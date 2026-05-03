@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#121212">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="./icon.png">
+    <title>STLA Shift Hub</title>
+    <link rel="stylesheet" href="styles.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    
+    <div class="app-header">
+        <img src="./icon.png" alt="STLA Logo" class="app-logo" onerror="this.style.display='none'">
+        <div class="app-title-container">
+            <p class="app-subtitle" id="greeting-text">Welcome, Drizzy</p>
+            <h1 class="app-title">STLA <span>Shift Hub</span></h1>
+        </div>
+    </div>
+    
+    <div class="dashboard-card" onclick="triggerBiometricsAndOpenPay()">
+        <div class="dash-left">
+            <div class="dash-icon">💰</div>
+            <div class="dash-text">
+                <p class="dash-title">Current Pay Period</p>
+                <p class="dash-subtitle">View Dashboard</p>
+            </div>
+        </div>
+        <div class="dash-arrow">❯</div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item"><span class="dot" style="background-color: var(--night);"></span> Nights</div>
+        <div class="legend-item"><span class="dot" style="background-color: var(--day);"></span> Days</div>
+        <div class="legend-item"><span class="dot" style="background-color: var(--off);"></span> Off</div>
+        <div class="legend-item"><span class="dot" style="background-color: var(--mod);"></span> Modified</div>
+        <div class="legend-item">💧 Drop Day</div>
+        <div class="legend-item">❌ 120H Max</div>
+    </div>
+    
+    <div id="calendar"></div>
+
+    <div class="fab-container">
+        <div class="fab-row">
+            <select id="year-select" class="fab-btn secondary" onchange="haptic(); renderCalendar()"></select>
+            <select id="crew-select" class="fab-btn secondary" onchange="haptic(); renderCalendar()">
+                <option value="D">Crew D</option>
+                <option value="A">Crew A</option>
+                <option value="B">Crew B</option>
+                <option value="C">Crew C</option>
+            </select>
+        </div>
+        <div class="fab-row" style="justify-content: flex-end;">
+            <div class="fab-btn secondary" onclick="openSettingsSheet()">⚙️ Settings</div>
+            <div class="fab-btn" onclick="haptic(); scrollToToday()">📅 Today</div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="overlay" onclick="closeAllSheets()"></div>
+
+    <div class="bottom-sheet" id="sheet-pickup">
+        <h3 class="sheet-header" id="sheet-date">Log Shift & OT</h3>
+        
+        <div class="sheet-card" style="padding: 10px 15px;">
+            <div class="sheet-card-title">Quick Log Templates</div>
+            <div class="quick-log-scroller">
+                <div class="toggle-btn" style="min-width: max-content; padding: 6px 12px; font-size: 11px;" onclick="quickLog('early4')">+4h Early OT</div>
+                <div class="toggle-btn" style="min-width: max-content; padding: 6px 12px; font-size: 11px;" onclick="quickLog('late4')">+4h Late OT</div>
+                <div class="toggle-btn" style="min-width: max-content; padding: 6px 12px; font-size: 11px;" onclick="quickLog('vacation')">12h Vacation</div>
+            </div>
+        </div>
+
+        <div class="sheet-card">
+            <div class="sheet-card-title">Role & Pay Classification</div>
+            <div class="toggle-group">
+                <div class="toggle-btn role-btn" onclick="selectRole('Reg')" id="btn-role-Reg">Regular</div>
+                <div class="toggle-btn role-btn" onclick="selectRole('TL')" id="btn-role-TL">Team Leader</div>
+                <div class="toggle-btn role-btn" onclick="selectRole('Manual')" id="btn-role-Manual">Manual</div>
+            </div>
+            <input type="number" id="manual-rate-input" class="number-input" placeholder="Custom Rate ($/hr)" style="display: none; margin-top: 12px;" step="0.01">
+        </div>
+
+        <div class="sheet-card" id="section-shift-times">
+            <div class="sheet-card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Shift Times <span style="color:var(--day); cursor:pointer; font-size:10px; margin-left:10px;" onclick="clearTimes()">Clear</span></span>
+                <div class="toggle-btn meeting-btn" style="padding: 4px 8px; margin: 0; min-width: auto; font-size: 10px;" onclick="addMorningMeeting()">+1h OT (Meeting)</div>
+            </div>
+            <div class="time-row">
+                <div>
+                    <div style="font-size:10px; color:var(--text-muted); margin-bottom:6px;">Start Time</div>
+                    <input type="time" id="input-start-time" class="time-input" onchange="resetSliders(); updatePickupToggles()">
+                </div>
+                <div>
+                    <div style="font-size:10px; color:var(--text-muted); margin-bottom:6px;">End Time</div>
+                    <input type="time" id="input-end-time" class="time-input" onchange="resetSliders(); updatePickupToggles()">
+                </div>
+            </div>
+        </div>
+
+        <div class="sheet-card" id="section-short-shift" style="display: none;">
+            <div class="sheet-card-title">Classify Missed Hours (<span id="display-short-hours" style="color: var(--night);">0</span> total)</div>
+            <div style="margin-top: 10px; display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); font-weight: bold; letter-spacing: 0.5px;">
+                <span>ALL UNPAID</span>
+                <span>SPLIT</span>
+                <span>ALL VACATION</span>
+            </div>
+            <input type="range" id="short-slider" class="vac-slider" min="0" max="1" step="0.5" value="0" oninput="updateShortSliderLabels(); updatePickupToggles();">
+            <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 10px; background: var(--input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
+                <div style="flex:1; border-right: 1px solid var(--border);">
+                    <div style="font-size:10px; color:var(--text-muted); margin-bottom: 2px;">Unpaid Off</div>
+                    <div id="lbl-slider-unpaid" style="font-size: 16px; font-weight: bold; color: var(--night);">0.0h</div>
+                </div>
+                <div style="flex:1;">
+                    <div style="font-size:10px; color:var(--text-muted); margin-bottom: 2px;">Vacation</div>
+                    <div id="lbl-slider-vac" style="font-size: 16px; font-weight: bold; color: #00bcd4;">0.0h</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sheet-card" id="section-ot-rate" style="display: none;">
+            <div class="sheet-card-title">Classify Extra Hours (<span id="display-extra-hours" style="color: #fbbc04;">0</span> total)</div>
+            <div style="margin-top: 10px; display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); font-weight: bold; letter-spacing: 0.5px;">
+                <span>ALL OT</span>
+                <span>SPLIT</span>
+                <span>ALL DT</span>
+            </div>
+            <input type="range" id="ot-slider" min="0" max="1" step="0.5" value="1" oninput="updateSliderLabels(); updatePickupToggles();">
+            <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 10px; background: var(--input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
+                <div style="flex:1; border-right: 1px solid var(--border);">
+                    <div style="font-size:10px; color:var(--text-muted); margin-bottom: 2px;">OT (1.5x)</div>
+                    <div id="lbl-slider-ot" style="font-size: 16px; font-weight: bold; color: var(--off);">0.0h</div>
+                </div>
+                <div style="flex:1;">
+                    <div style="font-size:10px; color:var(--text-muted); margin-bottom: 2px;">DT (2.0x)</div>
+                    <div id="lbl-slider-dt" style="font-size: 16px; font-weight: bold; color: var(--day);">0.0h</div>
+                </div>
+            </div>
+            <div style="margin-top: 15px;">
+                <div style="font-size:10px; color:var(--text-muted); margin-bottom:6px; font-weight: bold; letter-spacing: 0.5px;">OT REASON (OPTIONAL)</div>
+                <input type="text" id="input-ot-reason" class="text-input" placeholder="e.g. Breakdown, Coverage, Meeting...">
+            </div>
+        </div>
+
+        <div class="sheet-card">
+            <div class="sheet-card-title">Schedule Overrides</div>
+            <div class="toggle-group">
+                <div class="toggle-btn day-type" onclick="selectType('Day')" id="btn-type-Day">☀️ Day Shift</div>
+                <div class="toggle-btn night-type" onclick="selectType('Night')" id="btn-type-Night">🌙 Night Shift</div>
+            </div>
+            <div id="crew-override-container" style="margin-top: 12px;">
+                <div class="toggle-group">
+                    <div class="toggle-btn crew-type" onclick="selectCrew('A')" id="btn-crew-A">A Shift</div>
+                    <div class="toggle-btn crew-type" onclick="selectCrew('B')" id="btn-crew-B">B Shift</div>
+                    <div class="toggle-btn crew-type" onclick="selectCrew('C')" id="btn-crew-C">C Shift</div>
+                    <div class="toggle-btn crew-type" onclick="selectCrew('OT')" id="btn-crew-OT">OT</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sheet-card">
+            <div class="sheet-card-title">Time Off & Absences</div>
+            <div class="toggle-group">
+                <div class="toggle-btn" style="border-color:#00bcd4; color:#00bcd4;" onclick="selectType('Vacation')" id="btn-type-Vacation">🏖️ Vacation</div>
+                <div class="toggle-btn" style="border-color:var(--night); color:var(--night);" onclick="selectType('Off')" id="btn-type-Off">🚫 Unpaid Off</div>
+                <div class="toggle-btn" style="border-color:#fbbc04; color:#fbbc04;" onclick="selectType('Lieu')" id="btn-type-Lieu">🏛️ Lieu Day</div>
+                <div class="toggle-btn" style="border-color:var(--day); color:var(--day);" onclick="selectType('DropOff')" id="btn-type-DropOff">💧 Drop Off</div>
+                <div class="toggle-btn" style="border-color:var(--off); color:var(--off); flex-basis: 100%;" onclick="selectType('DropPaid')" id="btn-type-DropPaid">💰 Drop Paid</div>
+            </div>
+        </div>
+
+        <div id="conflict-warning">
+            <div id="conflict-text"></div>
+            <label style="display: none; align-items: center; justify-content: center; gap: 5px; margin-top: 10px; font-size: 12px; color: var(--text);" id="override-label">
+                <input type="checkbox" id="cb-override" onchange="haptic(); updatePickupToggles()"> Override Lockdown
+            </label>
+        </div>
+
+        <div class="btn-row">
+            <button class="btn-action btn-remove" id="btn-remove" onclick="removeShift()">Clear Day</button>
+            <button class="btn-action btn-cancel" onclick="closeAllSheets()">Cancel</button>
+            <button class="btn-action btn-save" id="btn-save" onclick="saveShift()">Save</button>
+        </div>
+    </div>
+
+    <div class="bottom-sheet" id="sheet-payroll" style="display: flex; flex-direction: column; max-height: 85vh; padding-bottom: 0;">
+        <h3 class="sheet-header">💰 Financial Dashboard</h3>
+        <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: -15px; margin-bottom: 15px;">Calculated dynamically by Year rules.</p>
+        
+        <div style="overflow-y: auto; flex: 1; padding: 0 15px 20px 15px;">
+            <div id="payroll-content"></div>
+            
+            <div class="chart-container" id="chart-wrapper" style="display: none;">
+                <canvas id="payChart"></canvas>
+            </div>
+
+            <div class="sheet-card" style="margin-top: 25px; border-color: var(--accent); background: rgba(255, 123, 0, 0.05);">
+                <div class="sheet-card-title" style="color: var(--accent); margin-bottom: 15px;">🔮 "What-If" OT Simulator</div>
+                
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); font-weight: bold; margin-bottom: 5px;">
+                        <span>Overtime (1.5x)</span>
+                        <span id="sim-ot-val">0.0 hrs</span>
+                    </div>
+                    <input type="range" id="sim-ot-slider" min="0" max="24" step="0.5" value="0" oninput="runSimulator();" style="width: 100%; accent-color: #34a853;">
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); font-weight: bold; margin-bottom: 5px;">
+                        <span>Double Time (2.0x)</span>
+                        <span id="sim-dt-val">0.0 hrs</span>
+                    </div>
+                    <input type="range" id="sim-dt-slider" min="0" max="24" step="0.5" value="0" oninput="runSimulator();" style="width: 100%; accent-color: #4285f4;">
+                </div>
+
+                <div style="display: flex; justify-content: space-between; margin-top: 20px; padding-top: 15px; border-top: 1px dashed var(--border);">
+                    <div style="text-align: center; flex: 1;">
+                        <div style="font-size: 10px; color: var(--text-muted); font-weight: bold;">+ GROSS</div>
+                        <div id="sim-gross" style="font-size: 14px; font-weight: bold; color: var(--text);">+$0.00</div>
+                    </div>
+                    <div style="text-align: center; flex: 1; border-left: 1px solid var(--border);">
+                        <div style="font-size: 10px; color: var(--text-muted); font-weight: bold;">- EST. TAX</div>
+                        <div id="sim-tax" style="font-size: 14px; font-weight: bold; color: var(--night);">-$0.00</div>
+                    </div>
+                    <div style="text-align: center; flex: 1; border-left: 1px solid var(--border);">
+                        <div style="font-size: 10px; color: var(--text-muted); font-weight: bold;">+ NET BUMP</div>
+                        <div id="sim-net" style="font-size: 16px; font-weight: 900; color: var(--off);">+$0.00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-row" style="position: sticky; bottom: 0; background: var(--glass-bg, #1c1c1e); padding: 15px 0 25px 0; margin: 0; border-top: 1px solid var(--border); z-index: 10;">
+            <button class="btn-action btn-cancel" style="flex: 1; background: var(--day); border: none; color: #fff;" onclick="exportPDF()">📄 PDF</button>
+            <button class="btn-action btn-cancel" style="flex: 1;" onclick="sharePayPeriod()">📤 Text</button>
+            <button class="btn-action btn-save" style="flex: 1.5;" onclick="closeAllSheets()">Close</button>
+        </div>
+    </div>
+
+    <div class="bottom-sheet" id="sheet-settings" style="display: flex; flex-direction: column; max-height: 85vh; padding-bottom: 0;">
+        <h3 class="sheet-header">⚙️ System Settings</h3>
+        
+        <div class="settings-scroll-area" style="overflow-y: auto; flex: 1; padding: 0 15px 20px 15px;">
+            <div class="settings-group-title">Data Management & Privacy</div>
+            <div class="settings-group">
+                <div class="settings-row" style="cursor: pointer;" onclick="exportData()">
+                    <div class="settings-label" style="color: var(--day); font-weight: bold;">📤 Export Backup (.json)</div>
+                </div>
+                <div class="settings-row" style="cursor: pointer;" onclick="document.getElementById('import-file').click(); haptic();">
+                    <div class="settings-label" style="color: var(--accent); font-weight: bold;">📥 Import Backup</div>
+                    <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importData(event)">
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">Require Face/Fingerprint for Pay</div>
+                    <label class="switch">
+                        <input type="checkbox" id="setting-biometrics" onchange="haptic()">
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-group-title">Native OS Integrations</div>
+            <div class="settings-group">
+                <div class="settings-row">
+                    <div class="settings-label">Sync to Phone Calendar</div>
+                    <label class="switch">
+                        <input type="checkbox" id="setting-cal-sync" onchange="haptic()">
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">Smart Wake-Up Alarms</div>
+                    <label class="switch">
+                        <input type="checkbox" id="setting-alarms" onchange="haptic()">
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-group-title">Profile & Work Defaults</div>
+            <div class="settings-group">
+                <div class="settings-row">
+                    <div class="settings-label">App Theme</div>
+                    <select id="setting-theme" class="settings-select" onchange="haptic(); applyTheme(this.value)">
+                        <option value="system">System Default</option>
+                        <option value="dark">Always Dark</option>
+                        <option value="light">Always Light</option>
+                    </select>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">Display Name</div>
+                    <input type="text" id="setting-display-name" class="settings-input" placeholder="e.g. Drizzy">
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">Default App Crew</div>
+                    <select id="setting-default-crew" class="settings-select" onchange="haptic()">
+                        <option value="A">Crew A</option>
+                        <option value="B">Crew B</option>
+                        <option value="C">Crew C</option>
+                        <option value="D">Crew D</option>
+                    </select>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">Default Role</div>
+                    <select id="setting-default-role" class="settings-select" onchange="haptic()">
+                        <option value="Reg">Regular</option>
+                        <option value="TL">Team Leader</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="settings-group-title">Shift Notifications</div>
+            <div class="settings-group">
+                <div class="settings-row">
+                    <div class="settings-label">24-Hour Warning</div>
+                    <label class="switch">
+                        <input type="checkbox" id="setting-notif-24" onchange="haptic()">
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">12-Hour Warning</div>
+                    <label class="switch">
+                        <input type="checkbox" id="setting-notif-12" onchange="haptic()">
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">3-Hour Warning</div>
+                    <label class="switch">
+                        <input type="checkbox" id="setting-notif-3" onchange="haptic()">
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-group-title">Financial & Tax Overrides</div>
+            <div class="settings-group">
+                <div class="settings-row">
+                    <div class="settings-label">Regular Rate ($/hr)</div>
+                    <input type="number" id="setting-reg-rate" class="settings-input" step="0.01">
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">Team Leader ($/hr)</div>
+                    <input type="number" id="setting-tl-rate" class="settings-input" step="0.01">
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">Stop CPP Deductions:</div>
+                    <select id="cpp-max-pp" class="settings-select" onchange="haptic()"></select>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">Stop EI Deductions:</div>
+                    <select id="ei-max-pp" class="settings-select" onchange="haptic()"></select>
+                </div>
+            </div>
+
+            <div class="settings-group-title">Vacation Management</div>
+            <div class="settings-group">
+                <div class="settings-row">
+                    <div class="settings-label">Cycle Limit (Hours)</div>
+                    <input type="number" id="setting-vacation-limit" class="settings-input">
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">Cycle Start Date</div>
+                    <input type="date" id="setting-vac-start" class="settings-input">
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">Cycle End Date</div>
+                    <input type="date" id="setting-vac-end" class="settings-input">
+                </div>
+            </div>
+
+            <div class="settings-group-title">Calendar & Rotation Anchor</div>
+            <div class="settings-group">
+                <div class="settings-row">
+                    <div class="settings-label">Render Start Year</div>
+                    <input type="number" id="setting-start-year" class="settings-input">
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">Render End Year</div>
+                    <input type="number" id="setting-end-year" class="settings-input">
+                </div>
+                <div class="settings-row" style="flex-direction: column; align-items: stretch; gap: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="settings-label">Base Rotation Date</div>
+                        <input type="date" id="rot-date-input" class="settings-input">
+                    </div>
+                    <div class="toggle-group" style="margin-top: 5px;">
+                        <div class="toggle-btn crew-type" onclick="selectRotOffset(0)" id="btn-rot-0">2-Day Day</div>
+                        <div class="toggle-btn crew-type" onclick="selectRotOffset(4)" id="btn-rot-4">3-Day Night</div>
+                        <div class="toggle-btn crew-type" onclick="selectRotOffset(14)" id="btn-rot-14">2-Day Night</div>
+                        <div class="toggle-btn crew-type" onclick="selectRotOffset(18)" id="btn-rot-18">3-Day Day</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="btn-row" style="position: sticky; bottom: 0; background: var(--glass-bg, #1c1c1e); padding: 15px 0 25px 0; margin: 0; border-top: 1px solid var(--border); z-index: 10;">
+            <button class="btn-action btn-cancel" onclick="closeAllSheets()">Cancel</button>
+            <button class="btn-action btn-save" onclick="saveSettings()">Save Settings</button>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script src="cordova.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
