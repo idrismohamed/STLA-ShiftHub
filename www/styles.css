@@ -275,7 +275,7 @@ input:checked + .switch-slider:before { transform: translateX(20px); }
 .time-input::-webkit-calendar-picker-indicator, .date-picker::-webkit-calendar-picker-indicator { filter: var(--calendar-filter); }
 
 /* Range Sliders */
-input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; background: transparent; }
 input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: var(--day); cursor: pointer; margin-top: -8px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); border: 2px solid #fff; }
 input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: linear-gradient(90deg, var(--off) 0%, var(--day) 100%); border-radius: 4px; }
 .vac-slider::-webkit-slider-thumb { background: #00bcd4 !important; }
