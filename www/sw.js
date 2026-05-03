@@ -1,7 +1,15 @@
-const CACHE_NAME = 'shift-hub-v22';
+const CACHE_NAME = 'shift-hub-v23';
 const urlsToCache = [
   './index.html',
   './styles.css',
+  './constants.js',
+  './utils.js',
+  './state.js',
+  './rotation.js',
+  './payroll.js',
+  './calendar.js',
+  './notifications.js',
+  './ui.js',
   './app.js',
   './manifest.json',
   './icon.png'
