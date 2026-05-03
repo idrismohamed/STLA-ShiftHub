@@ -5,22 +5,6 @@ window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', ()
     if (sysSettings.theme === 'system') applyTheme('system');
 });
 
-// ─── Year selector ────────────────────────────────────────────────────────────
-
-// ─── Data export / import ─────────────────────────────────────────────────────
-
-
-
-
-
-
-
-
-
-
-
-
-
 // ─── Cordova / browser event wiring ──────────────────────────────────────────
 
 document.addEventListener('deviceready', function() {
