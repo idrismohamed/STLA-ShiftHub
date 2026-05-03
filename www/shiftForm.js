@@ -1,0 +1,513 @@
+// ─── Shift form state ─────────────────────────────────────────────────────────
+
+let activeDate = null, activeCurrentShift = null, activeNextShift = null;
+let selectedType = null, selectedCrew = null, selectedRole = sysSettings.defaultRole;
+
+// ─── Shift form helpers ───────────────────────────────────────────────────────
+
+function clearTimes() {
+    haptic();
+    const sInput = document.getElementById('input-start-time');
+    const eInput = document.getElementById('input-end-time');
+    const rInput = document.getElementById('input-ot-reason');
+    if (sInput) sInput.value = '';
+    if (eInput) eInput.value = '';
+    if (rInput) rInput.value = '';
+    resetSliders();
+    updatePickupToggles();
+}
+
+function resetSliders() {
+    const otSlider    = document.getElementById('ot-slider');
+    const shortSlider = document.getElementById('short-slider');
+    if (otSlider)    otSlider.removeAttribute('data-user-modified');
+    if (shortSlider) shortSlider.removeAttribute('data-user-modified');
+}
+
+function updateSliderLabels() {
+    const slider = document.getElementById('ot-slider');
+    if (!slider) return;
+    slider.setAttribute('data-user-modified', 'true');
+    const dt    = parseFloat(slider.value) || 0;
+    const extra = parseFloat(slider.max)   || 0;
+    const otLabel = document.getElementById('lbl-slider-ot');
+    const dtLabel = document.getElementById('lbl-slider-dt');
+    if (otLabel) otLabel.innerText = Math.max(0, extra - dt).toFixed(1) + 'h';
+    if (dtLabel) dtLabel.innerText = dt.toFixed(1) + 'h';
+}
+
+function updateShortSliderLabels() {
+    const slider = document.getElementById('short-slider');
+    if (!slider) return;
+    slider.setAttribute('data-user-modified', 'true');
+    const vH    = parseFloat(slider.value) || 0;
+    const short = parseFloat(slider.max)   || 0;
+    const vacLabel    = document.getElementById('lbl-slider-vac');
+    const unpaidLabel = document.getElementById('lbl-slider-unpaid');
+    if (vacLabel)    vacLabel.innerText    = vH.toFixed(1) + 'h';
+    if (unpaidLabel) unpaidLabel.innerText = Math.max(0, short - vH).toFixed(1) + 'h';
+    updatePickupToggles(true);
+}
+
+// ─── Shift entry sheet ────────────────────────────────────────────────────────
+
+function openPickupSheet(dStr, disp, curS, nextS) {
+    activeDate = dStr; activeCurrentShift = curS; activeNextShift = nextS;
+    const sheetDate = document.getElementById('sheet-date');
+    if (sheetDate) sheetDate.innerText = disp;
+
+    const ex         = extraShifts[dStr] || {};
+    const targetType = ex.type || curS;
+    let defS = '', defE = '';
+
+    if      (targetType === 'Day'  || targetType === 'D') { defS = '06:30'; defE = '18:30'; }
+    else if (targetType === 'Night'|| targetType === 'N') { defS = '18:30'; defE = '06:30'; }
+    else if (targetType === 'DropPaid') { defS = (curS === 'N') ? '18:30' : '06:30'; defE = (curS === 'N') ? '06:30' : '18:30'; }
+
+    if (['Vacation', 'Off', 'DropOff', 'Lieu'].includes(targetType) || (targetType === 'O' && selectedType !== 'DropPaid')) {
+        defS = ''; defE = '';
+    }
+
+    const regRoleBtn = document.getElementById('btn-role-Reg');
+    const tlRoleBtn  = document.getElementById('btn-role-TL');
+    if (regRoleBtn) regRoleBtn.innerText = `Regular ($${sysSettings.regRate.toFixed(2)})`;
+    if (tlRoleBtn)  tlRoleBtn.innerText  = `Team Leader ($${sysSettings.tlRate.toFixed(2)})`;
+
+    selectedType = ex.type || null;
+    selectedCrew = normalizeCrew(ex.crew) || null;
+    selectedRole = ex.role || sysSettings.defaultRole || 'Reg';
+
+    const manualInput = document.getElementById('manual-rate-input');
+    if (manualInput) {
+        manualInput.style.display = selectedRole === 'Manual' ? 'block' : 'none';
+        manualInput.value         = selectedRole === 'Manual' ? (ex.manualRate || '') : '';
+    }
+
+    const stInput = document.getElementById('input-start-time');
+    const etInput = document.getElementById('input-end-time');
+    if (stInput) stInput.value = ex.startTime || defS;
+    if (etInput) etInput.value = ex.endTime   || defE;
+
+    const otSlider = document.getElementById('ot-slider');
+    if (otSlider) {
+        otSlider.removeAttribute('data-user-modified');
+        if (ex.dtHours !== undefined) otSlider.dataset.savedDt = ex.dtHours; else delete otSlider.dataset.savedDt;
+    }
+    const shortSlider = document.getElementById('short-slider');
+    if (shortSlider) {
+        shortSlider.removeAttribute('data-user-modified');
+        if (ex.vacHours !== undefined) shortSlider.dataset.savedVac = ex.vacHours; else delete shortSlider.dataset.savedVac;
+    }
+
+    const cbOverride = document.getElementById('cb-override');
+    if (cbOverride) cbOverride.checked = ex.overrideLockout || false;
+
+    const rInput = document.getElementById('input-ot-reason');
+    if (rInput) rInput.value = ex.otReason || '';
+
+    updatePickupToggles();
+
+    const btnRemove = document.getElementById('btn-remove');
+    if (btnRemove) btnRemove.style.display = Object.keys(ex).length ? 'block' : 'none';
+    openSheet('sheet-pickup');
+}
+
+function quickLog(template) {
+    haptic();
+    const stInput = document.getElementById('input-start-time');
+    const etInput = document.getElementById('input-end-time');
+    const baseS   = (activeCurrentShift === 'D' || activeCurrentShift === 'Day') ? '06:30'
+                  : (activeCurrentShift === 'N' || activeCurrentShift === 'Night' ? '18:30' : '06:30');
+
+    if (template === 'early4') {
+        if (baseS === '06:30') { stInput.value = '02:30'; etInput.value = '18:30'; }
+        else                   { stInput.value = '14:30'; etInput.value = '06:30'; }
+    } else if (template === 'late4') {
+        if (baseS === '06:30') { stInput.value = '06:30'; etInput.value = '22:30'; }
+        else                   { stInput.value = '18:30'; etInput.value = '10:30'; }
+    } else if (template === 'vacation') {
+        selectType('Vacation');
+        return;
+    }
+
+    if (['Vacation', 'Off', 'DropOff', 'Lieu'].includes(selectedType)) selectedType = null;
+    resetSliders();
+    updatePickupToggles();
+}
+
+function selectRole(r) {
+    haptic();
+    selectedRole = r;
+    const manualInput = document.getElementById('manual-rate-input');
+    if (manualInput) manualInput.style.display = (r === 'Manual') ? 'block' : 'none';
+    updatePickupToggles();
+}
+
+function selectType(t) {
+    haptic();
+    selectedType = (selectedType === t) ? null : t;
+    const stInput = document.getElementById('input-start-time');
+    const etInput = document.getElementById('input-end-time');
+
+    if      (selectedType === 'Day')   { if (stInput) stInput.value = '06:30'; if (etInput) etInput.value = '18:30'; }
+    else if (selectedType === 'Night') { if (stInput) stInput.value = '18:30'; if (etInput) etInput.value = '06:30'; }
+    else if (['DropOff', 'Vacation', 'Off', 'Lieu'].includes(selectedType)) {
+        if (stInput) stInput.value = '';
+        if (etInput) etInput.value = '';
+        const rInput = document.getElementById('input-ot-reason');
+        if (rInput) rInput.value = '';
+        selectedCrew = null;
+    } else if (selectedType === 'DropPaid') {
+        if (activeCurrentShift === 'N') { if (stInput) stInput.value = '18:30'; if (etInput) etInput.value = '06:30'; }
+        else                            { if (stInput) stInput.value = '06:30'; if (etInput) etInput.value = '18:30'; }
+    } else {
+        if      (activeCurrentShift === 'D') { if (stInput) stInput.value = '06:30'; if (etInput) etInput.value = '18:30'; }
+        else if (activeCurrentShift === 'N') { if (stInput) stInput.value = '18:30'; if (etInput) etInput.value = '06:30'; }
+        else { if (stInput) stInput.value = ''; if (etInput) etInput.value = ''; }
+    }
+    resetSliders();
+    updatePickupToggles();
+}
+
+function selectCrew(c) { haptic(); selectedCrew = (selectedCrew === c) ? null : c; updatePickupToggles(); }
+
+function addMorningMeeting() {
+    haptic();
+    const et = document.getElementById('input-end-time');
+    if (et) {
+        if (!et.value) { const exp = selectedType || activeCurrentShift; et.value = (exp === 'Day' || exp === 'D') ? '18:30' : '06:30'; }
+        const [h, m] = et.value.split(':').map(Number);
+        et.value = `${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+    const otSlider = document.getElementById('ot-slider');
+    if (otSlider) otSlider.removeAttribute('data-user-modified');
+    updatePickupToggles();
+}
+
+// ─── Pickup toggle validation ─────────────────────────────────────────────────
+
+function updatePickupToggles(skipSliderReset = false) {
+    document.querySelectorAll('#sheet-pickup .toggle-btn').forEach(b => b.classList.remove('active'));
+
+    const f            = dayFatigue[activeDate];
+    const isDropPeriod = f && f.isDropPeriod;
+    const activePP     = f ? f.ppIndex : 0;
+    const offset       = (((activePP % 3) + 3) % 3);
+    const startPP      = activePP - (offset === 1 ? 2 : (offset === 2 ? 0 : 1));
+
+    let hasDropOffInCycle = false, hasAbsenceInCycle = false, hasDropPaidInCycle = false;
+    const cycleStartUTC = basePPStartUTC + startPP * MS_PP;
+    const cycleEndUTC   = basePPStartUTC + (startPP + 3) * MS_PP;
+
+    for (let u = cycleStartUTC; u < cycleEndUTC; u += MS_DAY) {
+        const dS = toDateKey(u);
+        if (dS !== activeDate && extraShifts[dS]) {
+            if (extraShifts[dS].type === 'DropOff')                                            hasDropOffInCycle  = true;
+            if (['Off', 'DropOff', 'Lieu'].includes(extraShifts[dS].type))                     hasAbsenceInCycle  = true;
+            if (extraShifts[dS].type === 'DropPaid')                                           hasDropPaidInCycle = true;
+        }
+    }
+
+    const btnDropPaid = document.getElementById('btn-type-DropPaid');
+    const btnDropOff  = document.getElementById('btn-type-DropOff');
+    if (btnDropPaid && btnDropOff) {
+        btnDropOff.style.display  = 'block';
+        btnDropPaid.style.display = isDropPeriod ? 'block' : 'none';
+    }
+
+    if (selectedType && ['Day', 'Night'].includes(selectedType)) {
+        const btn = document.getElementById('btn-type-' + selectedType);
+        if (btn) btn.classList.add('active');
+    }
+    if (selectedCrew) {
+        const btn = document.getElementById('btn-crew-' + selectedCrew);
+        if (btn) btn.classList.add('active');
+    }
+    const activeRoleBtn = document.getElementById('btn-role-' + selectedRole);
+    if (activeRoleBtn) activeRoleBtn.classList.add('active');
+
+    const isTimeOff            = ['Vacation', 'Off', 'DropOff', 'Lieu'].includes(selectedType);
+    const crewOverrideContainer = document.getElementById('crew-override-container');
+    if (crewOverrideContainer) crewOverrideContainer.style.display = isTimeOff ? 'none' : 'block';
+
+    ['Vacation', 'Off', 'DropOff', 'DropPaid', 'Lieu'].forEach(t => {
+        const btn = document.getElementById('btn-type-' + t);
+        if (!btn) return;
+        if (selectedType === t) {
+            btn.classList.add('active');
+            if (t === 'Vacation') btn.style.background = 'rgba(0, 188, 212, 0.2)';
+            if (t === 'Off')      btn.style.background = 'rgba(234, 67, 53, 0.2)';
+            if (t === 'Lieu')     btn.style.background = 'rgba(251, 188, 4, 0.2)';
+            if (t === 'DropOff')  btn.style.background = 'rgba(66, 133, 244, 0.2)';
+            if (t === 'DropPaid') btn.style.background = 'rgba(52, 168, 83, 0.2)';
+            btn.style.boxShadow = TIMEOFF_GLOWS[t];
+        } else {
+            btn.style.background  = 'var(--input-bg)';
+            btn.style.boxShadow   = '';
+        }
+    });
+
+    const wT   = document.getElementById('conflict-text');
+    const ovL  = document.getElementById('override-label');
+    const bSave = document.getElementById('btn-save');
+    if (wT)  wT.innerHTML        = '';
+    if (ovL) ovL.style.display   = 'none';
+    let hasW = false, canS = true;
+
+    const stInput = document.getElementById('input-start-time');
+    const etInput = document.getElementById('input-end-time');
+    const st      = stInput ? stInput.value : '';
+    const et      = etInput ? etInput.value : '';
+
+    // Vacation limit check
+    if (selectedType === 'Vacation') {
+        const crewSelect = document.getElementById('crew-select');
+        const viewCrew   = crewSelect ? crewSelect.value : sysSettings.defaultCrew;
+        const ytdVacation = getUsedVacationHours(viewCrew, activeDate, activeDate);
+        const base = f ? f.baseWorkHours : 0;
+        const dur  = (st && et) ? getDuration(st, et) : 0;
+        const vH   = (st && et) ? Math.max(0, (base || 12) - dur) : (base || 12);
+        if (ytdVacation + vH > sysSettings.vacationLimit + 0.05) {
+            const hrsLeft = Math.max(0, sysSettings.vacationLimit - ytdVacation);
+            if (wT) wT.innerHTML += `⚠️ VACATION LIMIT: Cannot book. You only have ${hrsLeft.toFixed(1)} hours remaining for this cycle.<br>`;
+            hasW = true; canS = false;
+        }
+    }
+
+    // Lieu balance check
+    if (selectedType === 'Lieu') {
+        const crewSelect = document.getElementById('crew-select');
+        const viewCrew   = crewSelect ? crewSelect.value : sysSettings.defaultCrew;
+        const banked     = computeLieuBalance(activeDate, viewCrew, activeDate);
+        if (banked <= 0) {
+            if (wT) wT.innerHTML += `⚠️ LIEU DAY LIMIT: You have no banked Lieu Days available (current balance: ${banked}).<br>`;
+            hasW = true; canS = false;
+        }
+    }
+
+    if (selectedType === 'DropOff' && hasDropOffInCycle) {
+        if (wT) wT.innerHTML += `⚠️ DROP OFF LIMIT: You already took a Drop Off Day in this 6-week cycle.<br>`;
+        hasW = true; canS = false;
+    }
+    if (selectedType === 'DropPaid') {
+        if (hasDropPaidInCycle) { if (wT) wT.innerHTML += `⚠️ DROP PAID LIMIT: You already logged a Drop Paid shift in this cycle.<br>`; hasW = true; canS = false; }
+        if (hasAbsenceInCycle)  { if (wT) wT.innerHTML += `⚠️ DROP PAID BLOCKED: You have an Unpaid Absence logged in this eligibility cycle.<br>`; hasW = true; canS = false; }
+    }
+
+    // Rest-time checks
+    if (st && et && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(selectedType)) {
+        let currentStart = getFloatTime(st);
+        let currentEnd   = getFloatTime(et); if (currentEnd < currentStart) currentEnd += 24;
+        const dateObj    = new Date(activeDate + 'T00:00:00Z');
+        const crewSelect = document.getElementById('crew-select');
+        const crew       = crewSelect ? crewSelect.value : sysSettings.defaultCrew;
+        const cbOv       = document.getElementById('cb-override');
+
+        const yUTC = Date.UTC(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate() - 1);
+        const yStr = toDateKey(yUTC);
+        const yEnd = getShiftEndFloat(yStr, crew);
+        if (yEnd !== null) {
+            const restBack = (currentStart + 24) - yEnd;
+            if (restBack < 7.95) {
+                if (wT)  wT.innerHTML    += `🚨 INSUFFICIENT REST: Only ${restBack.toFixed(1)}h rest since yesterday's shift.<br>`;
+                if (ovL) ovL.style.display = 'flex';
+                if (!cbOv || !cbOv.checked) canS = false;
+            }
+        }
+
+        const tUTC  = Date.UTC(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate() + 1);
+        const tStr  = toDateKey(tUTC);
+        const tStart = getShiftStartFloat(tStr, crew);
+        if (tStart !== null) {
+            const restFwd = (tStart + 24) - currentEnd;
+            if (restFwd < 7.95) {
+                if (wT)  wT.innerHTML    += `🚨 INSUFFICIENT REST: Only ${restFwd.toFixed(1)}h rest before tomorrow's shift.<br>`;
+                if (ovL) ovL.style.display = 'flex';
+                if (!cbOv || !cbOv.checked) canS = false;
+            }
+        }
+    }
+
+    // Sleep warning
+    if (activeCurrentShift === 'O' && activeNextShift !== 'O' && ['Day', 'Night'].includes(selectedType)) {
+        if (activeNextShift === 'N' && selectedType === 'Day')  { if (wT) wT.innerHTML += '⚠️ SLEEP WARNING: Nights tomorrow!<br>'; hasW = true; }
+        if (activeNextShift === 'D' && selectedType === 'Night') { if (wT) wT.innerHTML += '⚠️ SLEEP WARNING: Days tomorrow!<br>';  hasW = true; }
+    }
+
+    let base  = f ? f.baseWorkHours : 0;
+    const cbOv = document.getElementById('cb-override');
+    if (f && f.isLockout && cbOv && cbOv.checked) base = (activeCurrentShift === 'D' || activeCurrentShift === 'N') ? 12 : 0;
+    if (['DropPaid', 'DropOff', 'Lieu'].includes(selectedType)) base = 0;
+
+    const dur   = (st && et) ? getDuration(st, et) : 0;
+    const extra = Math.max(0, dur - base);
+    const short = Math.max(0, base - dur);
+
+    const otS        = document.getElementById('section-ot-rate');
+    const otSlider   = document.getElementById('ot-slider');
+    const shortS     = document.getElementById('section-short-shift');
+    const shortSlider = document.getElementById('short-slider');
+
+    function setShortShiftMode(mode, html = '') {
+        if (!shortS) return;
+        let msgBox = document.getElementById('short-shift-msgbox');
+        if (!msgBox) { msgBox = document.createElement('div'); msgBox.id = 'short-shift-msgbox'; shortS.appendChild(msgBox); }
+        if (mode === 'message') {
+            Array.from(shortS.children).forEach(c => { if (c.id !== 'short-shift-msgbox') c.style.display = 'none'; });
+            msgBox.style.display = 'block';
+            msgBox.innerHTML     = html;
+        } else {
+            Array.from(shortS.children).forEach(c => { if (c.id !== 'short-shift-msgbox') c.style.display = ''; });
+            msgBox.style.display = 'none';
+        }
+    }
+
+    if (selectedType === 'Vacation') {
+        if (shortS) { shortS.style.display = 'block'; shortS.style.background = 'rgba(0, 188, 212, 0.1)'; shortS.style.borderColor = 'rgba(0, 188, 212, 0.3)'; }
+        const vH = (st && et) ? short : (base || 12);
+        setShortShiftMode('message', `<div class="sheet-label" style="color: #00bcd4; margin-bottom: 0;">🏖️ ${vH.toFixed(1)} hours logged as Vacation</div>`);
+    } else if (selectedType === 'Off') {
+        if (shortS) { shortS.style.display = 'block'; shortS.style.background = 'rgba(234, 67, 53, 0.1)'; shortS.style.borderColor = 'rgba(234, 67, 53, 0.3)'; }
+        const uH = (st && et) ? short : (base || 12);
+        setShortShiftMode('message', `<div class="sheet-label" style="color: var(--night); margin-bottom: 0;">⚠️ ${uH.toFixed(1)} hours logged as Unpaid</div>`);
+    } else if (selectedType === 'Lieu') {
+        if (shortS) { shortS.style.display = 'block'; shortS.style.background = 'rgba(251, 188, 4, 0.1)'; shortS.style.borderColor = 'rgba(251, 188, 4, 0.3)'; }
+        const uH = (st && et) ? short : (base || 12);
+        setShortShiftMode('message', `<div class="sheet-label" style="color: #fbbc04; margin-bottom: 0;">🏛️ ${uH.toFixed(1)} hours logged as Lieu Day</div>`);
+    } else if (short > 0.05 && dur > 0 && selectedType !== 'DropPaid') {
+        if (shortS) { shortS.style.display = 'block'; shortS.style.background = 'var(--card)'; shortS.style.borderColor = 'var(--border)'; }
+        setShortShiftMode('slider');
+        const dsh = document.getElementById('display-short-hours');
+        if (dsh) dsh.innerText = short.toFixed(1);
+        if (shortSlider) {
+            shortSlider.max = short;
+            if (!skipSliderReset) {
+                if (shortSlider.dataset.savedVac !== undefined) { shortSlider.value = shortSlider.dataset.savedVac; shortSlider.setAttribute('data-user-modified', 'true'); delete shortSlider.dataset.savedVac; }
+                else if (!shortSlider.hasAttribute('data-user-modified')) shortSlider.value = 0;
+                else if (parseFloat(shortSlider.value) > short) shortSlider.value = short;
+            }
+            const vH = parseFloat(shortSlider.value) || 0;
+            const lsv = document.getElementById('lbl-slider-vac');
+            const lsu = document.getElementById('lbl-slider-unpaid');
+            if (lsv) lsv.innerText = vH.toFixed(1) + 'h';
+            if (lsu) lsu.innerText = (short - vH).toFixed(1) + 'h';
+        }
+    } else {
+        if (shortS) shortS.style.display = 'none';
+    }
+
+    if (extra > 0.05 && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(selectedType)) {
+        if (otS) otS.style.display = 'block';
+        const deh = document.getElementById('display-extra-hours');
+        if (deh) deh.innerText = extra.toFixed(1);
+        if (otSlider) {
+            otSlider.max = extra;
+            if (!skipSliderReset) {
+                if (otSlider.dataset.savedDt !== undefined) { otSlider.value = otSlider.dataset.savedDt; otSlider.setAttribute('data-user-modified', 'true'); delete otSlider.dataset.savedDt; }
+                else if (!otSlider.hasAttribute('data-user-modified')) otSlider.value = (selectedType === 'DropPaid') ? 0 : extra;
+                else if (parseFloat(otSlider.value) > extra) otSlider.value = extra;
+            }
+            const dt = parseFloat(otSlider.value) || 0;
+            const lso = document.getElementById('lbl-slider-ot');
+            const lsd = document.getElementById('lbl-slider-dt');
+            if (lso) lso.innerText = Math.max(0, extra - dt).toFixed(1) + 'h';
+            if (lsd) lsd.innerText = dt.toFixed(1) + 'h';
+        }
+    } else {
+        if (otS) otS.style.display = 'none';
+        if (!skipSliderReset && otSlider) otSlider.removeAttribute('data-user-modified');
+    }
+
+    // 120h projection check
+    if (f && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(selectedType)) {
+        const crewSelect = document.getElementById('crew-select');
+        const viewC      = crewSelect ? crewSelect.value : sysSettings.defaultCrew;
+        const ppStart    = basePPStartUTC + f.ppIndex * MS_PP;
+        let proj = 0;
+        for (let d = 0; d <= 13; d++) {
+            const dS = toDateKey(ppStart + d * MS_DAY);
+            proj += (dS === activeDate) ? dur : (dayFatigue[dS]?.scheduledWorkHours || 0);
+        }
+        if (proj > 120.05) {
+            if (wT)  wT.innerHTML    += `🚨 120H LIMIT: Projected ${proj.toFixed(1)}h.<br>`;
+            if (ovL) ovL.style.display = 'flex';
+            if (!cbOv || !cbOv.checked) canS = false;
+        }
+    }
+
+    const cw = document.getElementById('conflict-warning');
+    if (cw) cw.style.display = (wT && wT.innerHTML) ? 'block' : 'none';
+    if (bSave) { bSave.disabled = !canS; bSave.style.opacity = canS ? '1' : '0.5'; bSave.style.pointerEvents = canS ? 'auto' : 'none'; }
+}
+
+// ─── Save / Remove shift ──────────────────────────────────────────────────────
+
+function saveShift() {
+    haptic();
+    const payload = { role: selectedRole };
+
+    if (selectedRole === 'Manual') {
+        const manualInput = document.getElementById('manual-rate-input');
+        const mRate = manualInput ? parseFloat(manualInput.value) : 0;
+        if (mRate > 0) payload.manualRate = mRate;
+    }
+
+    const stInput = document.getElementById('input-start-time');
+    const etInput = document.getElementById('input-end-time');
+    const st = stInput ? stInput.value : '';
+    const et = etInput ? etInput.value : '';
+
+    if (st && et) { payload.startTime = st; payload.endTime = et; }
+    if (selectedType) payload.type = selectedType;
+
+    const cbOv  = document.getElementById('cb-override');
+    let base     = dayFatigue[activeDate] ? dayFatigue[activeDate].baseWorkHours : 0;
+    if (dayFatigue[activeDate] && dayFatigue[activeDate].isLockout && cbOv && cbOv.checked) {
+        base = (activeCurrentShift === 'D' || activeCurrentShift === 'N') ? 12 : 0;
+    }
+    if (['DropPaid', 'DropOff', 'Lieu'].includes(selectedType)) base = 0;
+
+    let dur   = (st && et) ? getDuration(st, et) : 0;
+    if (selectedType === 'DropPaid' && dur === 0) dur = 12;
+
+    const extra = Math.max(0, dur - base);
+    const short = Math.max(0, base - dur);
+
+    if (selectedType === 'Vacation') {
+        payload.vacHours = (dur === 0) ? (base === 0 ? 12 : base) : short;
+    } else {
+        if (short > 0.05 && selectedType !== 'DropPaid' && selectedType !== 'Lieu') {
+            const shortSlider = document.getElementById('short-slider');
+            const vH          = shortSlider ? (parseFloat(shortSlider.value) || 0) : 0;
+            if (vH > 0) payload.vacHours = vH;
+        }
+        if (!['Off', 'DropOff', 'Lieu'].includes(selectedType)) {
+            const otSlider = document.getElementById('ot-slider');
+            const dtH      = otSlider ? (parseFloat(otSlider.value) || 0) : 0;
+            const otH      = Math.max(0, extra - dtH);
+            if (extra > 0.05) {
+                payload.otHours = otH;
+                payload.dtHours = dtH;
+                const rInput = document.getElementById('input-ot-reason');
+                if (rInput && rInput.value.trim()) payload.otReason = rInput.value.trim();
+            }
+            if (selectedCrew) payload.crew = selectedCrew;
+        }
+    }
+    if (cbOv && cbOv.checked) payload.overrideLockout = true;
+
+    extraShifts[activeDate] = payload;
+    localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts));
+    updateNotifications();
+    closeAllSheets();
+    showToast('Shift Saved');
+}
+
+function removeShift() {
+    haptic();
+    delete extraShifts[activeDate];
+    localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts));
+    updateNotifications();
+    closeAllSheets();
+    showToast('Shift Removed', 'error');
+}

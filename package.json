@@ -1,0 +1,31 @@
+{
+  "name": "stla-shifthub",
+  "version": "1.0.0",
+  "description": "STLA Shift Hub - Mobile shift management and payroll application",
+  "main": "www/index.html",
+  "scripts": {
+    "build": "echo 'Building Cordova app...' && cordova build",
+    "build:android": "cordova build android",
+    "build:ios": "cordova build ios",
+    "run:android": "cordova run android",
+    "run:ios": "cordova run ios",
+    "run:browser": "cordova run browser",
+    "add:platforms": "cordova platform add android && cordova platform add ios",
+    "add:plugins": "cordova plugin add cordova-plugin-device cordova-plugin-statusbar cordova-plugin-fingerprint-aio cordova-plugin-x-socialsharing cordova-plugin-local-notification"
+  },
+  "keywords": [
+    "cordova",
+    "mobile",
+    "shift-management",
+    "payroll",
+    "stla"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "cordova": "^12.0.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
