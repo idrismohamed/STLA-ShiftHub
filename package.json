@@ -24,7 +24,7 @@
   "license": "MIT",
   "devDependencies": {
     "@moodlehq/cordova-plugin-local-notification": "^0.9.0-moodle.12",
-    "cordova": "^12.0.0",
+    "cordova": "^13.0.0",
     "cordova-android": "^15.0.0",
     "cordova-browser": "^7.0.0",
     "cordova-plugin-badge": "^0.8.9",
