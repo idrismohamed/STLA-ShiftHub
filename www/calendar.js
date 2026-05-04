@@ -1,3 +1,25 @@
+const CALENDAR_VIEWS = ['month', 'agenda', 'week'];
+let calendarViewMode = localStorage.getItem('calendarViewMode') || 'month';
+const AGENDA_LOOKAHEAD_DAYS = 14;
+
+function toggleCalendarView() {
+    const currentIndex = CALENDAR_VIEWS.indexOf(calendarViewMode);
+    const nextIndex = (currentIndex + 1) % CALENDAR_VIEWS.length;
+    setCalendarViewMode(CALENDAR_VIEWS[nextIndex]);
+}
+
+function getNextViewLabel(mode) {
+    if (mode === 'month') return 'Agenda';
+    if (mode === 'agenda') return 'Week';
+    return 'Month';
+}
+
+function setCalendarViewMode(mode) {
+    calendarViewMode = mode;
+    localStorage.setItem('calendarViewMode', mode);
+    renderCalendar();
+}
+
 /** Smooth-scroll the "today" cell into view. */
 function scrollToToday() {
     const el = document.querySelector('.day.today');
@@ -17,6 +39,9 @@ function renderCalendar() {
     const crewSelect = document.getElementById('crew-select');
     const year = yearSelect ? parseInt(yearSelect.value) : getLogicalToday().getFullYear();
     const crew = crewSelect ? crewSelect.value : sysSettings.defaultCrew;
+    const viewMode = calendarViewMode;
+    const viewToggle = document.getElementById('btn-view-toggle');
+    if (viewToggle) viewToggle.innerText = getNextViewLabel(viewMode);
 
     const logicalT = getLogicalToday();
     const nowUTC   = Date.UTC(logicalT.getFullYear(), logicalT.getMonth(), logicalT.getDate());
@@ -26,6 +51,19 @@ function renderCalendar() {
     precalcFatigue(year, crew);
     const yearHols = getHolidays(year);
     let fullCalendarHtml = '';
+
+    if (viewMode === 'agenda') {
+        cal.innerHTML = renderAgendaView(year, crew, logicalT, todayStr, yearHols, currentTargetPPIndex);
+        renderCalendarWidget(crew, logicalT, todayStr);
+        renderDashboardCard(crew, logicalT);
+        return;
+    }
+    if (viewMode === 'week') {
+        cal.innerHTML = renderWeekView(year, crew, logicalT, todayStr, yearHols, currentTargetPPIndex);
+        renderCalendarWidget(crew, logicalT, todayStr);
+        renderDashboardCard(crew, logicalT);
+        return;
+    }
 
     for (let m = 0; m < 12; m++) {
         const first  = new Date(year, m, 1);
@@ -140,4 +178,223 @@ function renderCalendar() {
 
     cal.innerHTML = fullCalendarHtml;
     setTimeout(scrollToToday, 200);
+    renderCalendarWidget(crew, logicalT, todayStr);
+    renderDashboardCard(crew, logicalT);
+}
+
+function renderWeekView(year, crew, logicalT, todayStr, yearHols, currentTargetPPIndex) {
+    const baseDate = (year === logicalT.getFullYear()) ? new Date(logicalT) : new Date(year, 0, 1);
+    const weekStart = new Date(baseDate);
+    weekStart.setDate(baseDate.getDate() - baseDate.getDay());
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    const weekLabel = `Week of ${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+
+    let html = `<div class="week-container"><div class="week-header"><div><div class="agenda-title">${weekLabel}</div><div class="agenda-subtitle">Crew ${crew}</div></div></div><div class="week-grid">`;
+
+    for (let i = 0; i < 7; i++) {
+        const target = new Date(weekStart);
+        target.setDate(weekStart.getDate() + i);
+        const targetUTC = Date.UTC(target.getFullYear(), target.getMonth(), target.getDate());
+        const dStr = toDateKey(targetUTC);
+        const pI = getPIndex(targetUTC);
+        let shift = getShiftForCrew(pI, crew);
+        let sC = shift;
+        let lbl = shift === 'N' ? 'Night' : (shift === 'D' ? 'Day' : 'Off');
+        let detail = '';
+        let badgeHtml = '';
+        const friendly = target.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+        const f = dayFatigue[dStr] || {};
+        if (f.isLockout) { shift = 'O'; sC = 'O'; lbl = 'Off'; }
+
+        const ex = extraShifts[dStr];
+        if (ex) {
+            if (ex.type === 'Vacation') lbl = ex.startTime || ex.endTime ? 'Partial Vacation' : 'Vacation';
+            else if (ex.type === 'Off') lbl = ex.startTime || ex.endTime ? 'Partial Off' : 'Absence';
+            else if (ex.type === 'Lieu') lbl = ex.startTime || ex.endTime ? 'Partial Lieu' : 'Lieu Day';
+            else if (ex.type === 'DropOff') lbl = 'Drop Off';
+            else if (ex.type === 'DropPaid') lbl = 'Drop Paid';
+            else lbl = ex.type === 'Day' ? 'Day' : ex.type === 'Night' ? 'Night' : lbl;
+
+            if (ex.startTime || ex.endTime) detail = `${formatTime12(ex.startTime)} - ${formatTime12(ex.endTime)}`;
+            if (ex.type && !['Vacation', 'Off', 'DropOff'].includes(ex.type)) badgeHtml += `<span class="agenda-badge">${ex.type}</span>`;
+        }
+        if (!detail && ['D', 'N'].includes(shift)) detail = shift === 'D' ? '06:30 - 18:30' : '18:30 - 06:30';
+
+        const holInfo = yearHols[dStr];
+        if (holInfo) badgeHtml += `<span class="agenda-badge">Holiday</span>`;
+        if (f.isDropPeriod) badgeHtml += `<span class="agenda-badge">Drop Cycle</span>`;
+        if (f.isLockout) badgeHtml += `<span class="agenda-badge">120H Max</span>`;
+
+        html += `<div class="week-card ${sC} ${dStr === todayStr ? 'today' : ''} " onclick="haptic(); openPickupSheet('${dStr}', '${friendly}', '${getShiftForCrew(pI, crew)}', '${getShiftForCrew((pI + 1) % 28, crew)}')">
+            <div class="week-day">${friendly}</div>
+            <div class="week-label">${lbl}</div>
+            <div class="week-detail">${detail || 'No time'}</div>
+            <div class="week-badges">${badgeHtml}</div>
+        </div>`;
+    }
+
+    html += '</div></div>';
+    return html;
+}
+
+function renderDashboardCard(crew, logicalT) {
+    const titleEl = document.getElementById('dashboard-next-shift');
+    if (!titleEl) return;
+    const next = getUpcomingShift(crew, logicalT);
+    if (!next) {
+        titleEl.innerText = 'No upcoming work shifts scheduled.';
+        return;
+    }
+    const dateText = next.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const countdown = formatTimeUntil(next.date, logicalT);
+    titleEl.innerText = `${dateText} · ${next.label} · ${next.timeText || next.schedule} · ${countdown}`;
+}
+
+function renderAgendaView(year, crew, logicalT, todayStr, yearHols, currentTargetPPIndex) {
+    const pickerStart = (year === logicalT.getFullYear()) ? new Date(logicalT) : new Date(year, 0, 1);
+    const agendaStart = new Date(pickerStart.getFullYear(), pickerStart.getMonth(), pickerStart.getDate());
+    let html = `<div class="agenda-container"><div class="agenda-header"><div><div class="agenda-title">Upcoming ${AGENDA_LOOKAHEAD_DAYS} days</div><div class="agenda-subtitle">Crew ${crew}</div></div></div><div class="agenda-list">`;
+
+    for (let i = 0; i < AGENDA_LOOKAHEAD_DAYS; i++) {
+        const target = new Date(agendaStart);
+        target.setDate(target.getDate() + i);
+        const targetUTC = Date.UTC(target.getFullYear(), target.getMonth(), target.getDate());
+        const dStr = toDateKey(targetUTC);
+        const pI = getPIndex(targetUTC);
+        let shift = getShiftForCrew(pI, crew);
+        let sC = shift;
+        let lbl = shift === 'N' ? 'Night' : (shift === 'D' ? 'Day' : 'Off');
+        let details = '';
+        let timeText = '';
+        let badgeHtml = '';
+
+        const f = dayFatigue[dStr] || {};
+        if (f.isLockout) { shift = 'O'; sC = 'O'; lbl = 'Off'; }
+
+        const ex = extraShifts[dStr];
+        if (ex) {
+            if (ex.type === 'Vacation') {
+                lbl = ex.startTime || ex.endTime ? 'Partial Vacation' : 'Vacation';
+            } else if (ex.type === 'Off') {
+                lbl = ex.startTime || ex.endTime ? 'Partial Off' : 'Absence';
+            } else if (ex.type === 'Lieu') {
+                lbl = ex.startTime || ex.endTime ? 'Partial Lieu' : 'Lieu Day';
+            } else if (ex.type === 'DropOff') {
+                lbl = 'Drop Off';
+            } else if (ex.type === 'DropPaid') {
+                lbl = 'Drop Paid';
+            } else {
+                lbl = ex.type === 'Day' ? 'Day' : ex.type === 'Night' ? 'Night' : lbl;
+            }
+
+            if (ex.startTime || ex.endTime) {
+                timeText = `${formatTime12(ex.startTime)} - ${formatTime12(ex.endTime)}`;
+            }
+            if (ex.type && !['Vacation', 'Off', 'DropOff'].includes(ex.type)) {
+                badgeHtml += `<span class="agenda-badge">${ex.type}</span>`;
+            }
+        }
+
+        if (!timeText && ['D', 'N'].includes(shift)) {
+            timeText = shift === 'D' ? '06:30 - 18:30' : '18:30 - 06:30';
+        }
+
+        const holInfo = yearHols[dStr];
+        if (holInfo) badgeHtml += `<span class="agenda-badge">Holiday</span>`;
+        if (f.isDropPeriod) badgeHtml += `<span class="agenda-badge">Drop Cycle</span>`;
+        if (f.isLockout) badgeHtml += `<span class="agenda-badge">120H Max</span>`;
+
+        const isToday = dStr === todayStr;
+        const isPast = targetUTC < Date.UTC(logicalT.getFullYear(), logicalT.getMonth(), logicalT.getDate());
+        const timeC = isToday ? 'today' : (isPast ? 'past' : '');
+        const currentPPClass = (f.ppIndex === currentTargetPPIndex) ? 'current-pp' : '';
+        const friendlyDate = target.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+        html += `<div class="agenda-item ${sC} ${timeC} ${currentPPClass}" onclick="haptic(); openPickupSheet('${dStr}', '${friendlyDate}', '${getShiftForCrew(pI, crew)}', '${getShiftForCrew((pI + 1) % 28, crew)}')">
+            <div class="agenda-meta">
+                <div class="agenda-date">${friendlyDate}</div>
+                <div class="agenda-status">${lbl}</div>
+                <div class="agenda-badges">${badgeHtml}</div>
+            </div>
+            <div class="agenda-shift">${timeText || 'No shift time'}</div>
+        </div>`;
+    }
+
+    html += '</div></div>';
+    return html;
+}
+
+function renderCalendarWidget(crew, logicalT, todayStr) {
+    const widget = document.getElementById('calendar-widget');
+    if (!widget) return;
+
+    const next = getUpcomingShift(crew, logicalT);
+    const titleEl = document.getElementById('next-shift-title');
+    const detailsEl = document.getElementById('next-shift-details');
+    if (!titleEl || !detailsEl) return;
+
+    if (!next) {
+        titleEl.innerText = 'No upcoming shifts found';
+        detailsEl.innerText = 'Try changing crew or adding a shift to your schedule.';
+        return;
+    }
+
+    const shiftLabel = next.label;
+    const dateText = next.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const scheduleText = next.schedule || (next.timeText || 'Full shift day');
+    const countdown = formatTimeUntil(next.date, logicalT);
+
+    titleEl.innerText = `${dateText} • ${shiftLabel}`;
+    detailsEl.innerText = `${scheduleText} · ${countdown}`;
+}
+
+function getUpcomingShift(crew, fromDate) {
+    const start = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
+    for (let i = 0; i < 30; i++) {
+        const current = new Date(start);
+        current.setDate(start.getDate() + i);
+        const currentUTC = Date.UTC(current.getFullYear(), current.getMonth(), current.getDate());
+        const dStr = toDateKey(currentUTC);
+        const pI = getPIndex(currentUTC);
+        const baseShift = getShiftForCrew(pI, crew);
+        const ex = extraShifts[dStr];
+        const f = dayFatigue[dStr] || {};
+        let label = baseShift === 'N' ? 'Night' : (baseShift === 'D' ? 'Day' : 'Off');
+        let timeText = '';
+        let schedule = '';
+        let isWork = baseShift !== 'O';
+
+        if (ex) {
+            if (['Vacation', 'Off', 'DropOff'].includes(ex.type)) {
+                isWork = false;
+            } else {
+                isWork = true;
+                label = ex.type === 'Day' ? 'Day' : ex.type === 'Night' ? 'Night' : (ex.type === 'DropPaid' ? 'Drop Paid' : label);
+                if (ex.startTime || ex.endTime) {
+                    timeText = `${formatTime12(ex.startTime)} - ${formatTime12(ex.endTime)}`;
+                }
+                schedule = ex.crew ? `${formatCrewLabel(ex.crew)} ${label}` : label;
+            }
+        }
+
+        if (!ex && ['D', 'N'].includes(baseShift)) {
+            timeText = baseShift === 'D' ? '06:30 - 18:30' : '18:30 - 06:30';
+            schedule = `${label} shift`;
+        }
+
+        if (isWork) {
+            return { date: current, label, timeText, schedule: schedule || timeText || label };
+        }
+    }
+    return null;
+}
+
+function formatTimeUntil(targetDate, now) {
+    const diffMs = Date.UTC(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate()) - Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    if (diffMs <= 0) return 'Today';
+    const days = Math.floor(diffMs / 86400000);
+    if (days === 1) return 'Tomorrow';
+    return `In ${days} days`;
 }

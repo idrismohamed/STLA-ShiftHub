@@ -28,9 +28,26 @@
             <div class="dash-text">
                 <p class="dash-title">Current Pay Period</p>
                 <p class="dash-subtitle">View Dashboard</p>
+                <p class="dash-meta" id="dashboard-next-shift">Next shift loading…</p>
             </div>
         </div>
         <div class="dash-arrow">❯</div>
+    </div>
+
+    <div class="calendar-widget" id="calendar-widget">
+        <div class="widget-header">
+            <div>
+                <div class="widget-overline">Quick Schedule</div>
+                <h2 class="widget-title" id="next-shift-title">Next shift loading…</h2>
+                <p class="widget-subtitle" id="next-shift-details">Select a crew and see your upcoming shift details.</p>
+            </div>
+            <button class="small-btn" id="btn-view-toggle" onclick="haptic(); toggleCalendarView()">Agenda</button>
+        </div>
+        <div class="widget-actions">
+            <button class="widget-action-btn" onclick="haptic(); scrollToToday()">📍 Today</button>
+            <button class="widget-action-btn" onclick="haptic(); triggerBiometricsAndOpenPay()">💰 Pay</button>
+            <button class="widget-action-btn" onclick="haptic(); openSettingsSheet()">⚙️ Settings</button>
+        </div>
     </div>
 
     <div class="legend">
