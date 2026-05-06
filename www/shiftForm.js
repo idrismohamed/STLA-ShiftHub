@@ -2,6 +2,9 @@
 
 let activeDate = null, activeCurrentShift = null, activeNextShift = null;
 let selectedType = null, selectedCrew = null, selectedRole = sysSettings.defaultRole;
+let selectedRegPay = false;
+
+const _sheetHolCache = {};
 
 // ─── Shift form helpers ───────────────────────────────────────────────────────
 
@@ -13,7 +16,14 @@ function clearTimes() {
     if (sInput) sInput.value = '';
     if (eInput) eInput.value = '';
     if (rInput) rInput.value = '';
+    selectedRegPay = false;
     resetSliders();
+    updatePickupToggles();
+}
+
+function toggleRegPay() {
+    haptic();
+    selectedRegPay = !selectedRegPay;
     updatePickupToggles();
 }
 
@@ -54,7 +64,17 @@ function updateShortSliderLabels() {
 function openPickupSheet(dStr, disp, curS, nextS) {
     activeDate = dStr; activeCurrentShift = curS; activeNextShift = nextS;
     const sheetDate = document.getElementById('sheet-date');
-    if (sheetDate) sheetDate.innerText = disp;
+    if (sheetDate) sheetDate.textContent = disp;
+
+    const yr = parseInt(dStr.substring(0, 4));
+    if (!_sheetHolCache[yr]) _sheetHolCache[yr] = getHolidays(yr);
+    const holInfo = _sheetHolCache[yr][dStr];
+    const holBanner = document.getElementById('sheet-holiday-banner');
+    const holName   = document.getElementById('sheet-holiday-name');
+    if (holBanner && holName) {
+        holName.textContent = holInfo ? '⭐ ' + holInfo.n : '';
+        holBanner.classList.toggle('visible', !!holInfo);
+    }
 
     const ex         = extraShifts[dStr] || {};
     const targetType = ex.type || curS;
@@ -76,6 +96,7 @@ function openPickupSheet(dStr, disp, curS, nextS) {
     selectedType = ex.type || null;
     selectedCrew = normalizeCrew(ex.crew) || null;
     selectedRole = ex.role || sysSettings.defaultRole || 'Reg';
+    selectedRegPay = ex.regPay || false;
 
     const manualInput = document.getElementById('manual-rate-input');
     if (manualInput) {
@@ -160,7 +181,9 @@ function selectType(t) {
     } else if (selectedType === 'DropPaid') {
         if (activeCurrentShift === 'N') { if (stInput) stInput.value = '18:30'; if (etInput) etInput.value = '06:30'; }
         else                            { if (stInput) stInput.value = '06:30'; if (etInput) etInput.value = '18:30'; }
+        selectedRegPay = false;
     } else {
+        selectedRegPay = false;
         if      (activeCurrentShift === 'D') { if (stInput) stInput.value = '06:30'; if (etInput) etInput.value = '18:30'; }
         else if (activeCurrentShift === 'N') { if (stInput) stInput.value = '18:30'; if (etInput) etInput.value = '06:30'; }
         else { if (stInput) stInput.value = ''; if (etInput) etInput.value = ''; }
@@ -400,22 +423,41 @@ function updatePickupToggles(skipSliderReset = false) {
         if (otS) otS.style.display = 'block';
         const deh = document.getElementById('display-extra-hours');
         if (deh) deh.innerText = extra.toFixed(1);
-        if (otSlider) {
-            otSlider.max = extra;
-            if (!skipSliderReset) {
-                if (otSlider.dataset.savedDt !== undefined) { otSlider.value = otSlider.dataset.savedDt; otSlider.setAttribute('data-user-modified', 'true'); delete otSlider.dataset.savedDt; }
-                else if (!otSlider.hasAttribute('data-user-modified')) otSlider.value = (selectedType === 'DropPaid') ? 0 : extra;
-                else if (parseFloat(otSlider.value) > extra) otSlider.value = extra;
+
+        // Show "Regular Pay" button only for off-day pickups (base = 0)
+        const regPayBtn  = document.getElementById('btn-reg-pay');
+        const otDtSection = document.getElementById('ot-dt-section');
+        const isOffDay = (base === 0 && !['DropPaid'].includes(selectedType));
+        if (regPayBtn) {
+            regPayBtn.style.display = isOffDay ? 'block' : 'none';
+            regPayBtn.style.background = selectedRegPay ? 'rgba(75,163,227,0.15)' : 'var(--input-bg)';
+            regPayBtn.style.borderColor = selectedRegPay ? 'var(--accent)' : 'var(--border)';
+            regPayBtn.style.color = selectedRegPay ? 'var(--accent)' : 'var(--text-muted)';
+        }
+        if (otDtSection) otDtSection.style.display = (isOffDay && selectedRegPay) ? 'none' : 'block';
+
+        if (!selectedRegPay) {
+            if (otSlider) {
+                otSlider.max = extra;
+                if (!skipSliderReset) {
+                    if (otSlider.dataset.savedDt !== undefined) { otSlider.value = otSlider.dataset.savedDt; otSlider.setAttribute('data-user-modified', 'true'); delete otSlider.dataset.savedDt; }
+                    else if (!otSlider.hasAttribute('data-user-modified')) otSlider.value = (selectedType === 'DropPaid') ? 0 : extra;
+                    else if (parseFloat(otSlider.value) > extra) otSlider.value = extra;
+                }
+                const dt = parseFloat(otSlider.value) || 0;
+                const lso = document.getElementById('lbl-slider-ot');
+                const lsd = document.getElementById('lbl-slider-dt');
+                if (lso) lso.innerText = Math.max(0, extra - dt).toFixed(1) + 'h';
+                if (lsd) lsd.innerText = dt.toFixed(1) + 'h';
             }
-            const dt = parseFloat(otSlider.value) || 0;
-            const lso = document.getElementById('lbl-slider-ot');
-            const lsd = document.getElementById('lbl-slider-dt');
-            if (lso) lso.innerText = Math.max(0, extra - dt).toFixed(1) + 'h';
-            if (lsd) lsd.innerText = dt.toFixed(1) + 'h';
         }
     } else {
         if (otS) otS.style.display = 'none';
         if (!skipSliderReset && otSlider) otSlider.removeAttribute('data-user-modified');
+        const regPayBtn = document.getElementById('btn-reg-pay');
+        if (regPayBtn) regPayBtn.style.display = 'none';
+        const otDtSection = document.getElementById('ot-dt-section');
+        if (otDtSection) otDtSection.style.display = 'block';
     }
 
     // 120h projection check
@@ -482,12 +524,16 @@ function saveShift() {
             if (vH > 0) payload.vacHours = vH;
         }
         if (!['Off', 'DropOff', 'Lieu'].includes(selectedType)) {
-            const otSlider = document.getElementById('ot-slider');
-            const dtH      = otSlider ? (parseFloat(otSlider.value) || 0) : 0;
-            const otH      = Math.max(0, extra - dtH);
             if (extra > 0.05) {
-                payload.otHours = otH;
-                payload.dtHours = dtH;
+                if (selectedRegPay && base === 0) {
+                    payload.regPay = true;
+                } else {
+                    const otSlider = document.getElementById('ot-slider');
+                    const dtH      = otSlider ? (parseFloat(otSlider.value) || 0) : 0;
+                    const otH      = Math.max(0, extra - dtH);
+                    payload.otHours = otH;
+                    payload.dtHours = dtH;
+                }
                 const rInput = document.getElementById('input-ot-reason');
                 if (rInput && rInput.value.trim()) payload.otReason = rInput.value.trim();
             }

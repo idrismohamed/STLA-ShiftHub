@@ -15,7 +15,7 @@
     --drop-glow: #ffcc00;
     --pp-glow: #ff7b00;
     --border: #2c2c30;
-    --glass-bg: rgba(28, 28, 30, 0.85);
+    --glass-bg: #1c1c1e;
     --day-bg: #2a2a2a;
     --day-text: #ffffff;
     --input-bg: #121212;
@@ -39,7 +39,7 @@
     --drop-glow: #ffcc00;
     --pp-glow: #ff6d00;
     --border: #e5e5ea;
-    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-bg: #ffffff;
     --day-bg: #ffffff;
     --day-text: #000000;
     --input-bg: #f2f2f7;
@@ -52,8 +52,6 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 90px; ov
 /* Enhanced Modern Header (Glassmorphism) */
 .app-header {
     background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
     padding: 30px 20px 20px 20px;
     display: flex;
     align-items: center;
@@ -333,24 +331,10 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 90px; ov
 
 .btn-pp-end { position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; font-size: 7px; font-weight: 900; padding: 2px 4px; border-radius: 8px; white-space: nowrap; z-index: 5; box-shadow: 0 2px 5px rgba(0,0,0,0.3); max-width: 95%; overflow: hidden; text-overflow: ellipsis; }
 
-/* ANIMATIONS */
-@keyframes dropGlitter {
-    0% { box-shadow: 0 0 2px rgba(255, 204, 0, 0.2); }
-    50% { box-shadow: 0 0 10px rgba(255, 204, 0, 0.6), 0 0 4px #ffffff, 0 0 1px #ffffff; }
-    100% { box-shadow: 0 0 2px rgba(255, 204, 0, 0.2); }
-}
-
-@keyframes breathGlow {
-    0% { box-shadow: 0 0 5px var(--pp-glow); border-color: var(--accent); }
-    50% { box-shadow: 0 0 15px var(--pp-glow), 0 0 5px var(--accent-light); border-color: var(--accent-light); }
-    100% { box-shadow: 0 0 5px var(--pp-glow); border-color: var(--accent); }
-}
-
 /* SUBTLE Drop Period Cell Background */
-.day.drop-period { 
+.day.drop-period {
     background-color: rgba(255, 204, 0, 0.1) !important;
-    animation: dropGlitter 2.5s ease-in-out infinite;
-    border: 1px solid rgba(255, 204, 0, 0.4); 
+    border: 1px solid rgba(255, 204, 0, 0.4);
 }
 
 /* Force standard text visibility against the subtle yellow background */
@@ -370,11 +354,10 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 90px; ov
 .day.past { opacity: 0.5; filter: grayscale(50%); }
 .day.today { border: 2px solid var(--accent); background: rgba(255, 109, 0, 0.1); box-shadow: inset 0 0 10px rgba(255,109,0,0.1), 0 0 10px rgba(255,109,0,0.2); z-index: 2; }
 
-/* Breathing Current Pay Period */
-.day.current-pp { 
-    animation: breathGlow 2s ease-in-out infinite; 
-    opacity: 1; 
-    filter: none; 
+/* Current Pay Period */
+.day.current-pp {
+    border-color: var(--accent) !important;
+    filter: none;
 }
 
 /* Floating Action Bar */
@@ -385,15 +368,13 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 90px; ov
 .fab-btn.secondary { background: var(--day-bg); color: var(--day-text); box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid var(--border); }
 
 /* Bottom Sheets (Glassmorphism) */
-.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 99; display: none; opacity: 0; transition: opacity 0.3s; backdrop-filter: blur(3px); }
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 99; display: none; opacity: 0; transition: opacity 0.3s; }
 .bottom-sheet { 
     position: fixed; 
     bottom: -100%; 
     left: 0; right: 0; 
-    background: var(--glass-bg); 
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 24px 24px 0 0; 
+    background: var(--glass-bg);
+    border-radius: 24px 24px 0 0;
     padding: 25px 20px 40px 20px; 
     z-index: 100; 
     transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1); 
@@ -404,6 +385,12 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 90px; ov
 }
 .bottom-sheet.active { bottom: 0; }
 .sheet-header { font-size: 20px; font-weight: 900; margin-bottom: 20px; color: var(--text); text-align: center; }
+
+.sheet-header-block { text-align: center; margin-bottom: 22px; }
+.sheet-holiday-banner { display: none; margin-bottom: 9px; padding: 5px 16px; border-radius: 20px; background: rgba(251,188,4,0.12); border: 1px solid rgba(251,188,4,0.32); font-size: 11px; font-weight: 700; color: #fbbc04; letter-spacing: 0.7px; text-transform: uppercase; }
+.sheet-holiday-banner.visible { display: inline-flex; align-items: center; gap: 5px; }
+.sheet-date-line { font-size: 21px; font-weight: 900; color: var(--text); line-height: 1.2; margin-bottom: 4px; }
+.sheet-subtitle { font-size: 10px; color: var(--text-muted); letter-spacing: 1.2px; font-weight: 600; text-transform: uppercase; }
 
 /* Modern Sheet Cards */
 .sheet-card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 15px; margin-bottom: 15px; transition: background-color 0.3s, border-color 0.3s; }

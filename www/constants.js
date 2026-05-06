@@ -2,7 +2,7 @@
 const PATTERN = ['D','D','O','O','N','N','N','O','O','D','D','O','O','O','N','N','O','O','D','D','D','O','O','N','N','O','O','O'];
 
 const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-const daysOfWeek = ["Fri","Sat","Sun","Mon","Tue","Wed","Thu"];
+const daysOfWeek = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
 // Time constants (milliseconds)
 const MS_DAY = 86400000;

@@ -80,7 +80,11 @@
     <div class="modal-overlay" id="overlay" onclick="closeAllSheets()"></div>
 
     <div class="bottom-sheet" id="sheet-pickup">
-        <h3 class="sheet-header" id="sheet-date">Log Shift & OT</h3>
+        <div class="sheet-header-block">
+            <div id="sheet-holiday-banner" class="sheet-holiday-banner"><span id="sheet-holiday-name"></span></div>
+            <div id="sheet-date" class="sheet-date-line">Log Shift &amp; OT</div>
+            <div class="sheet-subtitle">Log Shift &amp; OT</div>
+        </div>
         
         <div class="sheet-card" style="padding: 10px 15px;">
             <div class="sheet-card-title">Quick Log Templates</div>
@@ -140,20 +144,23 @@
 
         <div class="sheet-card" id="section-ot-rate" style="display: none;">
             <div class="sheet-card-title">Classify Extra Hours (<span id="display-extra-hours" style="color: #fbbc04;">0</span> total)</div>
-            <div style="margin-top: 10px; display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); font-weight: bold; letter-spacing: 0.5px;">
-                <span>ALL OT</span>
-                <span>SPLIT</span>
-                <span>ALL DT</span>
-            </div>
-            <input type="range" id="ot-slider" min="0" max="1" step="0.5" value="1" oninput="updateSliderLabels(); updatePickupToggles();">
-            <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 10px; background: var(--input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
-                <div style="flex:1; border-right: 1px solid var(--border);">
-                    <div style="font-size:10px; color:var(--text-muted); margin-bottom: 2px;">OT (1.5x)</div>
-                    <div id="lbl-slider-ot" style="font-size: 16px; font-weight: bold; color: var(--off);">0.0h</div>
+            <div id="btn-reg-pay" onclick="toggleRegPay()" style="display:none; margin-top:10px; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--input-bg); font-size:13px; font-weight:600; text-align:center; cursor:pointer; color:var(--text-muted);">📋 Regular Pay</div>
+            <div id="ot-dt-section">
+                <div style="margin-top: 10px; display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); font-weight: bold; letter-spacing: 0.5px;">
+                    <span>ALL OT</span>
+                    <span>SPLIT</span>
+                    <span>ALL DT</span>
                 </div>
-                <div style="flex:1;">
-                    <div style="font-size:10px; color:var(--text-muted); margin-bottom: 2px;">DT (2.0x)</div>
-                    <div id="lbl-slider-dt" style="font-size: 16px; font-weight: bold; color: var(--day);">0.0h</div>
+                <input type="range" id="ot-slider" min="0" max="1" step="0.5" value="1" oninput="updateSliderLabels(); updatePickupToggles();">
+                <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 10px; background: var(--input-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="flex:1; border-right: 1px solid var(--border);">
+                        <div style="font-size:10px; color:var(--text-muted); margin-bottom: 2px;">OT (1.5x)</div>
+                        <div id="lbl-slider-ot" style="font-size: 16px; font-weight: bold; color: var(--off);">0.0h</div>
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-size:10px; color:var(--text-muted); margin-bottom: 2px;">DT (2.0x)</div>
+                        <div id="lbl-slider-dt" style="font-size: 16px; font-weight: bold; color: var(--day);">0.0h</div>
+                    </div>
                 </div>
             </div>
             <div style="margin-top: 15px;">
@@ -269,6 +276,13 @@
                 <div class="settings-row" style="cursor: pointer;" onclick="document.getElementById('import-file').click(); haptic();">
                     <div class="settings-label" style="color: var(--accent); font-weight: bold;">📥 Import Backup</div>
                     <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importData(event)">
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">Require Face/Fingerprint for Pay</div>
+                    <label class="switch">
+                        <input type="checkbox" id="setting-biometrics" onchange="haptic()">
+                        <span class="switch-slider"></span>
+                    </label>
                 </div>
                 <div class="settings-row">
                     <div class="settings-label">Require Face/Fingerprint for Pay</div>

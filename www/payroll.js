@@ -436,10 +436,18 @@ function openPayrollSheet(target = null) {
             gross += (dayR * rate) + pD.total;
             aftH += pD.aftHrs; nightH += pD.nightHrs; satH += pD.satHrs; sunH += pD.sunHrs;
             if (dayE > 0) {
-                let sO = ex?.otHours || 0, sD = ex?.dtHours || 0;
-                if (sO === 0 && sD === 0) { if (ex?.type === 'DropPaid') sO = dayE; else sD = dayE; }
-                gross += (sO * rate * 1.5) + (sD * rate * 2.0);
-                ot += sO; dt += sD;
+                if (ex?.regPay) {
+                    // Off-day pickup classified as regular pay — holiday premiums still apply separately
+                    regH += dayE;
+                    const pDex = calcPremiums(dS, st, dayE, rate);
+                    gross += (dayE * rate) + pDex.total;
+                    aftH += pDex.aftHrs; nightH += pDex.nightHrs; satH += pDex.satHrs; sunH += pDex.sunHrs;
+                } else {
+                    let sO = ex?.otHours || 0, sD = ex?.dtHours || 0;
+                    if (sO === 0 && sD === 0) { if (ex?.type === 'DropPaid') sO = dayE; else sD = dayE; }
+                    gross += (sO * rate * 1.5) + (sD * rate * 2.0);
+                    ot += sO; dt += sD;
+                }
             }
         }
 
@@ -447,15 +455,23 @@ function openPayrollSheet(target = null) {
         if (!cachedHols[holYear]) cachedHols[holYear] = getHolidays(holYear);
         const holInfo = cachedHols[holYear][dS];
         if (holInfo) {
-            if (bH === 0 && !['Vacation', 'DropOff', 'Lieu', 'Off'].includes(ex?.type)) { statOffH += 8; gross += 8 * rate; }
+            statOffH += 8; gross += 8 * rate;
+            // Night or day shift starting ON the holiday: full shift at premium
             if (dayR > 0) {
-                let shiftType = ex?.type || (bS === 'D' ? 'Day' : (bS === 'N' ? 'Night' : null));
-                if (!shiftType && ex?.startTime) { const sHr = parseInt(ex.startTime.split(':')[0]); shiftType = (sHr >= 6 && sHr < 18) ? 'Day' : 'Night'; }
-                if (!shiftType) shiftType = 'Day';
-                const holPremH = (shiftType === 'Day' || shiftType === 'D') ? dayR : Math.min(dayR, 8);
-                if (holInfo.m === 2.0) { statWorked20H += holPremH; gross += holPremH * rate * 1.0; }
-                else                  { statWorked15H += holPremH; gross += holPremH * rate * 0.5; }
+                if (holInfo.m === 2.0) { statWorked20H += dayR; gross += dayR * rate * 1.0; }
+                else                  { statWorked15H += dayR; gross += dayR * rate * 0.5; }
             }
+        }
+
+        // Night shift starting the evening before a stat holiday: 10 hours at premium
+        const nextDStr = toDateKey(u + MS_DAY);
+        const nextHolYear = parseInt(nextDStr.substring(0, 4));
+        if (!cachedHols[nextHolYear]) cachedHols[nextHolYear] = getHolidays(nextHolYear);
+        const nextHolInfo = cachedHols[nextHolYear][nextDStr];
+        if (nextHolInfo && dayR > 0 && (bS === 'N' || ex?.type === 'Night')) {
+            const holPremH = Math.min(dayR, 10);
+            if (nextHolInfo.m === 2.0) { statWorked20H += holPremH; gross += holPremH * rate * 1.0; }
+            else                      { statWorked15H += holPremH; gross += holPremH * rate * 0.5; }
         }
     }
 
@@ -473,7 +489,7 @@ function openPayrollSheet(target = null) {
 
     const vacHtml    = vacH > 0         ? `<div class="pp-stat-row"><span>Vacation:</span> <strong style="color: #00bcd4;">${vacH.toFixed(1)} hrs</strong></div>` : '';
     const lieuHtml   = ppLieuTakenH > 0 ? `<div class="pp-stat-row"><span>Lieu Day (Unpaid):</span> <strong style="color: #fbbc04;">${ppLieuTakenH.toFixed(1)} hrs</strong></div>` : '';
-    const statOffHtml  = statOffH > 0      ? `<div class="pp-stat-row"><span>Holiday Pay (Unworked):</span> <strong style="color: #fbbc04;">${statOffH.toFixed(1)} hrs</strong></div>` : '';
+    const statOffHtml  = statOffH > 0      ? `<div class="pp-stat-row"><span>Holiday Pay:</span> <strong style="color: #fbbc04;">${statOffH.toFixed(1)} hrs</strong></div>` : '';
     const stat15Html   = statWorked15H > 0 ? `<div class="pp-stat-row"><span>Working Holiday (1.5x):</span> <strong style="color: #ff6d00;">${statWorked15H.toFixed(1)} hrs</strong></div>` : '';
     const stat20Html   = statWorked20H > 0 ? `<div class="pp-stat-row"><span>Christmas Holiday (2.0x):</span> <strong style="color: var(--night);">${statWorked20H.toFixed(1)} hrs</strong></div>` : '';
     const lieuBankHtml = `<div class="pp-stat-row" style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);"><span>Banked Lieu Days:</span> <strong style="color:#fbbc04;">${lieuAvailable} Avail</strong></div>`;
