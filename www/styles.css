@@ -1,24 +1,24 @@
 /* DEFAULT DARK MODE & REFINED PALETTE */
 :root {
-    --bg: #121212;
-    --card: #1c1c1e;
-    --text: #ffffff;
-    --text-muted: #9aa0a6;
-    --accent: #ff7b00;
-    --accent-light: #ffac33;
-    --day: #4ba3e3;     
-    --night: #ff6b6b;   
-    --off: #20c997;     
-    --mod: #b19cd9;     
-    --drop-badge-bg: #ffcc00;
+    --bg: #0f0f13;
+    --card: #18181f;
+    --text: #f0f0ff;
+    --text-muted: #8a8fa8;
+    --accent: #ff6b35;
+    --accent-light: #ff9a6c;
+    --day: #38bdf8;
+    --night: #f43f5e;
+    --off: #34d399;
+    --mod: #a78bfa;
+    --drop-badge-bg: #fbbf24;
     --drop-badge-text: #000000;
-    --drop-glow: #ffcc00;
-    --pp-glow: #ff7b00;
-    --border: #2c2c30;
-    --glass-bg: #1c1c1e;
-    --day-bg: #2a2a2a;
-    --day-text: #ffffff;
-    --input-bg: #121212;
+    --drop-glow: #fbbf24;
+    --pp-glow: #ff6b35;
+    --border: #27272f;
+    --glass-bg: #18181f;
+    --day-bg: #1e1e27;
+    --day-text: #f0f0ff;
+    --input-bg: #0f0f13;
     --calendar-filter: invert(1);
 }
 
@@ -294,13 +294,13 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 90px; ov
 .day.empty { background: transparent; cursor: default; }
 
 /* Shifts */
-.day.D { background: rgba(75, 163, 227, 0.15); border-color: rgba(75, 163, 227, 0.3); color: var(--day); }
+.day.D { background: rgba(56, 189, 248, 0.18); border-color: rgba(56, 189, 248, 0.35); color: var(--day); }
 .day.D .label { color: var(--day); }
-.day.N { background: rgba(255, 107, 107, 0.15); border-color: rgba(255, 107, 107, 0.3); color: var(--night); }
+.day.N { background: rgba(244, 63, 94, 0.18); border-color: rgba(244, 63, 94, 0.35); color: var(--night); }
 .day.N .label { color: var(--night); }
-.day.O { background: rgba(32, 201, 151, 0.1); border-color: rgba(32, 201, 151, 0.2); color: var(--text-muted); }
+.day.O { background: rgba(52, 211, 153, 0.12); border-color: rgba(52, 211, 153, 0.26); color: var(--text-muted); }
 .day.O .label { color: var(--off); }
-.day.M { background: rgba(177, 156, 217, 0.15); border-color: rgba(177, 156, 217, 0.4); color: var(--mod); }
+.day.M { background: rgba(167, 139, 250, 0.18); border-color: rgba(167, 139, 250, 0.4); color: var(--mod); }
 .day.M .label { color: var(--mod); }
 
 /* Flex Reordering Elements */
@@ -309,7 +309,7 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 90px; ov
 .extra-shift { font-size: 8px; background: var(--mod); color: #fff; padding: 2px 4px; border-radius: 6px; text-align: center; width: 95%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 2; margin-top: 4px; order: 3; }
 .ot-container { position: relative; width: 100%; display: flex; flex-direction: column; gap: 2px; align-items: center; z-index: 2; margin-top: 4px; order: 4; }
 .lockout-badge { background: var(--night); color: #fff; font-size: 7px; font-weight: bold; padding: 2px 4px; border-radius: 4px; position: relative; white-space: nowrap; margin-top: 4px; order: 5; max-width: 95%; overflow: hidden; text-overflow: ellipsis; }
-.hol-badge { font-size: 7px; font-weight: 800; background: rgba(255, 107, 107, 0.1); color: var(--night); border: 1px solid rgba(255, 107, 107, 0.5); padding: 2px 4px; border-radius: 4px; margin-top: 3px; order: 6; max-width: 95%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 2; }
+.hol-badge { font-size: 7px; font-weight: 800; background: rgba(251, 191, 36, 0.14); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.4); padding: 2px 4px; border-radius: 4px; margin-top: 3px; order: 6; max-width: 95%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; z-index: 2; }
 
 /* Absolute Badges */
 .drop-badge { 
@@ -331,20 +331,14 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 90px; ov
 
 .btn-pp-end { position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; font-size: 7px; font-weight: 900; padding: 2px 4px; border-radius: 8px; white-space: nowrap; z-index: 5; box-shadow: 0 2px 5px rgba(0,0,0,0.3); max-width: 95%; overflow: hidden; text-overflow: ellipsis; }
 
-/* SUBTLE Drop Period Cell Background */
+/* Drop Period — violet tint + inset left stripe */
 .day.drop-period {
-    background-color: rgba(255, 204, 0, 0.1) !important;
-    border: 1px solid rgba(255, 204, 0, 0.4);
+    background-color: rgba(167, 139, 250, 0.1) !important;
+    border-color: rgba(167, 139, 250, 0.38) !important;
+    box-shadow: inset 3px 0 0 rgba(167, 139, 250, 0.55);
 }
 
-/* Force standard text visibility against the subtle yellow background */
-.day.drop-period .label,
-.day.drop-period .shift-times,
-.day.drop-period .ot-container {
-    color: var(--text) !important;
-}
-
-.lockout { opacity: 0.6; background: repeating-linear-gradient(45deg, rgba(255,107,107,0.05), rgba(255,107,107,0.05) 5px, rgba(0,0,0,0) 5px, rgba(0,0,0,0) 10px); border-color: rgba(255, 107, 107, 0.4); }
+.lockout { opacity: 0.6; background: repeating-linear-gradient(45deg, rgba(244,63,94,0.07), rgba(244,63,94,0.07) 5px, rgba(0,0,0,0) 5px, rgba(0,0,0,0) 10px); border-color: rgba(244,63,94,0.4); }
 
 .ot-badge { font-size: 7px; font-weight: 800; background: var(--off); color: #fff; padding: 1px 3px; border-radius: 4px; white-space: nowrap; max-width: 95%; overflow: hidden; text-overflow: ellipsis; }
 .ot-badge.dt { background: var(--day); }
@@ -352,7 +346,7 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 90px; ov
 
 /* Timeline Classes */
 .day.past { opacity: 0.5; filter: grayscale(50%); }
-.day.today { border: 2px solid var(--accent); background: rgba(255, 109, 0, 0.1); box-shadow: inset 0 0 10px rgba(255,109,0,0.1), 0 0 10px rgba(255,109,0,0.2); z-index: 2; }
+.day.today { border: 2px solid var(--off); background: rgba(52, 211, 153, 0.13); box-shadow: inset 0 0 10px rgba(52,211,153,0.08), 0 0 12px rgba(52,211,153,0.22); z-index: 2; }
 
 /* Current Pay Period */
 .day.current-pp {

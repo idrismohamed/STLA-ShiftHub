@@ -2,6 +2,7 @@ const CALENDAR_VIEWS = ['month', 'agenda', 'week'];
 let calendarViewMode = localStorage.getItem('calendarViewMode') || 'month';
 const AGENDA_LOOKAHEAD_DAYS = 14;
 let monthObserver = null;
+let _calFirstRender = true;
 
 function toggleCalendarView() {
     const currentIndex = CALENDAR_VIEWS.indexOf(calendarViewMode);
@@ -36,6 +37,8 @@ function renderCalendar() {
     const cal = document.getElementById('calendar');
     if (!cal) return;
 
+    const savedScrollY = window.scrollY;
+
     const yearSelect = document.getElementById('year-select');
     const crewSelect = document.getElementById('crew-select');
     const year = yearSelect ? parseInt(yearSelect.value) : getLogicalToday().getFullYear();
@@ -54,12 +57,14 @@ function renderCalendar() {
 
     if (viewMode === 'agenda') {
         cal.innerHTML = renderAgendaView(year, crew, logicalT, todayStr, yearHols, currentTargetPPIndex);
+        requestAnimationFrame(() => window.scrollTo(0, savedScrollY));
         renderCalendarWidget(crew, logicalT, todayStr);
         renderDashboardCard(crew, logicalT);
         return;
     }
     if (viewMode === 'week') {
         cal.innerHTML = renderWeekView(year, crew, logicalT, todayStr, yearHols, currentTargetPPIndex);
+        requestAnimationFrame(() => window.scrollTo(0, savedScrollY));
         renderCalendarWidget(crew, logicalT, todayStr);
         renderDashboardCard(crew, logicalT);
         return;
@@ -108,7 +113,12 @@ function renderCalendar() {
 
     wrappers.forEach(w => { if (!w.dataset.rendered) monthObserver.observe(w); });
 
-    setTimeout(scrollToToday, 50);
+    if (_calFirstRender) {
+        _calFirstRender = false;
+        setTimeout(scrollToToday, 50);
+    } else {
+        requestAnimationFrame(() => window.scrollTo(0, savedScrollY));
+    }
     renderCalendarWidget(crew, logicalT, todayStr);
     renderDashboardCard(crew, logicalT);
 }
