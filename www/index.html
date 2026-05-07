@@ -61,19 +61,6 @@
             </div>
 
             <div id="calendar"></div>
-
-            <div class="crew-anchor">
-                <div class="crew-float-chip">
-                    <span class="crew-float-label">Crew</span>
-                    <span class="crew-float-value" id="nav-crew-display">A</span>
-                    <select id="crew-select" class="pill-chip-select" onchange="haptic(); updateNavLabels(); renderCalendar()">
-                        <option value="A">Crew A</option>
-                        <option value="B">Crew B</option>
-                        <option value="C">Crew C</option>
-                        <option value="D">Crew D</option>
-                    </select>
-                </div>
-            </div>
         </div>
         <div id="analytics-side"></div>
     </div>
@@ -267,10 +254,10 @@
             </div>
         </div>
 
-        <div class="btn-row" style="position: sticky; bottom: 0; background: var(--glass-bg, #1c1c1e); padding: 15px 0 25px 0; margin: 0; border-top: 1px solid var(--border); z-index: 10;">
-            <button class="btn-action btn-cancel" style="flex: 1; background: var(--day); border: none; color: #fff;" onclick="exportPDF()">📄 PDF</button>
-            <button class="btn-action btn-cancel" style="flex: 1;" onclick="sharePayPeriod()">📤 Text</button>
-            <button class="btn-action btn-save" style="flex: 1.5;" onclick="closeAllSheets()">Close</button>
+        <div class="btn-row" style="position: sticky; bottom: 0; padding: 14px 20px 28px; margin: 0; border-radius: 0; border: none; border-top: 1px solid var(--border); box-shadow: none; width: 100%; z-index: 10; justify-content: center;">
+            <button class="btn-action btn-cancel" style="background: var(--day); border: none; color: #fff;" onclick="exportPDF()">📄 PDF</button>
+            <button class="btn-action btn-cancel" onclick="sharePayPeriod()">📤 Text</button>
+            <button class="btn-action btn-save" onclick="closeAllSheets()">Close</button>
         </div>
     </div>
 
@@ -286,20 +273,6 @@
                 <div class="settings-row" style="cursor: pointer;" onclick="document.getElementById('import-file').click(); haptic();">
                     <div class="settings-label" style="color: var(--accent); font-weight: bold;">📥 Import Backup</div>
                     <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importData(event)">
-                </div>
-                <div class="settings-row">
-                    <div class="settings-label">Require Face/Fingerprint for Pay</div>
-                    <label class="switch">
-                        <input type="checkbox" id="setting-biometrics" onchange="haptic()">
-                        <span class="switch-slider"></span>
-                    </label>
-                </div>
-                <div class="settings-row">
-                    <div class="settings-label">Require Face/Fingerprint for Pay</div>
-                    <label class="switch">
-                        <input type="checkbox" id="setting-biometrics" onchange="haptic()">
-                        <span class="switch-slider"></span>
-                    </label>
                 </div>
             </div>
 
@@ -439,7 +412,7 @@
             </div>
         </div>
         
-        <div class="btn-row" style="position: sticky; bottom: 0; background: var(--glass-bg, #1c1c1e); padding: 15px 0 25px 0; margin: 0; border-top: 1px solid var(--border); z-index: 10;">
+        <div class="btn-row" style="position: sticky; bottom: 0; padding: 14px 20px 28px; margin: 0; border-radius: 0; border: none; border-top: 1px solid var(--border); box-shadow: none; width: 100%; z-index: 10; justify-content: center;">
             <button class="btn-action btn-cancel" onclick="closeAllSheets()">Cancel</button>
             <button class="btn-action btn-save" onclick="saveSettings()">Save Settings</button>
         </div>

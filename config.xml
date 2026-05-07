@@ -25,8 +25,7 @@
 
     <plugin name="@moodlehq/cordova-plugin-local-notification" />
     
-    <plugin name="cordova-plugin-fingerprint-aio" />
-    <plugin name="cordova-plugin-x-socialsharing" />
+<plugin name="cordova-plugin-x-socialsharing" />
     <plugin name="cordova-plugin-calendar" />
     <plugin name="cordova-plugin-statusbar" />
     

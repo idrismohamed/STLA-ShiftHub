@@ -11,7 +11,7 @@
     "run:ios": "cordova run ios",
     "run:browser": "cordova run browser",
     "add:platforms": "cordova platform add android && cordova platform add ios",
-    "add:plugins": "cordova plugin add cordova-plugin-device cordova-plugin-statusbar cordova-plugin-fingerprint-aio cordova-plugin-x-socialsharing cordova-plugin-local-notification"
+    "add:plugins": "cordova plugin add cordova-plugin-device cordova-plugin-statusbar cordova-plugin-x-socialsharing cordova-plugin-local-notification"
   },
   "keywords": [
     "cordova",
@@ -30,8 +30,7 @@
     "cordova-plugin-badge": "^0.8.9",
     "cordova-plugin-calendar": "^5.1.6",
     "cordova-plugin-device": "^3.0.0",
-    "cordova-plugin-fingerprint-aio": "^6.0.1",
-    "cordova-plugin-statusbar": "^4.0.0",
+"cordova-plugin-statusbar": "^4.0.0",
     "cordova-plugin-x-socialsharing": "^6.0.4",
     "es6-promise-plugin": "^4.2.2"
   },
@@ -41,8 +40,7 @@
   "cordova": {
     "plugins": {
       "@moodlehq/cordova-plugin-local-notification": {},
-      "cordova-plugin-fingerprint-aio": {},
-      "cordova-plugin-x-socialsharing": {},
+"cordova-plugin-x-socialsharing": {},
       "cordova-plugin-calendar": {},
       "cordova-plugin-statusbar": {}
     },

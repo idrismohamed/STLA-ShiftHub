@@ -29,8 +29,7 @@ function initDefaults() {
     if (sysSettings.notif24h  === undefined) sysSettings.notif24h      = true;
     if (sysSettings.notif12h  === undefined) sysSettings.notif12h      = true;
     if (sysSettings.notif3h   === undefined) sysSettings.notif3h       = true;
-    if (sysSettings.useBiometrics === undefined) sysSettings.useBiometrics = false;
-    if (sysSettings.syncCalendar  === undefined) sysSettings.syncCalendar  = false;
+if (sysSettings.syncCalendar  === undefined) sysSettings.syncCalendar  = false;
     if (sysSettings.smartAlarms   === undefined) sysSettings.smartAlarms   = false;
 }
 

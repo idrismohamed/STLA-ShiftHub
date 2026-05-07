@@ -460,6 +460,20 @@ function formatTimeUntil(targetDate, now) {
    NEW CALENDAR REDESIGN — helper functions
    ═══════════════════════════════════════════════════════════ */
 
+/** Build the crew selector bar rendered at the bottom of every calendar card. */
+function buildCrewBar(crew) {
+    const opts = ['A','B','C','D'].map(c =>
+        `<option value="${c}"${c === crew ? ' selected' : ''}>Crew ${c}</option>`).join('');
+    return `<div class="cal-crew-bar">
+        <span class="cal-crew-label">Viewing schedule for</span>
+        <div class="cal-crew-btn">
+            <span>Crew ${crew}</span>
+            <span class="cal-crew-chevron">▾</span>
+            <select id="crew-select" class="pill-chip-select" onchange="haptic(); updateNavLabels(); renderCalendar()">${opts}</select>
+        </div>
+    </div>`;
+}
+
 /** Build the shared .cal-header HTML with nav content on left and view tabs on right. */
 function buildCalendarHeader(viewMode, leftContent) {
     const tabs = CALENDAR_VIEWS.map(v => {
@@ -757,6 +771,7 @@ function buildNewMonthView(m, year, crew, todayStr, yearHols, currentTargetPPInd
             ${dowRow}
             <div class="cal-grid">${cells}</div>
         </div>
+        ${buildCrewBar(crew)}
     </div>`;
 }
 
@@ -866,7 +881,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         </div>`;
     }
 
-    return `<div class="cal-redesign">${header}<div class="cal-scroll-area">${dowRow}<div class="cal-week-grid">${cards}</div></div></div>`;
+    return `<div class="cal-redesign">${header}<div class="cal-scroll-area">${dowRow}<div class="cal-week-grid">${cards}</div></div>${buildCrewBar(crew)}</div>`;
 }
 
 /** Navigate the week view by dir weeks. */
@@ -884,7 +899,7 @@ function renderYearView(year, crew, todayStr) {
     let miniMonths = '';
     for (let m = 0; m < 12; m++) miniMonths += buildMiniMonth(m, year, crew, todayStr);
 
-    return `<div class="cal-redesign">${header}<div class="cal-year-view">${miniMonths}</div></div>`;
+    return `<div class="cal-redesign">${header}<div class="cal-year-view">${miniMonths}</div>${buildCrewBar(crew)}</div>`;
 }
 
 /** Build a compact mini-month grid for the year overview. */
@@ -1206,11 +1221,12 @@ function renderAnalyticsDashboard(crew, logicalT) {
     const _sideHTML = `
 <div class="analytics-wrap">
 
-  <div class="an-section-title">Current Pay Period <span class="an-section-sub">${ppStartLabel}–${ppEndLabel}</span></div>
-  <div class="an-flat-card" style="margin-bottom:8px">
+  <div class="an-flat-card">
+    <div class="an-flat-card-title">Current Pay Period <span class="an-section-sub" style="text-transform:none;letter-spacing:0;font-size:10px">${ppStartLabel}–${ppEndLabel}</span></div>
     <div class="an-pp-bar-labels"><span>Day ${ppDayDisplay} of 14</span><span>${ppDaysLeft} day${ppDaysLeft !== 1 ? 's' : ''} left</span></div>
     <div class="an-progress" style="margin:5px 0 0"><div class="an-progress-fill" style="width:${ppPct}%;background:var(--accent)"></div></div>
   </div>
+
   <div class="an-grid-2">
     <div class="an-hero-card" style="--hero-color:#7c3aed">
       <div class="an-hero-label">Gross</div>
@@ -1221,6 +1237,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
       <div class="an-hero-value">${f$(gross - t.total)}</div>
     </div>
   </div>
+
   <div class="an-flat-card">
     <div class="an-row"><span>Regular</span><strong>${fH(regH)}</strong></div>
     <div class="an-row"><span>OT</span><strong style="color:#34a853">${fH(ot)}</strong></div>
@@ -1233,12 +1250,15 @@ function renderAnalyticsDashboard(crew, logicalT) {
     <div class="an-row"><span>CPP + EI</span><strong style="color:var(--night)">-${f$(t.cpp + t.ei)}</strong></div>
   </div>
 
-  <div class="an-section-title">${months[displayMonth]} <span class="an-section-sub">${displayYear}</span></div>
-  <div class="an-grid-3">
-    <div class="an-shift-card D"><div class="an-shift-label">Days</div><div class="an-shift-num">${dCount}</div></div>
-    <div class="an-shift-card N"><div class="an-shift-label">Nights</div><div class="an-shift-num">${nCount}</div></div>
-    <div class="an-shift-card O"><div class="an-shift-label">Off</div><div class="an-shift-num">${oCount}</div></div>
+  <div class="an-month-block">
+    <div class="an-section-title" style="margin-top:0">${months[displayMonth]} <span class="an-section-sub">${displayYear}</span></div>
+    <div class="an-grid-3" style="margin-bottom:0">
+      <div class="an-shift-card D"><div class="an-shift-label">Days</div><div class="an-shift-num">${dCount}</div></div>
+      <div class="an-shift-card N"><div class="an-shift-label">Nights</div><div class="an-shift-num">${nCount}</div></div>
+      <div class="an-shift-card O"><div class="an-shift-label">Off</div><div class="an-shift-num">${oCount}</div></div>
+    </div>
   </div>
+
   <div class="an-flat-card">
     <div class="an-row"><span>Total Hours</span><strong>${fH(totalMonthHours)}</strong></div>
     ${monthOT > 0 ? `<div class="an-row"><span>OT</span><strong style="color:#34a853">${fH(monthOT)}</strong></div>` : ''}
@@ -1246,8 +1266,8 @@ function renderAnalyticsDashboard(crew, logicalT) {
     ${monthExRows ? `<div class="an-sep"></div>${monthExRows}` : ''}
   </div>
 
-  <div class="an-section-title">${thisMonthName} vs ${prevMonthName}${prevYear !== displayYear ? ` <span class="an-section-sub">${prevYear}</span>` : ''}</div>
   <div class="an-flat-card">
+    <div class="an-flat-card-title">${thisMonthName} vs ${prevMonthName}${prevYear !== displayYear ? ` <span class="an-section-sub" style="text-transform:none;letter-spacing:0">${prevYear}</span>` : ''}</div>
     <div class="an-compare-row an-compare-head">
       <span></span><span>${thisMonthName}</span><span>${prevMonthName}</span><span>Δ</span>
     </div>

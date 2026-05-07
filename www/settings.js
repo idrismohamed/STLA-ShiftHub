@@ -40,8 +40,7 @@ function openSettingsSheet() {
         'setting-notif-24':  'notif24h',
         'setting-notif-12':  'notif12h',
         'setting-notif-3':   'notif3h',
-        'setting-biometrics':'useBiometrics',
-        'setting-cal-sync':  'syncCalendar',
+'setting-cal-sync':  'syncCalendar',
         'setting-alarms':    'smartAlarms'
     };
     for (const [id, key] of Object.entries(checkboxes)) {
@@ -84,8 +83,7 @@ function saveSettings() {
         notif24h:          g('setting-notif-24')    ? g('setting-notif-24').checked    : true,
         notif12h:          g('setting-notif-12')    ? g('setting-notif-12').checked    : true,
         notif3h:           g('setting-notif-3')     ? g('setting-notif-3').checked     : true,
-        useBiometrics:     g('setting-biometrics')  ? g('setting-biometrics').checked  : false,
-        syncCalendar:      g('setting-cal-sync')    ? g('setting-cal-sync').checked    : false,
+syncCalendar:      g('setting-cal-sync')    ? g('setting-cal-sync').checked    : false,
         smartAlarms:       g('setting-alarms')      ? g('setting-alarms').checked      : false
     };
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(sysSettings));

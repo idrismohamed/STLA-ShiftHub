@@ -586,17 +586,7 @@ function sharePayPeriod() {
 
 function triggerBiometricsAndOpenPay(target = null) {
     haptic();
-    if (sysSettings.useBiometrics && window.Fingerprint) {
-        window.Fingerprint.isAvailable(
-            () => window.Fingerprint.show({ title: 'Authentication Required', description: 'Unlock to view financial data' },
-                () => openPayrollSheet(target),
-                () => showToast('Authentication Failed', 'error')
-            ),
-            () => { showToast('Biometrics not setup on this device', 'error'); openPayrollSheet(target); }
-        );
-    } else {
-        openPayrollSheet(target);
-    }
+    openPayrollSheet(target);
 }
 
 /**
