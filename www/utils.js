@@ -62,6 +62,12 @@ function formatTime12(timeStr) {
     return `${hour}:${m} ${ampm}`;
 }
 
+function formatTime24(timeStr) {
+    if (!timeStr) return '';
+    const [h, m] = timeStr.split(':');
+    return `${parseInt(h, 10)}:${m}`;
+}
+
 /**
  * Add months to a UTC millisecond timestamp.
  * @param {number} utcMs

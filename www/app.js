@@ -40,6 +40,18 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
     });
 }
 
+// ─── Responsive re-render on fold/unfold & orientation change ─────────────────
+
+let _resizeTimer;
+window.addEventListener('resize', () => {
+    clearTimeout(_resizeTimer);
+    _resizeTimer = setTimeout(() => renderCalendar(), 200);
+});
+window.addEventListener('orientationchange', () => {
+    clearTimeout(_resizeTimer);
+    _resizeTimer = setTimeout(() => renderCalendar(), 300);
+});
+
 // ─── Initial page setup ───────────────────────────────────────────────────────
 
 const gText = document.getElementById('greeting-text');

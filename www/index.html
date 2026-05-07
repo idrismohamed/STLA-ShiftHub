@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#121212">
+    <meta name="theme-color" content="#141218">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="./icon.png">
     <title>STLA Shift Hub</title>
@@ -22,59 +22,69 @@
         </div>
     </div>
     
-    <div class="dashboard-card" onclick="triggerBiometricsAndOpenPay()">
-        <div class="dash-left">
-            <div class="dash-icon">💰</div>
-            <div class="dash-text">
-                <p class="dash-title">Current Pay Period</p>
-                <p class="dash-subtitle">View Dashboard</p>
-                <p class="dash-meta" id="dashboard-next-shift">Next shift loading…</p>
+    <div class="cal-analytics-row">
+        <div class="cal-main-col">
+            <div class="dashboard-card" onclick="triggerBiometricsAndOpenPay()">
+                <div class="dash-left">
+                    <div class="dash-icon">💰</div>
+                    <div class="dash-text">
+                        <p class="dash-title">Current Pay Period</p>
+                        <p class="dash-subtitle">View Dashboard</p>
+                        <p class="dash-meta" id="dashboard-next-shift">Next shift loading…</p>
+                    </div>
+                </div>
+                <div class="dash-arrow">❯</div>
+            </div>
+
+            <div class="calendar-widget" id="calendar-widget">
+                <div class="widget-header">
+                    <div>
+                        <div class="widget-overline">Quick Schedule</div>
+                        <h2 class="widget-title" id="next-shift-title">Next shift loading…</h2>
+                        <p class="widget-subtitle" id="next-shift-details">Select a crew and see your upcoming shift details.</p>
+                    </div>
+                </div>
+                <div class="widget-actions">
+                    <button class="widget-action-btn" onclick="haptic(); scrollToToday()">📍 Today</button>
+                    <button class="widget-action-btn" onclick="haptic(); triggerBiometricsAndOpenPay()">💰 Pay</button>
+                    <button class="widget-action-btn" onclick="haptic(); openSettingsSheet()">⚙️ Settings</button>
+                </div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item"><span class="dot" style="background-color: var(--night);"></span> Nights</div>
+                <div class="legend-item"><span class="dot" style="background-color: var(--day);"></span> Days</div>
+                <div class="legend-item"><span class="dot" style="background-color: var(--off);"></span> Off</div>
+                <div class="legend-item"><span class="dot" style="background-color: var(--mod);"></span> Modified</div>
+                <div class="legend-item">💧 Drop Day</div>
+                <div class="legend-item">❌ 120H Max</div>
+            </div>
+
+            <div id="calendar"></div>
+
+            <div class="crew-anchor">
+                <div class="crew-float-chip">
+                    <span class="crew-float-label">Crew</span>
+                    <span class="crew-float-value" id="nav-crew-display">A</span>
+                    <select id="crew-select" class="pill-chip-select" onchange="haptic(); updateNavLabels(); renderCalendar()">
+                        <option value="A">Crew A</option>
+                        <option value="B">Crew B</option>
+                        <option value="C">Crew C</option>
+                        <option value="D">Crew D</option>
+                    </select>
+                </div>
             </div>
         </div>
-        <div class="dash-arrow">❯</div>
+        <div id="analytics-side"></div>
     </div>
 
-    <div class="calendar-widget" id="calendar-widget">
-        <div class="widget-header">
-            <div>
-                <div class="widget-overline">Quick Schedule</div>
-                <h2 class="widget-title" id="next-shift-title">Next shift loading…</h2>
-                <p class="widget-subtitle" id="next-shift-details">Select a crew and see your upcoming shift details.</p>
-            </div>
-            <button class="small-btn" id="btn-view-toggle" onclick="haptic(); toggleCalendarView()">Agenda</button>
-        </div>
-        <div class="widget-actions">
-            <button class="widget-action-btn" onclick="haptic(); scrollToToday()">📍 Today</button>
-            <button class="widget-action-btn" onclick="haptic(); triggerBiometricsAndOpenPay()">💰 Pay</button>
-            <button class="widget-action-btn" onclick="haptic(); openSettingsSheet()">⚙️ Settings</button>
-        </div>
-    </div>
+    <div id="analytics-below"></div>
 
-    <div class="legend">
-        <div class="legend-item"><span class="dot" style="background-color: var(--night);"></span> Nights</div>
-        <div class="legend-item"><span class="dot" style="background-color: var(--day);"></span> Days</div>
-        <div class="legend-item"><span class="dot" style="background-color: var(--off);"></span> Off</div>
-        <div class="legend-item"><span class="dot" style="background-color: var(--mod);"></span> Modified</div>
-        <div class="legend-item">💧 Drop Day</div>
-        <div class="legend-item">❌ 120H Max</div>
-    </div>
-    
-    <div id="calendar"></div>
+    <select id="year-select" style="display:none" onchange="haptic(); renderCalendar()"></select>
 
-    <div class="fab-container">
-        <div class="fab-row">
-            <select id="year-select" class="fab-btn secondary" onchange="haptic(); renderCalendar()"></select>
-            <select id="crew-select" class="fab-btn secondary" onchange="haptic(); renderCalendar()">
-                <option value="D">Crew D</option>
-                <option value="A">Crew A</option>
-                <option value="B">Crew B</option>
-                <option value="C">Crew C</option>
-            </select>
-        </div>
-        <div class="fab-row" style="justify-content: flex-end;">
-            <div class="fab-btn secondary" onclick="openSettingsSheet()">⚙️ Settings</div>
-            <div class="fab-btn" onclick="haptic(); scrollToToday()">📅 Today</div>
-        </div>
+    <div class="pill-bar">
+        <button class="pill-btn-secondary" onclick="haptic(); openSettingsSheet()">⚙️ Settings</button>
+        <button class="pill-btn-primary" onclick="haptic(); scrollToToday()">📅 Today</button>
     </div>
 
     <div class="modal-overlay" id="overlay" onclick="closeAllSheets()"></div>

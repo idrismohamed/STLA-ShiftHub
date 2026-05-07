@@ -54,6 +54,7 @@ function importData(e) {
             if (cSel) cSel.value = sysSettings.defaultCrew;
 
             populateYearSelect();
+            invalidateFatigueCache();
             renderCalendar();
             updateNotifications();
             showToast('Backup Restored Successfully!');

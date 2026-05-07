@@ -544,6 +544,7 @@ function saveShift() {
 
     extraShifts[activeDate] = payload;
     localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts));
+    invalidateFatigueCache();
     updateNotifications();
     closeAllSheets();
     showToast('Shift Saved');
@@ -553,6 +554,7 @@ function removeShift() {
     haptic();
     delete extraShifts[activeDate];
     localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts));
+    invalidateFatigueCache();
     updateNotifications();
     closeAllSheets();
     showToast('Shift Removed', 'error');

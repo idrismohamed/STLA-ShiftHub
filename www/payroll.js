@@ -125,6 +125,8 @@ function calculateTaxes(biGross, ppI, targetYear = 2026) {
     return { cpp, ei, fedTax: fedT / ppCount, onTax: onT / ppCount, total: cpp + ei + (fedT / ppCount) + (onT / ppCount) };
 }
 
+const _holsCache = {};
+
 /**
  * Return a map of Ontario statutory holidays for the given year.
  * Easter is computed via the anonymous Gregorian algorithm.
@@ -134,6 +136,7 @@ function calculateTaxes(biGross, ppI, targetYear = 2026) {
  */
 function getHolidays(y) {
     y = parseInt(y);
+    if (_holsCache[y]) return _holsCache[y];
     // Easter calculation (anonymous Gregorian algorithm)
     const a = y % 19, b = Math.floor(y / 100), c = y % 100, d2 = Math.floor(b / 4), e = b % 4;
     const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
@@ -159,7 +162,7 @@ function getHolidays(y) {
     };
     const fmt = dt => toDateKey(dt.getTime());
 
-    return {
+    return (_holsCache[y] = {
         [fmt(new Date(Date.UTC(y, 0, 1)))]:  { n: "New Year's Day",  m: 1.5 },
         [fmt(nthDay(1, 1, 3))]:              { n: "Family Day",       m: 1.5 },
         [fmt(gf)]:                            { n: "Good Friday",      m: 1.5 },
@@ -171,7 +174,7 @@ function getHolidays(y) {
         [fmt(new Date(Date.UTC(y, 11, 24)))]:{ n: "Christmas Eve",    m: 1.5 },
         [fmt(new Date(Date.UTC(y, 11, 25)))]:{ n: "Christmas Day",    m: 2.0 },
         [fmt(new Date(Date.UTC(y, 11, 26)))]:{ n: "Boxing Day",       m: 2.0 }
-    };
+    });
 }
 
 /**

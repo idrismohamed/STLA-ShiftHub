@@ -1,20 +1,29 @@
-const CALENDAR_VIEWS = ['month', 'agenda', 'week'];
+const CALENDAR_VIEWS = ['month', 'week', 'year'];
 let calendarViewMode = localStorage.getItem('calendarViewMode') || 'month';
+// Clamp stored view to valid values (agenda no longer exists)
+if (!CALENDAR_VIEWS.includes(calendarViewMode)) calendarViewMode = 'month';
+let currentCalMonth = parseInt(localStorage.getItem('currentCalMonth') || new Date().getMonth());
+let currentWeekOffset = parseInt(localStorage.getItem('currentWeekOffset')) || 0;
+let calMonthExpanded = localStorage.getItem('calMonthExpanded') !== 'false';
+
+// Swipe tracking for month navigation
+let _swipeStartX = 0, _swipeStartY = 0;
+function calSwipeStart(e) {
+    _swipeStartX = e.touches[0].clientX;
+    _swipeStartY = e.touches[0].clientY;
+}
+function calSwipeEnd(e) {
+    const dx = e.changedTouches[0].clientX - _swipeStartX;
+    const dy = e.changedTouches[0].clientY - _swipeStartY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 55) {
+        haptic();
+        navigateMonth(dx < 0 ? 1 : -1);
+    }
+}
 const AGENDA_LOOKAHEAD_DAYS = 14;
 let monthObserver = null;
 let _calFirstRender = true;
 
-function toggleCalendarView() {
-    const currentIndex = CALENDAR_VIEWS.indexOf(calendarViewMode);
-    const nextIndex = (currentIndex + 1) % CALENDAR_VIEWS.length;
-    setCalendarViewMode(CALENDAR_VIEWS[nextIndex]);
-}
-
-function getNextViewLabel(mode) {
-    if (mode === 'month') return 'Agenda';
-    if (mode === 'agenda') return 'Week';
-    return 'Month';
-}
 
 function setCalendarViewMode(mode) {
     calendarViewMode = mode;
@@ -22,30 +31,58 @@ function setCalendarViewMode(mode) {
     renderCalendar();
 }
 
-/** Smooth-scroll the "today" cell into view. */
+function toggleMonthPanel() {
+    calMonthExpanded = !calMonthExpanded;
+    localStorage.setItem('calMonthExpanded', calMonthExpanded);
+    const panel = document.getElementById('cal-month-panel');
+    const chevron = document.getElementById('cal-expand-chevron');
+    if (panel) panel.classList.toggle('collapsed', !calMonthExpanded);
+    if (chevron) chevron.classList.toggle('rotated', !calMonthExpanded);
+    haptic();
+}
+
+function updateNavLabels() {
+    const crewEl  = document.getElementById('nav-crew-display');
+    const crewSel = document.getElementById('crew-select');
+    if (crewEl && crewSel) crewEl.textContent = crewSel.value;
+}
+
+/** Navigate to today's month/week then scroll the page up to the calendar. */
 function scrollToToday() {
-    const el = document.querySelector('.day.today');
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (calendarViewMode === 'month') {
+        const logicalT = getLogicalToday();
+        const yearSelect = document.getElementById('year-select');
+        const year = yearSelect ? parseInt(yearSelect.value) : logicalT.getFullYear();
+        if (year === logicalT.getFullYear()) {
+            currentCalMonth = logicalT.getMonth();
+            localStorage.setItem('currentCalMonth', currentCalMonth);
+            currentWeekOffset = 0;
+            localStorage.setItem('currentWeekOffset', 0);
+            renderCalendar();
+        }
+    } else if (calendarViewMode === 'week') {
+        currentWeekOffset = 0;
+        localStorage.setItem('currentWeekOffset', 0);
+        renderCalendar();
+    }
+    const target = document.querySelector('.cal-analytics-row') || document.getElementById('calendar');
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 /**
- * Rebuild all 12 monthly grids for the currently selected year and crew.
- * Reads year from #year-select, crew from #crew-select, and all state from
- * the global extraShifts / dayFatigue objects.
+ * Main calendar entry point. Reads year from #year-select, crew from #crew-select.
+ * Dispatches to month / week / year view renderers.
  */
 function renderCalendar() {
     const cal = document.getElementById('calendar');
     if (!cal) return;
 
     const savedScrollY = window.scrollY;
-
     const yearSelect = document.getElementById('year-select');
     const crewSelect = document.getElementById('crew-select');
     const year = yearSelect ? parseInt(yearSelect.value) : getLogicalToday().getFullYear();
     const crew = crewSelect ? crewSelect.value : sysSettings.defaultCrew;
     const viewMode = calendarViewMode;
-    const viewToggle = document.getElementById('btn-view-toggle');
-    if (viewToggle) viewToggle.innerText = getNextViewLabel(viewMode);
 
     const logicalT = getLogicalToday();
     const nowUTC   = Date.UTC(logicalT.getFullYear(), logicalT.getMonth(), logicalT.getDate());
@@ -55,74 +92,44 @@ function renderCalendar() {
     precalcFatigue(year, crew);
     const yearHols = getHolidays(year);
 
-    if (viewMode === 'agenda') {
-        cal.innerHTML = renderAgendaView(year, crew, logicalT, todayStr, yearHols, currentTargetPPIndex);
+    if (viewMode === 'week') {
+        cal.innerHTML = renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTargetPPIndex);
         requestAnimationFrame(() => window.scrollTo(0, savedScrollY));
         renderCalendarWidget(crew, logicalT, todayStr);
         renderDashboardCard(crew, logicalT);
+        renderAnalyticsDashboard(crew, logicalT);
         return;
     }
-    if (viewMode === 'week') {
-        cal.innerHTML = renderWeekView(year, crew, logicalT, todayStr, yearHols, currentTargetPPIndex);
+    if (viewMode === 'year') {
+        cal.innerHTML = renderYearView(year, crew, todayStr);
         requestAnimationFrame(() => window.scrollTo(0, savedScrollY));
         renderCalendarWidget(crew, logicalT, todayStr);
         renderDashboardCard(crew, logicalT);
+        renderAnalyticsDashboard(crew, logicalT);
         return;
     }
 
-    // Disconnect any observer from a previous render pass
+    // Month view — single month at a time
     if (monthObserver) { monthObserver.disconnect(); monthObserver = null; }
 
-    // Create 12 lightweight placeholder wrappers — no day cells yet
-    let skelHtml = '';
-    for (let m = 0; m < 12; m++) skelHtml += `<div class="month-wrapper" data-month="${m}"></div>`;
-    cal.innerHTML = skelHtml;
-
-    const wrappers      = cal.querySelectorAll('.month-wrapper');
-    const isCurrentYear = (year === logicalT.getFullYear());
-    const todayMonthIdx = logicalT.getMonth();
-
-    // Eagerly render the 3 months around today (or just January for other years)
-    const eagerSet = new Set();
-    if (isCurrentYear) {
-        for (let d = -1; d <= 1; d++) eagerSet.add(((todayMonthIdx + d) % 12 + 12) % 12);
-    } else {
-        eagerSet.add(0);
-    }
-
-    wrappers.forEach((w, m) => {
-        if (eagerSet.has(m)) {
-            w.innerHTML = buildMonthHtml(m, year, crew, todayStr, yearHols, currentTargetPPIndex);
-            w.dataset.rendered = '1';
-        } else {
-            w.style.minHeight = '340px'; // reserve space so scroll position is stable
-        }
-    });
-
-    // Lazy-render remaining months as they scroll into proximity
-    monthObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (!entry.isIntersecting || entry.target.dataset.rendered) return;
-            entry.target.dataset.rendered = '1';
-            entry.target.style.minHeight  = '';
-            const m = parseInt(entry.target.dataset.month);
-            entry.target.innerHTML = buildMonthHtml(m, year, crew, todayStr, yearHols, currentTargetPPIndex);
-            monthObserver.unobserve(entry.target);
-        });
-    }, { rootMargin: '300px 0px' });
-
-    wrappers.forEach(w => { if (!w.dataset.rendered) monthObserver.observe(w); });
-
+    // On first render, snap currentCalMonth to today's month if in current year
     if (_calFirstRender) {
         _calFirstRender = false;
-        setTimeout(scrollToToday, 50);
-    } else {
-        requestAnimationFrame(() => window.scrollTo(0, savedScrollY));
+        if (year === logicalT.getFullYear()) {
+            currentCalMonth = logicalT.getMonth();
+            localStorage.setItem('currentCalMonth', currentCalMonth);
+        }
     }
+
+    cal.innerHTML = buildNewMonthView(currentCalMonth, year, crew, todayStr, yearHols, currentTargetPPIndex);
+    requestAnimationFrame(() => window.scrollTo(0, savedScrollY));
     renderCalendarWidget(crew, logicalT, todayStr);
     renderDashboardCard(crew, logicalT);
+    renderAnalyticsDashboard(crew, logicalT);
+    updateNavLabels();
 }
 
+/* buildMonthHtml removed — replaced by buildNewMonthView + buildCalCell */
 function buildMonthHtml(m, year, crew, todayStr, yearHols, currentTargetPPIndex) {
     const first  = new Date(year, m, 1);
     const last   = new Date(year, m + 1, 0);
@@ -234,7 +241,7 @@ function buildMonthHtml(m, year, crew, todayStr, yearHols, currentTargetPPIndex)
     return html + `</div></div>`;
 }
 
-function renderWeekView(year, crew, logicalT, todayStr, yearHols, currentTargetPPIndex) {
+function renderWeekView(year, crew, logicalT, todayStr, yearHols) {
     const baseDate = (year === logicalT.getFullYear()) ? new Date(logicalT) : new Date(year, 0, 1);
     const weekStart = new Date(baseDate);
     weekStart.setDate(baseDate.getDate() - baseDate.getDay());
@@ -318,7 +325,6 @@ function renderAgendaView(year, crew, logicalT, todayStr, yearHols, currentTarge
         let shift = getShiftForCrew(pI, crew);
         let sC = shift;
         let lbl = shift === 'N' ? 'Night' : (shift === 'D' ? 'Day' : 'Off');
-        let details = '';
         let timeText = '';
         let badgeHtml = '';
 
@@ -378,7 +384,7 @@ function renderAgendaView(year, crew, logicalT, todayStr, yearHols, currentTarge
     return html;
 }
 
-function renderCalendarWidget(crew, logicalT, todayStr) {
+function renderCalendarWidget(crew, logicalT) {
     const widget = document.getElementById('calendar-widget');
     if (!widget) return;
 
@@ -412,7 +418,6 @@ function getUpcomingShift(crew, fromDate) {
         const pI = getPIndex(currentUTC);
         const baseShift = getShiftForCrew(pI, crew);
         const ex = extraShifts[dStr];
-        const f = dayFatigue[dStr] || {};
         let label = baseShift === 'N' ? 'Night' : (baseShift === 'D' ? 'Day' : 'Off');
         let timeText = '';
         let schedule = '';
@@ -449,4 +454,876 @@ function formatTimeUntil(targetDate, now) {
     const days = Math.floor(diffMs / 86400000);
     if (days === 1) return 'Tomorrow';
     return `In ${days} days`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NEW CALENDAR REDESIGN — helper functions
+   ═══════════════════════════════════════════════════════════ */
+
+/** Build the shared .cal-header HTML with nav content on left and view tabs on right. */
+function buildCalendarHeader(viewMode, leftContent) {
+    const tabs = CALENDAR_VIEWS.map(v => {
+        const label = v.charAt(0).toUpperCase() + v.slice(1);
+        return `<div class="cal-tab${v === viewMode ? ' active' : ''}" onclick="haptic(); setCalendarViewMode('${v}')">${label}</div>`;
+    }).join('');
+    return `<div class="cal-header"><div class="cal-header-left">${leftContent}</div><div class="cal-view-tabs">${tabs}</div></div>`;
+}
+
+/**
+ * Build the pill descriptors for a single day cell.
+ * Returns an ordered array of {cls, text} — PP pill is NOT included here.
+ * @param {string} dStr
+ * @param {string} shift  base shift after lockout adjustment ('D','N','O')
+ * @param {object|undefined} ex  extraShifts[dStr]
+ * @param {object} f  dayFatigue[dStr] || {}
+ * @param {number} baseH  base work hours for this shift
+ * @param {object} yearHols  holidays map
+ */
+function buildCellPills(dStr, shift, ex, f, baseH, yearHols) {
+    const pills = [];
+
+    // ── Primary pill ──────────────────────────────────────────────────────────
+    let pCls = 'pill-off', pTxt = 'Off';
+
+    if (ex) {
+        const t = ex.type;
+        const ht = ex.startTime && ex.endTime;
+        const times = ht ? `${formatTime24(ex.startTime)}–${formatTime24(ex.endTime)}` : '';
+
+        if (t === 'Vacation') {
+            pCls = ht ? 'pill-mod' : 'pill-vac';
+            pTxt = ht ? `🏖️ Partial Vac · ${times}` : '🏖️ Vacation';
+        } else if (t === 'Off') {
+            pCls = 'pill-absent';
+            pTxt = ht ? `🚫 Partial Off · ${times}` : '🚫 Absent';
+        } else if (t === 'Lieu') {
+            pCls = 'pill-lieu';
+            pTxt = ht ? `🏛️ Partial Lieu · ${times}` : '🏛️ Lieu Day';
+        } else if (t === 'DropOff') {
+            pCls = 'pill-drop'; pTxt = '💧 Drop Off';
+        } else if (t === 'DropPaid') {
+            pCls = 'pill-mod';
+            pTxt = ht ? `💰 Drop Paid · ${times}` : '💰 Drop Paid';
+        } else if (t === 'Day' || t === 'Night') {
+            pCls = (t === 'Day' ? 'pill-day' : 'pill-night') + ' two-line';
+            const icon = t === 'Day' ? '☀️' : '🌙';
+            const defT = t === 'Day' ? '6:30–18:30' : '18:30–6:30';
+            const disp = ht ? times : defT;
+            const label = ex.crew ? `${icon} ${formatCrewLabel(ex.crew)}` : `${icon} ${t}`;
+            pTxt = `<span class="pill-top">${label}</span><span class="pill-sub">${disp}</span>`;
+        }
+    } else if (f.isLockout) {
+        pCls = 'pill-lock'; pTxt = '❌ Max Hours';
+    } else if (shift === 'D') {
+        pCls = 'pill-day two-line';
+        pTxt = '<span class="pill-top">☀️ Day</span><span class="pill-sub">6:30–18:30</span>';
+    } else if (shift === 'N') {
+        pCls = 'pill-night two-line';
+        pTxt = '<span class="pill-top">🌙 Night</span><span class="pill-sub">18:30–6:30</span>';
+    }
+
+    pills.push({ cls: pCls, text: pTxt });
+
+    // ── Secondary pills ───────────────────────────────────────────────────────
+    if (ex && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(ex.type)) {
+        let displayOT = ex.otHours || 0;
+        let displayDT = ex.dtHours || 0;
+        if (ex.type === 'DropPaid' && !ex.otHours && !ex.dtHours && (!ex.startTime || !ex.endTime)) displayOT = 12.0;
+
+        if (displayOT > 0.05) pills.push({ cls: 'pill-ot', text: `+${displayOT.toFixed(1)} OT` });
+        if (displayDT > 0.05) pills.push({ cls: 'pill-dt', text: `+${displayDT.toFixed(1)} DT` });
+
+        if (ex.startTime && ex.endTime) {
+            const dur   = getDuration(ex.startTime, ex.endTime);
+            const short = Math.max(0, baseH - dur);
+            if (short > 0.05) {
+                const vH = ex.vacHours || 0;
+                const uH = Math.max(0, short - vH);
+                if (uH > 0.05) pills.push({ cls: 'pill-unpaid', text: `-${uH.toFixed(1)}h Unpaid` });
+                if (vH > 0.05) pills.push({ cls: 'pill-vac',    text: `+${vH.toFixed(1)}h Vac` });
+            }
+        }
+    }
+
+    // Drop cycle marker — only on the first day of a drop period
+    if (f.isDropPeriod && f.ppDayIndex === 0) {
+        pills.push({ cls: 'pill-drop', text: '💧 Drop Cycle' });
+    }
+
+    // Lockout secondary — when ex exists but doesn't fully override lockout
+    if (f.isLockout && ex && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(ex.type)) {
+        pills.push({ cls: 'pill-lock', text: '❌ Max' });
+    }
+
+    // Holiday
+    const hol = yearHols[dStr];
+    if (hol) pills.push({ cls: 'pill-hol', text: `⭐ ${hol.n}` });
+
+    return pills;
+}
+
+/**
+ * Build a single .cal-cell div — M3 simplified design.
+ * Date circle + shift type label + abbreviated time + corner OT chip + flag icons.
+ */
+function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex) {
+    const target = Date.UTC(year, m, d);
+    const dStr   = toDateKey(target);
+    const pI     = getPIndex(target);
+    let   shift  = getShiftForCrew(pI, crew);
+    const next   = getShiftForCrew((pI + 1) % 28, crew);
+    const f      = dayFatigue[dStr] || {};
+    const ex     = extraShifts[dStr];
+    const baseH  = f.baseWorkHours !== undefined ? f.baseWorkHours : ((shift === 'D' || shift === 'N') ? 12 : 0);
+
+    if (f.isLockout) shift = 'O';
+
+    let sC = shift;
+    if (ex) {
+        if      (ex.type === 'Vacation') sC = (ex.startTime && ex.endTime) ? 'M' : 'O';
+        else if (ex.type === 'Off')      sC = (ex.startTime && ex.endTime) ? 'M' : 'O';
+        else if (ex.type === 'Lieu')     sC = (ex.startTime && ex.endTime) ? 'M' : 'O';
+        else if (ex.type === 'DropOff')  sC = 'O';
+        else if (ex.type === 'DropPaid') sC = 'M';
+        else if (ex.type && ex.crew && ex.type !== 'DropPaid') sC = 'M';
+    }
+
+    const isToday     = (dStr === todayStr);
+    const isPast      = (dStr < todayStr);
+    const isCurrentPP = (f.ppIndex === currentTargetPPIndex);
+
+    let cls = `cal-cell ${sC}`;
+    cls += ` pp-${f.ppIndex !== undefined ? f.ppIndex % 4 : 0}`;
+    if (isToday)                             cls += ' today';
+    else if (isPast)                         cls += isCurrentPP ? ' current-pp past' : ' past';
+    else if (isCurrentPP)                    cls += ' current-pp';
+    if (f.isDropPeriod && f.ppDayIndex === 0) cls += ' drop-start';
+    if (f.isLockout && !['Vacation','Off','DropOff','Lieu'].includes(ex?.type)) cls += ' lockout';
+    if (f.isPPBoundary)                      cls += ' pp-end';
+
+    // ── Shift type label + optional time ────────────────────────────────────
+    let typeLabel = 'Off', timeLabel = '';
+    if (ex) {
+        const t  = ex.type;
+        const ht = ex.startTime && ex.endTime;
+        if (t === 'Vacation')      { typeLabel = ht ? '🏖️ Partial Vac' : '🏖️ Vacation'; sC += ' vac'; }
+        else if (t === 'Off')      { typeLabel = ht ? '🚫 Partial' : '🚫 Absent'; }
+        else if (t === 'Lieu')     { typeLabel = ht ? '🏛️ Partial' : '🏛️ Lieu'; }
+        else if (t === 'DropOff')  { typeLabel = '💧 Drop'; }
+        else if (t === 'DropPaid') { typeLabel = '💰 Drop+'; }
+        else if (t === 'Day')      { typeLabel = '☀️ Day';   timeLabel = ht ? formatTime24(ex.startTime) : '6:30'; }
+        else if (t === 'Night')    { typeLabel = '🌙 Night'; timeLabel = ht ? formatTime24(ex.startTime) : '18:30'; }
+        if (ht && !timeLabel) timeLabel = formatTime24(ex.startTime);
+    } else if (f.isLockout) {
+        typeLabel = '❌ Max';
+    } else if (shift === 'D') {
+        typeLabel = '☀️ Day';   timeLabel = '6:30';
+    } else if (shift === 'N') {
+        typeLabel = '🌙 Night'; timeLabel = '18:30';
+    }
+
+    // ── OT/DT corner chip (show only the larger of the two) ─────────────────
+    let otChip = '';
+    if (ex && !['Vacation','Off','DropOff','Lieu'].includes(ex.type)) {
+        let oH = ex.otHours || 0, dH = ex.dtHours || 0;
+        if (ex.type === 'DropPaid' && !oH && !dH && (!ex.startTime || !ex.endTime)) oH = 12;
+        if (dH > 0.05)      otChip = `<span class="cal-ot-chip dt">+${dH.toFixed(1)}DT</span>`;
+        else if (oH > 0.05) otChip = `<span class="cal-ot-chip ot">+${oH.toFixed(1)}OT</span>`;
+    }
+    // Show short hour indicators for short shifts
+    if (ex?.startTime && ex?.endTime) {
+        const dur   = getDuration(ex.startTime, ex.endTime);
+        const short = Math.max(0, baseH - dur);
+        if (short > 0.05 && !otChip) {
+            const uH = Math.max(0, short - (ex.vacHours || 0));
+            if (uH > 0.05) otChip = `<span class="cal-ot-chip unpaid">-${uH.toFixed(1)}h</span>`;
+        }
+    }
+
+    // ── Holiday flag ─────────────────────────────────────────────────────────
+    const holFlag = yearHols[dStr]
+        ? `<div class="cal-cell-flags"><span class="cal-flag hol-flag">⭐ ${yearHols[dStr].n.split(' ')[0]}</span></div>`
+        : '';
+
+    // ── Drop cycle start — top banner on first day ────────────────────────
+    const dropBadge = (f.isDropPeriod && f.ppDayIndex === 0)
+        ? `<div class="cal-drop-start">💧 Drop Cycle</div>`
+        : '';
+
+    // ── Pay period end — full-width tappable footer ───────────────────────
+    const ppBadge = f.isPPBoundary
+        ? `<button class="cal-pp-badge" onclick="event.stopPropagation(); haptic(); triggerBiometricsAndOpenPay(${f.ppIndex})">💰 PP End</button>`
+        : '';
+
+    const dispDate  = `${months[m]} ${d}, ${year}`;
+    const baseShift = getShiftForCrew(pI, crew);
+
+    return `<div class="${cls}" id="day-${dStr}" onclick="haptic(); openPickupSheet('${dStr}','${dispDate}','${baseShift}','${next}')">
+        ${dropBadge}
+        <span class="cal-date-num">${d}</span>
+        <span class="cal-cell-type">${typeLabel}</span>
+        ${timeLabel ? `<span class="cal-cell-time">${timeLabel}</span>` : ''}
+        ${holFlag}
+        ${otChip}
+        ${ppBadge}
+    </div>`;
+}
+
+/** Build the M3-style "this week" row — always visible above the month panel. */
+function buildM3WeekRow(crew, todayStr) {
+    const today  = new Date(todayStr + 'T00:00:00');
+    const sunday = new Date(today);
+    sunday.setDate(today.getDate() - today.getDay());
+
+    const dowLabels = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    let html = '<div class="cal-week-row">';
+
+    for (let i = 0; i < 7; i++) {
+        const d    = new Date(sunday);
+        d.setDate(sunday.getDate() + i);
+        const tUTC = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+        const dStr = toDateKey(tUTC);
+        const pI   = getPIndex(tUTC);
+        let shift  = getShiftForCrew(pI, crew);
+        const f    = dayFatigue[dStr] || {};
+        const ex   = extraShifts[dStr];
+
+        if (f.isLockout) shift = 'O';
+        let dotCls = shift; // D, N, O, M
+        if (ex) {
+            if (['Vacation','Off','DropOff','Lieu'].includes(ex.type)) dotCls = 'O';
+            else if (ex.type === 'DropPaid') dotCls = 'M';
+            else if (ex.type && ex.crew)     dotCls = 'M';
+        }
+
+        const isToday = dStr === todayStr;
+        const isPast  = dStr < todayStr;
+        let cls = 'cal-wr-day';
+        if (isToday) cls += ' today';
+        if (isPast)  cls += ' past';
+
+        const dispDate  = `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+        const baseShift = getShiftForCrew(pI, crew);
+        const next      = getShiftForCrew((pI + 1) % 28, crew);
+
+        html += `<button class="${cls}" onclick="haptic(); openPickupSheet('${dStr}','${dispDate}','${baseShift}','${next}')">
+            <span class="cal-wr-dow">${dowLabels[i]}</span>
+            <span class="cal-wr-num">${d.getDate()}</span>
+            <span class="cal-wr-dot ${dotCls}"></span>
+        </button>`;
+    }
+
+    html += '</div>';
+    return html;
+}
+
+/** Build the full single-month view HTML with collapsible month panel. */
+function buildNewMonthView(m, year, crew, todayStr, yearHols, currentTargetPPIndex) {
+    const monthLabel = `${months[m]} ${year}`;
+
+    const yearSelect = document.getElementById('year-select');
+    const minYear = yearSelect ? parseInt(yearSelect.options[0]?.value) : year;
+    const maxYear = yearSelect ? parseInt(yearSelect.options[yearSelect.options.length - 1]?.value) : year;
+    const canPrev = !(m === 0 && year <= minYear);
+    const canNext = !(m === 11 && year >= maxYear);
+
+    const chevronCls = calMonthExpanded ? 'cal-chevron' : 'cal-chevron rotated';
+    const leftContent = `
+        <button class="cal-nav-btn" onclick="haptic(); navigateMonth(-1)" ${canPrev ? '' : 'disabled'}>&#8249;</button>
+        <button class="cal-month-label-btn" onclick="toggleMonthPanel()">
+            <span class="cal-month-label">${monthLabel}</span>
+            <span class="${chevronCls}" id="cal-expand-chevron">▾</span>
+        </button>
+        <button class="cal-nav-btn" onclick="haptic(); navigateMonth(1)" ${canNext ? '' : 'disabled'}>&#8250;</button>`;
+
+    const header  = buildCalendarHeader('month', leftContent);
+    const weekRow = buildM3WeekRow(crew, todayStr);
+    const dowRow  = `<div class="cal-dow-row">${daysOfWeek.map(d => `<div class="cal-dow-cell">${d}</div>`).join('')}</div>`;
+
+    const first    = new Date(year, m, 1);
+    const last     = new Date(year, m + 1, 0);
+    const startDay = first.getDay();
+
+    let cells = '';
+    for (let i = 0; i < startDay; i++) cells += '<div class="cal-cell empty"></div>';
+    for (let d = 1; d <= last.getDate(); d++) cells += buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex);
+
+    const panelCls = calMonthExpanded ? 'cal-month-panel' : 'cal-month-panel collapsed';
+
+    return `<div class="cal-redesign" ontouchstart="calSwipeStart(event)" ontouchend="calSwipeEnd(event)">
+        ${header}
+        ${weekRow}
+        <div class="${panelCls}" id="cal-month-panel">
+            ${dowRow}
+            <div class="cal-grid">${cells}</div>
+        </div>
+    </div>`;
+}
+
+/** Navigate the month view by dir (+1 or -1), crossing year boundaries as needed. */
+function navigateMonth(dir) {
+    const yearSelect = document.getElementById('year-select');
+    let year = yearSelect ? parseInt(yearSelect.value) : getLogicalToday().getFullYear();
+    const savedMonth = currentCalMonth;
+
+    currentCalMonth += dir;
+
+    if (currentCalMonth < 0) {
+        currentCalMonth = 11;
+        year--;
+    } else if (currentCalMonth > 11) {
+        currentCalMonth = 0;
+        year++;
+    }
+
+    if (yearSelect) {
+        const opt = yearSelect.querySelector(`option[value="${year}"]`);
+        if (!opt) {
+            currentCalMonth = savedMonth; // revert to original month
+            return;
+        }
+        yearSelect.value = year;
+    }
+
+    localStorage.setItem('currentCalMonth', currentCalMonth);
+    renderCalendar();
+}
+
+/** Build the new week view with prev/next navigation. */
+function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTargetPPIndex) {
+    const base = (year === logicalT.getFullYear()) ? new Date(logicalT) : new Date(year, 0, 1);
+    const weekStart = new Date(base);
+    weekStart.setDate(base.getDate() - base.getDay() + currentWeekOffset * 7);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+
+    const fmt = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const weekLabel = `${fmt(weekStart)} – ${fmt(weekEnd)}, ${weekEnd.getFullYear()}`;
+
+    const leftContent = `
+        <button class="cal-nav-btn" onclick="haptic(); navigateWeek(-1)">&#8249;</button>
+        <span class="cal-month-label" style="font-size:14px;min-width:160px">${weekLabel}</span>
+        <button class="cal-nav-btn" onclick="haptic(); navigateWeek(1)">&#8250;</button>`;
+
+    const header = buildCalendarHeader('week', leftContent);
+    const dowRow = `<div class="cal-dow-row week-mode">${daysOfWeek.map(d => `<div class="cal-dow-cell">${d}</div>`).join('')}</div>`;
+
+    let cards = '';
+    for (let i = 0; i < 7; i++) {
+        const target = new Date(weekStart);
+        target.setDate(weekStart.getDate() + i);
+        const tUTC  = Date.UTC(target.getFullYear(), target.getMonth(), target.getDate());
+        const dStr  = toDateKey(tUTC);
+        const pI    = getPIndex(tUTC);
+        let   shift = getShiftForCrew(pI, crew);
+        const next  = getShiftForCrew((pI + 1) % 28, crew);
+        const f     = dayFatigue[dStr] || {};
+        const ex    = extraShifts[dStr];
+        const baseH = f.baseWorkHours !== undefined ? f.baseWorkHours : ((shift === 'D' || shift === 'N') ? 12 : 0);
+
+        if (f.isLockout) shift = 'O';
+
+        let sC = shift;
+        if (ex) {
+            if      (ex.type === 'Vacation') sC = (ex.startTime && ex.endTime) ? 'M' : 'O';
+            else if (ex.type === 'Off')      sC = (ex.startTime && ex.endTime) ? 'M' : 'O';
+            else if (ex.type === 'Lieu')     sC = (ex.startTime && ex.endTime) ? 'M' : 'O';
+            else if (ex.type === 'DropOff')  sC = 'O';
+            else if (ex.type === 'DropPaid') sC = 'M';
+            else if (ex.type && ex.crew && ex.type !== 'DropPaid') sC = 'M';
+        }
+
+        const isToday     = dStr === todayStr;
+        const isPast      = dStr < todayStr;
+        const isCurrentPP = f.ppIndex === currentTargetPPIndex;
+
+        let cardCls = `cal-week-card ${sC}`;
+        cardCls += ` pp-${f.ppIndex !== undefined ? f.ppIndex % 4 : 0}`;
+        if (isToday)     cardCls += ' today';
+        else if (isPast) cardCls += isCurrentPP ? ' current-pp past' : ' past';
+        else if (isCurrentPP) cardCls += ' current-pp';
+        if (f.isLockout && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(ex?.type)) cardCls += ' lockout';
+
+        const dateLabel = target.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
+        const friendly  = target.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        const baseShift = getShiftForCrew(pI, crew);
+
+        const pills   = buildCellPills(dStr, shift, ex, f, baseH, yearHols);
+        const visible = pills.slice(0, 5);
+        const overflow = pills.length - 5;
+
+        let pillsHtml = '<div class="cal-pills">';
+        for (const p of visible) pillsHtml += `<div class="cal-pill ${p.cls}">${p.text}</div>`;
+        if (overflow > 0) pillsHtml += `<div class="cal-see-more">+${overflow} more</div>`;
+        if (f.isPPBoundary) {
+            pillsHtml += `<div class="cal-pill pill-pp" onclick="event.stopPropagation(); haptic(); triggerBiometricsAndOpenPay(${f.ppIndex})">💰 Pay Period</div>`;
+        }
+        pillsHtml += '</div>';
+
+        cards += `<div class="${cardCls}" onclick="haptic(); openPickupSheet('${dStr}','${friendly}','${baseShift}','${next}')">
+            <div class="cal-week-date">${dateLabel}</div>
+            ${pillsHtml}
+        </div>`;
+    }
+
+    return `<div class="cal-redesign">${header}<div class="cal-scroll-area">${dowRow}<div class="cal-week-grid">${cards}</div></div></div>`;
+}
+
+/** Navigate the week view by dir weeks. */
+function navigateWeek(dir) {
+    currentWeekOffset += dir;
+    localStorage.setItem('currentWeekOffset', currentWeekOffset);
+    renderCalendar();
+}
+
+/** Build the year overview with 12 mini-month grids. */
+function renderYearView(year, crew, todayStr) {
+    const leftContent = `<span class="cal-month-label">${year}</span>`;
+    const header = buildCalendarHeader('year', leftContent);
+
+    let miniMonths = '';
+    for (let m = 0; m < 12; m++) miniMonths += buildMiniMonth(m, year, crew, todayStr);
+
+    return `<div class="cal-redesign">${header}<div class="cal-year-view">${miniMonths}</div></div>`;
+}
+
+/** Build a compact mini-month grid for the year overview. */
+function buildMiniMonth(m, year, crew, todayStr) {
+    const first    = new Date(year, m, 1);
+    const last     = new Date(year, m + 1, 0);
+    const startDay = first.getDay();
+    const miniDow  = ['S','M','T','W','T','F','S'];
+
+    let grid = `<div class="cal-mini-grid">`;
+    for (const d of miniDow) grid += `<div class="cal-mini-dow">${d}</div>`;
+    for (let i = 0; i < startDay; i++) grid += `<div class="cal-mini-day"></div>`;
+
+    for (let d = 1; d <= last.getDate(); d++) {
+        const tUTC  = Date.UTC(year, m, d);
+        const dStr  = toDateKey(tUTC);
+        const pI    = getPIndex(tUTC);
+        let   shift = getShiftForCrew(pI, crew);
+        const ex    = extraShifts[dStr];
+        const f     = dayFatigue[dStr] || {};
+
+        if (f.isLockout) shift = 'O';
+        if (ex) {
+            if (['Vacation','Off','DropOff','Lieu'].includes(ex.type)) shift = 'O';
+            else if (ex.type === 'Day')    shift = 'D';
+            else if (ex.type === 'Night')  shift = 'N';
+            else if (ex.type === 'DropPaid' || ex.crew) shift = 'M';
+        }
+
+        const isToday  = dStr === todayStr;
+        const dotHtml  = (!isToday && shift !== 'O') ? `<div class="cal-mini-dot ${shift}"></div>` : '';
+        grid += `<div class="cal-mini-day${isToday ? ' today-dot' : ''}">${d}${dotHtml}</div>`;
+    }
+
+    grid += '</div>';
+    return `<div class="cal-mini-month" onclick="haptic(); navigateToMonth(${m},${year})"><div class="cal-mini-month-title">${months[m].substring(0,3)}</div>${grid}</div>`;
+}
+
+/** Navigate from year view to a specific month in month view. */
+function navigateToMonth(m, year) {
+    currentCalMonth = m;
+    localStorage.setItem('currentCalMonth', m);
+    const yearSelect = document.getElementById('year-select');
+    if (yearSelect) yearSelect.value = year;
+    setCalendarViewMode('month');
+    requestAnimationFrame(() => {
+        const target = document.querySelector('.cal-analytics-row') || document.getElementById('calendar');
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+}
+
+/** Render the four-section analytics dashboard below the calendar. */
+function renderAnalyticsDashboard(crew, logicalT) {
+    const elSide  = document.getElementById('analytics-side');
+    const elBelow = document.getElementById('analytics-below');
+    if (!elSide && !elBelow) return;
+
+    const nowUTC    = Date.UTC(logicalT.getFullYear(), logicalT.getMonth(), logicalT.getDate());
+    const todayStr  = toDateKey(nowUTC);
+    const currentPP = Math.floor((nowUTC - basePPStartUTC) / MS_PP);
+    const ppS       = basePPStartUTC + currentPP * MS_PP;
+    const ppE          = ppS + MS_PP_TO_END;
+    const targetYear   = new Date(ppE).getUTCFullYear();
+    const ppDayIndex   = Math.min(13, Math.floor((nowUTC - ppS) / MS_DAY));
+    const ppDayDisplay = ppDayIndex + 1;
+    const ppDaysLeft   = 14 - ppDayDisplay;
+    const ppPct        = Math.round((ppDayDisplay / 14) * 100);
+
+    // Ensure fatigue is computed for the current (real) year
+    precalcFatigue(targetYear, crew);
+
+    const holCache = {};
+    const getHols  = y => { if (!holCache[y]) holCache[y] = getHolidays(y); return holCache[y]; };
+
+    // Find first PP of targetYear
+    let firstPP = 0;
+    for (let i = currentPP; i >= 0; i--) {
+        const testE = basePPStartUTC + (i * 14 + 13) * MS_DAY;
+        if (new Date(testE).getUTCFullYear() < targetYear) { firstPP = i + 1; break; }
+        if (i === 0) firstPP = 0;
+    }
+    const ppCount = getPayPeriodsInYear(targetYear);
+
+    // ── Current PP + YTD loop ────────────────────────────────
+    let regH = 0, ot = 0, dt = 0, gross = 0;
+    let aftH = 0, nightH = 0, satH = 0, sunH = 0;
+    let ytdGross = 0, ytdCPP = 0, ytdEI = 0, ppsDone = 0;
+
+    for (let pi = firstPP; pi <= currentPP; pi++) {
+        const s = basePPStartUTC + pi * MS_PP;
+        let piGross = 0, piRegH = 0, piOT = 0, piDT = 0;
+        let piAft = 0, piNight = 0, piSat = 0, piSun = 0;
+
+        for (let d = 0; d <= 13; d++) {
+            const u   = s + d * MS_DAY;
+            const dS  = toDateKey(u);
+            const bS  = getShiftForCrew(getPIndex(u), crew);
+            const ex  = extraShifts[dS];
+            const f   = dayFatigue[dS] || {};
+            const bH  = f.baseWorkHours !== undefined ? f.baseWorkHours : ((bS === 'D' || bS === 'N') ? 12 : 0);
+            const st  = ex?.startTime || ((bS === 'D' || ex?.type === 'Day') ? '06:30' : '18:30');
+
+            let act = bH, isVac = false;
+            if (ex) {
+                if      (ex.type === 'DropOff')                    { act = 0; }
+                else if (ex.type === 'DropPaid')                   { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 12; }
+                else if (ex.type === 'Vacation')                   { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; isVac = true; }
+                else if (ex.type === 'Off' || ex.type === 'Lieu')  { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; }
+                else if (ex.startTime && ex.endTime)               { act = getDuration(ex.startTime, ex.endTime); }
+                else if (ex.type)                                  { act = 12; }
+            }
+            if (f.isLockout && !isVac && ex?.type !== 'Off' && ex?.type !== 'DropOff' && ex?.type !== 'Lieu') act = 0;
+
+            const dayR = Math.min(act, bH);
+            const dayE = Math.max(0, act - bH);
+
+            let rate = sysSettings.regRate;
+            if (ex?.role === 'TL')                              rate = sysSettings.tlRate;
+            else if (ex?.role === 'Manual' && ex?.manualRate)   rate = ex.manualRate;
+
+            piRegH += dayR;
+
+            if (isVac) {
+                const vH = ex.vacHours !== undefined ? ex.vacHours : (ex.startTime && ex.endTime ? Math.max(0, bH - act) : (bH || 12));
+                piGross += vH * rate;
+            }
+
+            if (!f.isLockout && act > 0) {
+                const pD = calcPremiums(dS, st, dayR, rate);
+                piGross += (dayR * rate) + pD.total;
+                piAft   += pD.aftHrs; piNight += pD.nightHrs; piSat += pD.satHrs; piSun += pD.sunHrs;
+
+                if (dayE > 0) {
+                    let sO = ex?.otHours || 0, sD = ex?.dtHours || 0;
+                    if (sO === 0 && sD === 0) { if (ex?.type === 'DropPaid') sO = dayE; else sD = dayE; }
+                    piGross += (sO * rate * 1.5) + (sD * rate * 2.0);
+                    piOT += sO; piDT += sD;
+                }
+            }
+
+            const holYear = parseInt(dS.substring(0, 4));
+            const holInfo = getHols(holYear)[dS];
+            if (holInfo) {
+                piGross += 8 * rate;
+                if (dayR > 0) piGross += dayR * rate * (holInfo.m === 2.0 ? 1.0 : 0.5);
+            }
+            const nextDStr    = toDateKey(u + MS_DAY);
+            const nextHolInfo = getHols(parseInt(nextDStr.substring(0, 4)))[nextDStr];
+            if (nextHolInfo && dayR > 0 && (bS === 'N' || ex?.type === 'Night')) {
+                piGross += Math.min(dayR, 10) * rate * (nextHolInfo.m === 2.0 ? 1.0 : 0.5);
+            }
+        }
+
+        const piTax = calculateTaxes(piGross, pi, targetYear);
+        ytdGross += piGross; ytdCPP += piTax.cpp; ytdEI += piTax.ei; ppsDone++;
+
+        if (pi === currentPP) {
+            gross = piGross; regH = piRegH; ot = piOT; dt = piDT;
+            aftH = piAft; nightH = piNight; satH = piSat; sunH = piSun;
+        }
+    }
+
+    const t = calculateTaxes(gross, currentPP, targetYear);
+
+    // ── Month stats ──────────────────────────────────────────
+    const yearSelect   = document.getElementById('year-select');
+    const displayYear  = yearSelect ? parseInt(yearSelect.value) : targetYear;
+    const displayMonth = calendarViewMode === 'month' ? currentCalMonth : logicalT.getMonth();
+
+    if (displayYear !== targetYear) precalcFatigue(displayYear, crew);
+
+    let dCount = 0, nCount = 0, oCount = 0, totalMonthHours = 0;
+    let vacDays = 0, dropDays = 0, lieuDays = 0, absenceDays = 0;
+    let monthOT = 0, monthDT = 0;
+
+    const daysInMonth = new Date(displayYear, displayMonth + 1, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+        const u  = Date.UTC(displayYear, displayMonth, d);
+        const dS = toDateKey(u);
+        const bS = getShiftForCrew(getPIndex(u), crew);
+        const ex = extraShifts[dS];
+        const f  = dayFatigue[dS] || {};
+        const bH = f.baseWorkHours !== undefined ? f.baseWorkHours : ((bS === 'D' || bS === 'N') ? 12 : 0);
+
+        let eff = bS;
+        if (f.isLockout) eff = 'O';
+        let hours = bH;
+
+        if (ex) {
+            if      (ex.type === 'Vacation') { vacDays++;     hours = 0; eff = 'O'; }
+            else if (ex.type === 'Off')      { absenceDays++; hours = 0; eff = 'O'; }
+            else if (ex.type === 'Lieu')     { lieuDays++;    hours = 0; eff = 'O'; }
+            else if (ex.type === 'DropOff')  { dropDays++;    hours = 0; eff = 'O'; }
+            else if (ex.type === 'DropPaid') {
+                hours = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 12;
+                if (eff === 'O') eff = 'D'; // DropPaid on an off day still counts as worked
+            }
+            else if (ex.type === 'Day') {
+                eff = 'D';
+                hours = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 12;
+            }
+            else if (ex.type === 'Night') {
+                eff = 'N';
+                hours = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 12;
+            }
+            else if (ex.startTime && ex.endTime) { hours = getDuration(ex.startTime, ex.endTime); }
+        }
+        if (f.isLockout) hours = 0;
+
+        const dayE = Math.max(0, hours - bH);
+        if (dayE > 0 && !f.isLockout) {
+            let sO = ex?.otHours || 0, sD = ex?.dtHours || 0;
+            if (sO === 0 && sD === 0) { if (ex?.type === 'DropPaid') sO = dayE; else sD = dayE; }
+            monthOT += sO; monthDT += sD;
+        }
+
+        if      (eff === 'D') dCount++;
+        else if (eff === 'N') nCount++;
+        else                  oCount++;
+        totalMonthHours += hours;
+    }
+
+    // Re-enable correct fatigue for rest of page if we had to swap
+    if (displayYear !== targetYear) precalcFatigue(targetYear, crew);
+
+    // ── Last month stats (for comparison card) ───────────────
+    const thisWorked = dCount + nCount;
+    const prevMonth  = displayMonth === 0 ? 11 : displayMonth - 1;
+    const prevYear   = displayMonth === 0 ? displayYear - 1 : displayYear;
+
+    if (prevYear !== targetYear) precalcFatigue(prevYear, crew);
+
+    let prevWorked = 0, prevTotalHours = 0, prevMonthOT = 0, prevMonthDT = 0;
+    let prevVacDays = 0, prevAbsDays = 0;
+    const daysInPrevMonth = new Date(prevYear, prevMonth + 1, 0).getDate();
+    for (let d2 = 1; d2 <= daysInPrevMonth; d2++) {
+        const u2  = Date.UTC(prevYear, prevMonth, d2);
+        const dS2 = toDateKey(u2);
+        const bS2 = getShiftForCrew(getPIndex(u2), crew);
+        const ex2 = extraShifts[dS2];
+        const f2  = dayFatigue[dS2] || {};
+        const bH2 = f2.baseWorkHours !== undefined ? f2.baseWorkHours : ((bS2 === 'D' || bS2 === 'N') ? 12 : 0);
+
+        let eff2 = bS2;
+        if (f2.isLockout) eff2 = 'O';
+        let hours2 = bH2;
+
+        if (ex2) {
+            if      (ex2.type === 'Vacation') { prevVacDays++; hours2 = 0; eff2 = 'O'; }
+            else if (ex2.type === 'Off')      { prevAbsDays++; hours2 = 0; eff2 = 'O'; }
+            else if (ex2.type === 'Lieu')     {                hours2 = 0; eff2 = 'O'; }
+            else if (ex2.type === 'DropOff')  {                hours2 = 0; eff2 = 'O'; }
+            else if (ex2.type === 'DropPaid') { hours2 = (ex2.startTime && ex2.endTime) ? getDuration(ex2.startTime, ex2.endTime) : 12; if (eff2 === 'O') eff2 = 'D'; }
+            else if (ex2.type === 'Day')      { eff2 = 'D'; hours2 = (ex2.startTime && ex2.endTime) ? getDuration(ex2.startTime, ex2.endTime) : 12; }
+            else if (ex2.type === 'Night')    { eff2 = 'N'; hours2 = (ex2.startTime && ex2.endTime) ? getDuration(ex2.startTime, ex2.endTime) : 12; }
+            else if (ex2.startTime && ex2.endTime) { hours2 = getDuration(ex2.startTime, ex2.endTime); }
+        }
+        if (f2.isLockout) hours2 = 0;
+
+        const dayE2 = Math.max(0, hours2 - bH2);
+        if (dayE2 > 0 && !f2.isLockout) {
+            let sO2 = ex2?.otHours || 0, sD2 = ex2?.dtHours || 0;
+            if (sO2 === 0 && sD2 === 0) { if (ex2?.type === 'DropPaid') sO2 = dayE2; else sD2 = dayE2; }
+            prevMonthOT += sO2; prevMonthDT += sD2;
+        }
+        if (eff2 === 'D' || eff2 === 'N') prevWorked++;
+        prevTotalHours += hours2;
+    }
+
+    if (prevYear !== targetYear) precalcFatigue(targetYear, crew);
+
+    const fDelta = n => { const r = Math.round(n * 10) / 10; return r === 0 ? '—' : (r > 0 ? '+' : '') + r; };
+    const prevMonthName = months[prevMonth].slice(0, 3);
+    const thisMonthName = months[displayMonth].slice(0, 3);
+
+    // ── Vacation balance ─────────────────────────────────────
+    const vacUsed  = getUsedVacationHours(crew, todayStr);
+    const vacLimit = sysSettings.vacationLimit || 150;
+    const vacRem   = Math.max(0, vacLimit - vacUsed);
+    const vacPct   = Math.min(100, Math.round((vacUsed / vacLimit) * 100));
+    const { start: vacStart, end: vacEnd } = getVacationCycle(todayStr);
+
+    // ── Lieu / Drop Day balances ──────────────────────────────
+    const lieuBanked = computeLieuBalance(todayStr, crew, null);
+    let lieuTaken = 0, dropOffTaken = 0, dropPaidTaken = 0;
+    const cycleStart = Date.UTC(targetYear, 0, 1);
+    const cycleEnd   = Date.UTC(targetYear, 11, 31);
+    for (const [dS, ex] of Object.entries(extraShifts)) {
+        const u = Date.UTC(parseInt(dS.substring(0,4)), parseInt(dS.substring(5,7))-1, parseInt(dS.substring(8,10)));
+        if (u < cycleStart || u > cycleEnd) continue;
+        if (ex.type === 'Lieu')     lieuTaken++;
+        else if (ex.type === 'DropOff')  dropOffTaken++;
+        else if (ex.type === 'DropPaid') dropPaidTaken++;
+    }
+
+    // ── YTD projection ───────────────────────────────────────
+    const ppRemaining     = Math.max(0, ppCount - ppsDone);
+    const projectedAnnual = ppsDone > 0 ? ytdGross + (ytdGross / ppsDone) * ppRemaining : 0;
+
+    let annCPPMax = 4230.45, annEIMax = 1123.07;
+    if (targetYear === 2024) { annCPPMax = 3867.50; annEIMax = 1049.12; }
+    else if (targetYear === 2025) { annCPPMax = 4000.00; annEIMax = 1100.00; }
+
+    const cppPct = Math.min(100, Math.round((ytdCPP / annCPPMax) * 100));
+    const eiPct  = Math.min(100, Math.round((ytdEI  / annEIMax)  * 100));
+
+    const ppStartLabel = new Date(ppS).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const ppEndLabel   = new Date(ppE).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const f$  = n => '$' + n.toFixed(2);
+    const fH  = n => n.toFixed(1) + ' hrs';
+
+    const monthExRows = [
+        vacDays    > 0 ? `<div class="an-row"><span>Vacation</span><strong style="color:#00bcd4">${vacDays}d</strong></div>` : '',
+        absenceDays> 0 ? `<div class="an-row"><span>Absences</span><strong style="color:var(--night)">${absenceDays}d</strong></div>` : '',
+        dropDays   > 0 ? `<div class="an-row"><span>Drop Days</span><strong style="color:var(--day)">${dropDays}d</strong></div>` : '',
+        lieuDays   > 0 ? `<div class="an-row"><span>Lieu Days</span><strong style="color:#fbbc04">${lieuDays}d</strong></div>` : '',
+    ].join('');
+
+    const _sideHTML = `
+<div class="analytics-wrap">
+
+  <div class="an-section-title">Current Pay Period <span class="an-section-sub">${ppStartLabel}–${ppEndLabel}</span></div>
+  <div class="an-flat-card" style="margin-bottom:8px">
+    <div class="an-pp-bar-labels"><span>Day ${ppDayDisplay} of 14</span><span>${ppDaysLeft} day${ppDaysLeft !== 1 ? 's' : ''} left</span></div>
+    <div class="an-progress" style="margin:5px 0 0"><div class="an-progress-fill" style="width:${ppPct}%;background:var(--accent)"></div></div>
+  </div>
+  <div class="an-grid-2">
+    <div class="an-hero-card" style="--hero-color:#7c3aed">
+      <div class="an-hero-label">Gross</div>
+      <div class="an-hero-value">${f$(gross)}</div>
+    </div>
+    <div class="an-hero-card" style="--hero-color:#34d399">
+      <div class="an-hero-label">Net Pay</div>
+      <div class="an-hero-value">${f$(gross - t.total)}</div>
+    </div>
+  </div>
+  <div class="an-flat-card">
+    <div class="an-row"><span>Regular</span><strong>${fH(regH)}</strong></div>
+    <div class="an-row"><span>OT</span><strong style="color:#34a853">${fH(ot)}</strong></div>
+    <div class="an-row"><span>DT</span><strong style="color:#4285f4">${fH(dt)}</strong></div>
+    <div class="an-sep"></div>
+    <div class="an-row"><span>Aft / Night hrs</span><strong>${fH(aftH + nightH)}</strong></div>
+    <div class="an-row"><span>Sat / Sun hrs</span><strong>${fH(satH + sunH)}</strong></div>
+    <div class="an-sep"></div>
+    <div class="an-row"><span>Tax (Fed + ON)</span><strong style="color:var(--night)">-${f$(t.fedTax + t.onTax)}</strong></div>
+    <div class="an-row"><span>CPP + EI</span><strong style="color:var(--night)">-${f$(t.cpp + t.ei)}</strong></div>
+  </div>
+
+  <div class="an-section-title">${months[displayMonth]} <span class="an-section-sub">${displayYear}</span></div>
+  <div class="an-grid-3">
+    <div class="an-shift-card D"><div class="an-shift-label">Days</div><div class="an-shift-num">${dCount}</div></div>
+    <div class="an-shift-card N"><div class="an-shift-label">Nights</div><div class="an-shift-num">${nCount}</div></div>
+    <div class="an-shift-card O"><div class="an-shift-label">Off</div><div class="an-shift-num">${oCount}</div></div>
+  </div>
+  <div class="an-flat-card">
+    <div class="an-row"><span>Total Hours</span><strong>${fH(totalMonthHours)}</strong></div>
+    ${monthOT > 0 ? `<div class="an-row"><span>OT</span><strong style="color:#34a853">${fH(monthOT)}</strong></div>` : ''}
+    ${monthDT > 0 ? `<div class="an-row"><span>DT</span><strong style="color:#4285f4">${fH(monthDT)}</strong></div>` : ''}
+    ${monthExRows ? `<div class="an-sep"></div>${monthExRows}` : ''}
+  </div>
+
+  <div class="an-section-title">${thisMonthName} vs ${prevMonthName}${prevYear !== displayYear ? ` <span class="an-section-sub">${prevYear}</span>` : ''}</div>
+  <div class="an-flat-card">
+    <div class="an-compare-row an-compare-head">
+      <span></span><span>${thisMonthName}</span><span>${prevMonthName}</span><span>Δ</span>
+    </div>
+    <div class="an-sep" style="margin:4px 0"></div>
+    <div class="an-compare-row">
+      <span>Days worked</span>
+      <strong>${thisWorked}</strong>
+      <strong style="color:var(--text-muted)">${prevWorked}</strong>
+      <span class="an-delta ${thisWorked > prevWorked ? 'pos' : thisWorked < prevWorked ? 'neg' : ''}">${fDelta(thisWorked - prevWorked)}</span>
+    </div>
+    <div class="an-compare-row">
+      <span>Hours</span>
+      <strong>${totalMonthHours.toFixed(0)}</strong>
+      <strong style="color:var(--text-muted)">${prevTotalHours.toFixed(0)}</strong>
+      <span class="an-delta ${totalMonthHours > prevTotalHours ? 'pos' : totalMonthHours < prevTotalHours ? 'neg' : ''}">${fDelta(totalMonthHours - prevTotalHours)}</span>
+    </div>
+    ${(monthOT + monthDT > 0 || prevMonthOT + prevMonthDT > 0) ? `
+    <div class="an-compare-row">
+      <span>OT / DT hrs</span>
+      <strong style="color:#34a853">${(monthOT + monthDT).toFixed(1)}</strong>
+      <strong style="color:var(--text-muted)">${(prevMonthOT + prevMonthDT).toFixed(1)}</strong>
+      <span class="an-delta ${(monthOT + monthDT) > (prevMonthOT + prevMonthDT) ? 'pos' : (monthOT + monthDT) < (prevMonthOT + prevMonthDT) ? 'neg' : ''}">${fDelta((monthOT + monthDT) - (prevMonthOT + prevMonthDT))}</span>
+    </div>` : ''}
+    ${(vacDays + absenceDays > 0 || prevVacDays + prevAbsDays > 0) ? `
+    <div class="an-sep" style="margin:4px 0"></div>
+    <div class="an-compare-row">
+      <span>Days off taken</span>
+      <strong style="color:#00bcd4">${vacDays + absenceDays}</strong>
+      <strong style="color:var(--text-muted)">${prevVacDays + prevAbsDays}</strong>
+      <span class="an-delta">${fDelta((vacDays + absenceDays) - (prevVacDays + prevAbsDays))}</span>
+    </div>` : ''}
+  </div>
+
+</div>`;
+
+    const _belowHTML = `
+<div class="analytics-wrap">
+
+  <div class="an-section-title">Vacation Balance</div>
+  <div class="an-flat-card">
+    <div class="an-row"><span>Used</span><strong style="color:#00bcd4">${fH(vacUsed)}</strong></div>
+    <div class="an-row"><span>Remaining</span><strong>${fH(vacRem)}</strong></div>
+    <div class="an-progress"><div class="an-progress-fill" style="width:${vacPct}%;background:${vacPct > 85 ? 'var(--night)' : '#00bcd4'}"></div></div>
+    <div class="an-progress-meta">${vacPct}% used · ${vacStart} → ${vacEnd}</div>
+  </div>
+
+  <div class="an-section-title">Lieu &amp; Drop Day Balance</div>
+  <div class="an-flat-card">
+    <div class="an-row"><span>Banked Lieu Days</span><strong style="color:#fbbc04">${lieuBanked} day${lieuBanked !== 1 ? 's' : ''}</strong></div>
+    ${lieuTaken > 0 ? `<div class="an-row"><span>Lieu Taken (${targetYear})</span><strong style="color:var(--text-muted)">${lieuTaken}d</strong></div>` : ''}
+    <div class="an-sep"></div>
+    <div class="an-row"><span>Drop Off Taken (${targetYear})</span><strong style="color:var(--day)">${dropOffTaken}d</strong></div>
+    <div class="an-row"><span>Drop Paid Taken (${targetYear})</span><strong style="color:var(--off)">${dropPaidTaken}d</strong></div>
+  </div>
+
+  <div class="an-section-title">${targetYear} Year to Date</div>
+  <div class="an-grid-2">
+    <div class="an-hero-card" style="--hero-color:#f59e0b">
+      <div class="an-hero-label">YTD Gross</div>
+      <div class="an-hero-value">$${Math.round(ytdGross).toLocaleString()}</div>
+    </div>
+    <div class="an-hero-card" style="--hero-color:#8a8fa8">
+      <div class="an-hero-label">Projected</div>
+      <div class="an-hero-value">$${Math.round(projectedAnnual).toLocaleString()}</div>
+    </div>
+  </div>
+  <div class="an-flat-card">
+    <div class="an-flat-card-title">CPP / EI Progress</div>
+    <div class="an-row"><span>CPP Paid</span><strong>${f$(ytdCPP)} / ${f$(annCPPMax)}</strong></div>
+    <div class="an-progress" style="margin:4px 0 10px"><div class="an-progress-fill" style="width:${cppPct}%;background:#7c3aed"></div></div>
+    <div class="an-row"><span>EI Paid</span><strong>${f$(ytdEI)} / ${f$(annEIMax)}</strong></div>
+    <div class="an-progress" style="margin-top:4px"><div class="an-progress-fill" style="width:${eiPct}%;background:#4285f4"></div></div>
+  </div>
+
+</div>`;
+
+    if (elSide)  elSide.innerHTML  = _sideHTML;
+    if (elBelow) elBelow.innerHTML = _belowHTML;
 }

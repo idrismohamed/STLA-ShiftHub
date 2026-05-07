@@ -105,13 +105,22 @@ function getShiftStartFloat(dateStr, crew) {
     return null;
 }
 
+let _fatigueKey = '';
+/** Call before mutating extraShifts so the next precalcFatigue call recomputes. */
+function invalidateFatigueCache() { _fatigueKey = ''; }
+
 /**
  * Populate dayFatigue for all days in the given year (plus Dec of prior year and
  * Jan of following year) enforcing the 120-hour-per-14-day maximum.
+ * Skips recomputation when called again with the same (year, crew) unless
+ * invalidateFatigueCache() was called first.
  * @param {number} year
  * @param {string} viewCrew
  */
 function precalcFatigue(year, viewCrew) {
+    const key = `${year}-${viewCrew}`;
+    if (key === _fatigueKey) return;
+    _fatigueKey = key;
     dayFatigue = {};
     const yearStart = Date.UTC(year - 1, 11, 1);
     const yearEnd   = Date.UTC(year + 1, 0, 31);
