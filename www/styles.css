@@ -1319,6 +1319,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     gap: 10px;
     margin-bottom: 10px;
 }
+.an-month-block { margin-bottom: 10px; }
 .an-hero-card {
     background: var(--card);
     border: 1px solid var(--glass-border);
@@ -1552,9 +1553,9 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     /* ── Pill bar ── */
     .pill-bar { bottom: 24px; }
 
-    /* ── Year view: 3 columns on unfolded ── */
-    .cal-year-view          { grid-template-columns: repeat(3, 1fr); gap: 14px; }
-    .cal-mini-month         { padding: 12px 10px; }
+    /* ── Year view: minmax(0,1fr) lets columns shrink below min-content so they never clip ── */
+    .cal-year-view          { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 12px 8px 16px 8px; }
+    .cal-mini-month         { padding: 12px 8px; min-width: 0; overflow: hidden; }
     .cal-mini-month-title   { font-size: 15px; margin-bottom: 6px; }
     .cal-mini-dow           { font-size: 10px; }
     .cal-mini-day           { font-size: 12px; min-height: 20px; }
