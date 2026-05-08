@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:stitch.withgoogle.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
+    ]
+  }
+}
