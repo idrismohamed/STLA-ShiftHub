@@ -1180,15 +1180,27 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         // Insert row divider before the 8th card (split into two rows of 7)
         if (i === 7) cards += '</div><div class="cal-pp-row-gap"></div><div class="cal-week-grid">';
 
-        cards += `<div class="${cardCls}" onclick="haptic(); openPickupSheet('${dStr}','${friendly}','${shift}','${next}')">
+        cards += `<div class="${cardCls}" onclick="haptic(); openPickupSheet('${dStr}','${friendly}','${shift}','${next}')" ontouchstart="calLpStart(event,'${dStr}','${friendly}','${shift}','${next}')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd()">
             <div class="cal-week-date">${dateLabel}</div>
             ${pillsHtml}
         </div>`;
     }
 
+    let _dropBanner = '';
+    if (isDropPP) {
+        _dropBanner = `<div class="cal-drop-pp-banner">💧 Drop Cycle</div>`;
+    } else {
+        let _ndi = tgtPPIdx + 1;
+        while ((_ndi % 3) !== 1) _ndi++;
+        const _daysUntil = Math.floor((basePPStartUTC + _ndi * MS_PP - nowUTC) / MS_DAY);
+        if (_daysUntil > 0 && _daysUntil <= 14) {
+            _dropBanner = `<div class="cal-drop-pp-banner upcoming">💧 Drop Cycle in ${_daysUntil} day${_daysUntil !== 1 ? 's' : ''}</div>`;
+        }
+    }
+
     return `<div class="cal-redesign" ontouchstart="ppDragStart(event)" ontouchmove="ppDragMove(event)" ontouchend="ppDragEnd(event)">
         ${header}
-        ${isDropPP ? `<div class="cal-drop-pp-banner">💧 Drop Cycle</div>` : ''}
+        ${_dropBanner}
         <div class="cal-scroll-area">
             ${dowRow}
             <div id="cal-pp-wrap" class="cal-pp-wrap">
@@ -1269,6 +1281,8 @@ function buildMiniMonth(m, year, crew, todayStr) {
     for (const d of miniDow) grid += `<div class="cal-mini-dow">${d}</div>`;
     for (let i = 0; i < startDay; i++) grid += `<div class="cal-mini-day"></div>`;
 
+    let mmD = 0, mmN = 0, mmOT = 0, mmDrop = false;
+
     for (let d = 1; d <= last.getDate(); d++) {
         const tUTC  = Date.UTC(year, m, d);
         const dStr  = toDateKey(tUTC);
@@ -1285,13 +1299,21 @@ function buildMiniMonth(m, year, crew, todayStr) {
             else if (ex.type === 'DropPaid' || ex.crew) shift = 'M';
         }
 
+        if (shift === 'D') mmD++;
+        else if (shift === 'N') mmN++;
+        if (ex) mmOT += (ex.otHours || 0) + (ex.dtHours || 0);
+        if (f.isDropPeriod) mmDrop = true;
+
         const isToday  = dStr === todayStr;
         const dotHtml  = (!isToday && shift !== 'O') ? `<div class="cal-mini-dot ${shift}"></div>` : '';
         grid += `<div class="cal-mini-day${isToday ? ' today-dot' : ''}">${d}${dotHtml}</div>`;
     }
 
     grid += '</div>';
-    return `<div class="cal-mini-month" onclick="haptic(); navigateToMonth(${m},${year})"><div class="cal-mini-month-title">${months[m].substring(0,3)}</div>${grid}</div>`;
+    const otBadge  = mmOT > 0   ? `<span class="cal-mini-ot-badge">+${mmOT.toFixed(0)}h</span>` : '';
+    const dropIcon = mmDrop      ? `<span class="cal-mini-drop">💧</span>` : '';
+    const summary  = `<div class="cal-mini-summary"><span>☀️${mmD} 🌙${mmN}</span><span>${otBadge}${dropIcon}</span></div>`;
+    return `<div class="cal-mini-month" onclick="haptic(); navigateToMonth(${m},${year})"><div class="cal-mini-month-title">${months[m].substring(0,3)}</div>${grid}${summary}</div>`;
 }
 
 /** Navigate from year view to a specific month in month view. */
@@ -1574,15 +1596,25 @@ function renderAnalyticsDashboard(crew, logicalT) {
         lieuDays   > 0 ? `<div class="an-row"><span>Lieu Days</span><strong style="color:#fbbc04">${lieuDays}d</strong></div>` : '',
     ].join('');
 
+    const fatigueUsed  = regH + ot + dt;
+    const fatigueRem   = Math.max(0, 120 - fatigueUsed);
+    const fatiguePct   = Math.min(100, Math.round((fatigueUsed / 120) * 100));
+    const fatigueColor = fatigueUsed >= 108 ? 'var(--night)' : fatigueUsed >= 90 ? 'var(--accent)' : '#34d399';
+    const fatigueAtMax = fatigueUsed >= 120;
+    const fatigueRightLabel = fatigueAtMax ? '' : `<span style="color:${fatigueColor};font-weight:700">${fatigueRem.toFixed(1)}h left</span>`;
+    const ppHoursMicro = (ot + dt > 0) ? `<div class="an-hero-micro">+${(ot + dt).toFixed(1)}h OT/DT</div>` : '';
+
     const elTop = document.getElementById('pp-top-summary');
     if (elTop) elTop.innerHTML = `
 <div class="pp-top-wrap">
   <div class="an-flat-card" style="margin-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom:none;">
     <div class="an-flat-card-title">Current Pay Period <span class="an-section-sub" style="text-transform:none;letter-spacing:0;font-size:10px">${ppStartLabel}–${ppEndLabel}</span></div>
     <div class="an-pp-bar-labels"><span>Day ${ppDayDisplay} of 14</span><span>${ppDaysLeft} day${ppDaysLeft !== 1 ? 's' : ''} left</span></div>
-    <div class="an-progress" style="margin:5px 0 0"><div class="an-progress-fill" style="width:${ppPct}%;background:var(--accent)"></div></div>
+    <div class="an-progress" style="margin:5px 0 8px"><div class="an-progress-fill" style="width:${ppPct}%;background:var(--accent)"></div></div>
+    <div class="an-pp-bar-labels"><span style="color:${fatigueAtMax ? 'var(--night)' : 'var(--text-muted)'}">120h Fatigue — ${fatigueAtMax ? '⛔ MAX REACHED' : fatigueUsed.toFixed(1) + 'h used'}</span>${fatigueRightLabel}</div>
+    <div class="an-progress" style="margin:4px 0 0"><div class="an-progress-fill" style="width:${fatiguePct}%;background:${fatigueColor}"></div></div>
   </div>
-  <div class="an-grid-2" style="margin:0;border-top-left-radius:0;border-top-right-radius:0;">
+  <div class="an-grid-3" style="margin:0;border-top-left-radius:0;border-top-right-radius:0;">
     <div class="an-hero-card" style="--hero-color:#7c3aed;border-top-left-radius:0;border-top-right-radius:0;">
       <div class="an-hero-label">Gross</div>
       <div class="an-hero-value">${f$(gross)}</div>
@@ -1590,6 +1622,11 @@ function renderAnalyticsDashboard(crew, logicalT) {
     <div class="an-hero-card" style="--hero-color:#34d399;border-top-left-radius:0;border-top-right-radius:0;">
       <div class="an-hero-label">Net Pay</div>
       <div class="an-hero-value">${f$(gross - t.total)}</div>
+    </div>
+    <div class="an-hero-card" style="--hero-color:var(--day);border-top-left-radius:0;border-top-right-radius:0;">
+      <div class="an-hero-label">PP Hours</div>
+      <div class="an-hero-value">${fatigueUsed.toFixed(1)}h</div>
+      ${ppHoursMicro}
     </div>
   </div>
 </div>`;
@@ -1706,3 +1743,62 @@ function renderAnalyticsDashboard(crew, logicalT) {
     if (elSide)  elSide.innerHTML  = _sideHTML;
     if (elBelow) elBelow.innerHTML = _belowHTML;
 }
+
+// ── Long-press context menu ───────────────────────────────────────────────────
+let _ctxLpTimer = null, _ctxLpX = 0, _ctxLpY = 0;
+
+function calLpStart(e, dStr, friendly, shift, next) {
+    _ctxLpX = e.touches[0].clientX;
+    _ctxLpY = e.touches[0].clientY;
+    _ctxLpTimer = setTimeout(() => {
+        _ctxLpTimer = null;
+        showCtxMenu(dStr, friendly, shift, next, _ctxLpX, _ctxLpY);
+    }, 500);
+}
+
+function calLpMove(e) {
+    if (!_ctxLpTimer) return;
+    const dx = e.touches[0].clientX - _ctxLpX;
+    const dy = e.touches[0].clientY - _ctxLpY;
+    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) { clearTimeout(_ctxLpTimer); _ctxLpTimer = null; }
+}
+
+function calLpEnd() {
+    if (_ctxLpTimer) { clearTimeout(_ctxLpTimer); _ctxLpTimer = null; }
+}
+
+function showCtxMenu(dStr, friendly, shift, next, x, y) {
+    const menu = document.getElementById('ctx-menu');
+    if (!menu) return;
+    hideCtxMenu();
+    const icon = shift === 'D' ? '☀️' : shift === 'N' ? '🌙' : '📅';
+    menu.innerHTML = `
+        <div class="cal-ctx-item" onclick="hideCtxMenu();haptic();openPickupSheet('${dStr}','${friendly}','${shift}','${next}')">${icon} Log Shift</div>
+        <div class="cal-ctx-item" onclick="hideCtxMenu();haptic();openPickupSheet('${dStr}','${friendly}','${shift}','${next}');requestAnimationFrame(()=>requestAnimationFrame(()=>selectType('Vacation')))">🏖️ Vacation</div>
+        <div class="cal-ctx-item" onclick="hideCtxMenu();haptic();triggerBiometricsAndOpenPay(Math.floor((Date.UTC(...'${dStr}'.split('-').map(Number).map((v,i)=>i===1?v-1:v))-basePPStartUTC)/MS_PP))">💰 View Pay Period</div>`;
+    const menuW = 190;
+    let top  = y - 148;
+    let left = x - menuW / 2;
+    if (top < 8)  top = y + 10;
+    if (left < 8) left = 8;
+    if (left + menuW > window.innerWidth - 8) left = window.innerWidth - menuW - 8;
+    menu.style.top  = top  + 'px';
+    menu.style.left = left + 'px';
+    menu.style.display = 'block';
+    haptic();
+    requestAnimationFrame(() => menu.classList.add('visible'));
+}
+
+function hideCtxMenu() {
+    const menu = document.getElementById('ctx-menu');
+    if (!menu) return;
+    menu.classList.remove('visible');
+    setTimeout(() => { if (menu && !menu.classList.contains('visible')) menu.style.display = 'none'; }, 200);
+}
+
+document.addEventListener('touchstart', function(e) {
+    const menu = document.getElementById('ctx-menu');
+    if (menu && menu.style.display === 'block' && !e.target.closest('#ctx-menu')) {
+        hideCtxMenu();
+    }
+}, { passive: true });

@@ -562,11 +562,14 @@ function removeShift() {
         delete syncedEvents[activeDate];
         try { localStorage.setItem(STORAGE_KEYS.SYNCED_EVENTS, JSON.stringify(syncedEvents)); } catch(e) {}
     }
+    const _undoDate    = activeDate;
+    const _undoPayload = extraShifts[activeDate] ? { ...extraShifts[activeDate] } : null;
     delete extraShifts[activeDate];
     try { localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts)); }
     catch(e) { showToast('Storage full — could not remove shift.', 'error'); return; }
     invalidateFatigueCache();
     updateNotifications();
     closeAllSheets();
-    showToast('Shift Removed', 'error');
+    if (_undoPayload) showToastWithUndo('Shift Removed', _undoDate, _undoPayload);
+    else showToast('Shift Removed', 'error');
 }

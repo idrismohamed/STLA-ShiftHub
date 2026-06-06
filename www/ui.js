@@ -23,6 +23,43 @@ function showToast(msg, type = 'success') {
     }, 3000);
 }
 
+function showToastWithUndo(msg, dateKey, payload) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = 'native-toast error';
+    toast.style.pointerEvents = 'auto';
+    toast.style.justifyContent = 'space-between';
+
+    const text = document.createElement('span');
+    text.textContent = msg;
+
+    const btn = document.createElement('button');
+    btn.className = 'toast-undo-btn';
+    btn.textContent = 'UNDO';
+
+    toast.appendChild(text);
+    toast.appendChild(btn);
+    container.appendChild(toast);
+    haptic();
+    setTimeout(() => toast.classList.add('show'), 10);
+
+    const autoRemove = setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+
+    btn.onclick = () => {
+        clearTimeout(autoRemove);
+        extraShifts[dateKey] = payload;
+        try { localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts)); } catch(e) {}
+        invalidateFatigueCache();
+        renderCalendar();
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    };
+}
+
 function openSheet(id) {
     document.body.style.overflow = 'hidden';
     const overlay = document.getElementById('overlay');
@@ -180,6 +217,8 @@ function closeAllSheets(fromHistory = false) {
     }
 
     document.addEventListener('touchstart', function (e) {
+        const ctxMenu = document.getElementById('ctx-menu');
+        if (ctxMenu && ctxMenu.style.display === 'block') return;
         const sheet = e.target.closest('.bottom-sheet.active');
         if (!sheet) return;
         if (getScrollParent(e.target)) return;
