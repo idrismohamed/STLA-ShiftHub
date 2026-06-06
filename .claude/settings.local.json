@@ -4,7 +4,11 @@
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\idris\\\\Repos\\\\STLA-ShiftHub\" -Recurse -File)",
       "Bash(Select-Object Name, FullName)",
       "Bash(Sort-Object Name)",
-      "PowerShell(\\(Get-Content \"c:\\\\Users\\\\idris\\\\Repos\\\\STLA-ShiftHub\\\\www\\\\styles.css\" | Measure-Object -Line\\).Lines)"
+      "PowerShell(\\(Get-Content \"c:\\\\Users\\\\idris\\\\Repos\\\\STLA-ShiftHub\\\\www\\\\styles.css\" | Measure-Object -Line\\).Lines)",
+      "Bash(python3)",
+      "Bash(cp /tmp/package/dist/motion.js /home/user/STLA-ShiftHub/www/motion.js && echo \"Copied: $\\(wc -c < /home/user/STLA-ShiftHub/www/motion.js\\) bytes\")",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }
