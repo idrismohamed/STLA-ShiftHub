@@ -22,12 +22,18 @@
         <preference name="AndroidWindowSplashScreenAnimatedIcon" value="resources/splashTemplate.png" />
         <preference name="AndroidWindowSplashScreenBackground" value="#181A1C" />
 
-        <icon density="ldpi"    src="resources/android/icon/drawable-ldpi-icon.png" />
+        <!-- Square launcher icons -->
         <icon density="mdpi"    src="resources/android/icon/drawable-mdpi-icon.png" />
         <icon density="hdpi"    src="resources/android/icon/drawable-hdpi-icon.png" />
         <icon density="xhdpi"   src="resources/android/icon/drawable-xhdpi-icon.png" />
         <icon density="xxhdpi"  src="resources/android/icon/drawable-xxhdpi-icon.png" />
         <icon density="xxxhdpi" src="resources/android/icon/drawable-xxxhdpi-icon.png" />
+        <!-- Round launcher icons (Android 7.1+) -->
+        <icon density="mdpi"    src="resources/android/icon-round/drawable-mdpi-icon.png"    target="round" />
+        <icon density="hdpi"    src="resources/android/icon-round/drawable-hdpi-icon.png"    target="round" />
+        <icon density="xhdpi"   src="resources/android/icon-round/drawable-xhdpi-icon.png"   target="round" />
+        <icon density="xxhdpi"  src="resources/android/icon-round/drawable-xxhdpi-icon.png"  target="round" />
+        <icon density="xxxhdpi" src="resources/android/icon-round/drawable-xxxhdpi-icon.png" target="round" />
     </platform>
 
     <plugin name="@moodlehq/cordova-plugin-local-notification" />
