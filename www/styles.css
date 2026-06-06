@@ -884,10 +884,15 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     background: var(--cal-header-bg);
     border-bottom: 1px solid var(--border);
 }
-/* Week view keeps wide columns so DOW labels align with scrollable cards */
+/* Week view keeps wide columns so DOW labels align with scrollable cards.
+   padding and column-gap must match .cal-week-grid exactly so the 7 column
+   tracks land at the same horizontal positions in both grids. */
 .cal-dow-row.week-mode {
     grid-template-columns: repeat(7, minmax(110px, 1fr));
-    min-width: 770px;
+    min-width: 822px; /* 7×110 + 6×6 gap + 2×8 padding — same natural width as .cal-week-grid */
+    padding-left: 8px;
+    padding-right: 8px;
+    column-gap: 6px;
     will-change: transform, opacity;
 }
 .cal-dow-cell {
