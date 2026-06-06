@@ -1015,8 +1015,8 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         }
         pillsHtml += '</div>';
 
-        // Add a subtle row divider after the 7th card (between the two weeks)
-        if (i === 6) cards += '</div><div class="cal-pp-row-gap"></div><div class="cal-week-grid">';
+        // Insert row divider before the 8th card (split into two rows of 7)
+        if (i === 7) cards += '</div><div class="cal-pp-row-gap"></div><div class="cal-week-grid">';
 
         cards += `<div class="${cardCls}" onclick="haptic(); openPickupSheet('${dStr}','${friendly}','${shift}','${next}')">
             <div class="cal-week-date">${dateLabel}</div>
