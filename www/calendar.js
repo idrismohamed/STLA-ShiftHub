@@ -675,8 +675,7 @@ function buildViewBar(crew, ppIdx = null) {
         <div class="cal-view-bar-actions">
             <button class="cal-week-bar-btn" onclick="haptic(); scrollToToday()">📅 Today</button>
             <button class="cal-week-bar-btn" onclick="haptic(); triggerBiometricsAndOpenPay(${payArg})">💰 Pay Period</button>
-            <button class="cal-week-bar-btn" onclick="haptic(); openSettingsSheet()" style="margin-left:auto">⚙️</button>
-            <div class="cal-crew-btn">
+            <div class="cal-crew-btn" style="margin-left:auto">
                 <span>Crew ${crew}</span>
                 <span class="cal-crew-chevron">▾</span>
                 <select id="crew-select" class="pill-chip-select" onchange="haptic(); updateNavLabels(); renderCalendar()">${opts}</select>
