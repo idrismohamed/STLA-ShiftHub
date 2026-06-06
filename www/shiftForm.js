@@ -499,7 +499,12 @@ function saveShift() {
     const st = stInput ? stInput.value : '';
     const et = etInput ? etInput.value : '';
 
-    if (st && et) { payload.startTime = st; payload.endTime = et; }
+    // Fall back to existing saved times if only one field is present (mobile input can
+    // temporarily clear a field while the user is editing the other one)
+    const existingEx = extraShifts[activeDate] || {};
+    const finalSt = st || existingEx.startTime || '';
+    const finalEt = et || existingEx.endTime   || '';
+    if (finalSt && finalEt) { payload.startTime = finalSt; payload.endTime = finalEt; }
     if (selectedType) payload.type = selectedType;
 
     const cbOv  = document.getElementById('cb-override');

@@ -507,7 +507,8 @@ function openPayrollSheet(target = null) {
                 ${vacHtml}${lieuHtml}${statOffHtml}${stat15Html}${stat20Html}${lieuBankHtml}
                 <div class="pp-stat-row" style="margin-top:8px;"><span>OT (1.5x):</span> <strong style="color:#34a853;">${ot.toFixed(1)} hrs</strong></div>
                 <div class="pp-stat-row"><span>DT (2.0x):</span> <strong style="color:#4285f4;">${dt.toFixed(1)} hrs</strong></div>
-                <div class="pp-stat-row pp-total"><span>TOTAL:</span> <span>${(regH + vacH + ot + dt + statOffH + statWorked15H + statWorked20H).toFixed(1)} hrs</span></div>
+                <div class="pp-stat-row pp-total"><span>WORKED:</span> <span>${(regH + vacH + ot + dt + statWorked15H + statWorked20H).toFixed(1)} hrs</span></div>
+                <div class="pp-stat-row" style="margin-top:4px;padding-top:4px;border-top:1px dashed var(--border);color:var(--text-muted);font-size:12px;"><span>PAID (incl. premiums):</span> <span style="color:var(--text);">${(regH + vacH + statOffH + (ot * 1.5) + (dt * 2.0) + (statWorked15H * 1.5) + (statWorked20H * 2.0)).toFixed(1)} hrs</span></div>
             </div>
             <div class="pp-financials" style="margin-bottom:15px;border-color:var(--border);">
                 <div class="fin-section-title" style="margin-top:0;color:var(--text-muted);">${targetYear} YTD Worked Hours</div>

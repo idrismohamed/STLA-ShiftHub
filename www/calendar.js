@@ -632,6 +632,18 @@ function buildCellPills(dStr, shift, ex, f, baseH, yearHols) {
             const disp = ht ? times : defT;
             const label = ex.crew ? `${icon} ${formatCrewLabel(ex.crew)}` : `${icon} ${t}`;
             pTxt = `<span class="pill-top">${label}</span><span class="pill-sub">${disp}</span>`;
+        } else {
+            // No recognized type — fall back to base rotation shift so D/N shifts with
+            // custom times (e.g. early start) don't falsely display as "Off"
+            if (shift === 'D') {
+                pCls = 'pill-day two-line';
+                const disp = ht ? times : '6:30–18:30';
+                pTxt = `<span class="pill-top">☀️ Day</span><span class="pill-sub">${disp}</span>`;
+            } else if (shift === 'N') {
+                pCls = 'pill-night two-line';
+                const disp = ht ? times : '18:30–6:30';
+                pTxt = `<span class="pill-top">🌙 Night</span><span class="pill-sub">${disp}</span>`;
+            }
         }
     } else if (f.isLockout) {
         pCls = 'pill-lock'; pTxt = '❌ Max Hours';
