@@ -6,19 +6,65 @@ let currentCalMonth = parseInt(localStorage.getItem('currentCalMonth') || new Da
 let currentWeekOffset = parseInt(localStorage.getItem('currentWeekOffset')) || 0;
 let calMonthExpanded = localStorage.getItem('calMonthExpanded') !== 'false';
 
-// Swipe tracking for month navigation
-let _swipeStartX = 0, _swipeStartY = 0;
-function calSwipeStart(e) {
-    _swipeStartX = e.touches[0].clientX;
-    _swipeStartY = e.touches[0].clientY;
+// Month drag tracking — direction-locked so vertical scroll still works
+let _calDragStartX = 0, _calDragStartY = 0, _calDragActive = false;
+let _calDragDx = 0, _calDragDir = null; // 'h' | 'v' | null
+
+function _calPanelEl() { return document.getElementById('cal-month-panel'); }
+
+function calDragStart(e) {
+    _calDragStartX  = e.touches[0].clientX;
+    _calDragStartY  = e.touches[0].clientY;
+    _calDragActive  = true;
+    _calDragDx      = 0;
+    _calDragDir     = null;
+    const el = _calPanelEl();
+    if (el) { el.style.transition = 'none'; el.style.opacity = '1'; }
 }
-function calSwipeEnd(e) {
-    const dx = e.changedTouches[0].clientX - _swipeStartX;
-    const dy = e.changedTouches[0].clientY - _swipeStartY;
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 55) {
-        haptic();
-        navigateMonth(dx < 0 ? 1 : -1);
+
+function calDragMove(e) {
+    if (!_calDragActive) return;
+    const dx = e.touches[0].clientX - _calDragStartX;
+    const dy = e.touches[0].clientY - _calDragStartY;
+
+    if (!_calDragDir) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return; // dead zone
+        _calDragDir = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
     }
+    if (_calDragDir !== 'h') return; // vertical — don't interfere
+
+    _calDragDx = dx;
+    const FREE = 60;
+    const abs  = Math.abs(dx);
+    const eff  = abs <= FREE ? abs : FREE + (abs - FREE) * 0.22;
+    const el   = _calPanelEl();
+    if (el) el.style.transform = `translateX(${Math.sign(dx) * eff}px)`;
+    e.preventDefault();
+}
+
+function calDragEnd(e) {
+    if (!_calDragActive) return;
+    _calDragActive = false;
+    _calDragDir    = null;
+    const el = _calPanelEl();
+    if (!el) return;
+    const THRESHOLD = 55;
+    if (_calDragDx < -THRESHOLD) {
+        el.style.transition = 'transform 0.25s cubic-bezier(0.4,0,1,1), opacity 0.25s ease';
+        el.style.transform  = 'translateX(-60vw)';
+        el.style.opacity    = '0.5';
+        setTimeout(() => { haptic(); navigateMonth(1); }, 230);
+    } else if (_calDragDx > THRESHOLD) {
+        el.style.transition = 'transform 0.25s cubic-bezier(0.4,0,1,1), opacity 0.25s ease';
+        el.style.transform  = 'translateX(60vw)';
+        el.style.opacity    = '0.5';
+        setTimeout(() => { haptic(); navigateMonth(-1); }, 230);
+    } else {
+        el.style.transition = 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease';
+        el.style.transform  = 'translateX(0)';
+        el.style.opacity    = '1';
+    }
+    _calDragDx = 0;
 }
 
 // PP swipe tracking — elastic overscroll only activates at scroll boundary
@@ -887,7 +933,7 @@ function buildNewMonthView(m, year, crew, todayStr, yearHols, currentTargetPPInd
 
     const panelCls = calMonthExpanded ? 'cal-month-panel' : 'cal-month-panel collapsed';
 
-    return `<div class="cal-redesign" ontouchstart="calSwipeStart(event)" ontouchend="calSwipeEnd(event)">
+    return `<div class="cal-redesign" ontouchstart="calDragStart(event)" ontouchmove="calDragMove(event)" ontouchend="calDragEnd(event)">
         ${header}
         ${weekRow}
         <div class="${panelCls}" id="cal-month-panel">
@@ -925,6 +971,19 @@ function navigateMonth(dir) {
 
     localStorage.setItem('currentCalMonth', currentCalMonth);
     renderCalendar();
+    requestAnimationFrame(() => {
+        const panel = document.getElementById('cal-month-panel');
+        if (!panel) return;
+        const from = dir > 0 ? '60vw' : '-60vw';
+        panel.style.transition = 'none';
+        panel.style.transform  = `translateX(${from})`;
+        panel.style.opacity    = '0.5';
+        requestAnimationFrame(() => {
+            panel.style.transition = 'transform 0.35s cubic-bezier(0.25,1,0.5,1), opacity 0.28s ease';
+            panel.style.transform  = 'translateX(0)';
+            panel.style.opacity    = '1';
+        });
+    });
 }
 
 /** Build the new week view with prev/next navigation. */
