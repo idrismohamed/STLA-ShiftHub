@@ -9,16 +9,16 @@ function exportData() {
         synced:   localStorage.getItem(STORAGE_KEYS.SYNCED_EVENTS)
     };
     const jsonString = JSON.stringify(data);
-    const fileName   = `STLA_ShiftHub_Backup_${toDateKey(Date.now())}.json`;
+    const fileName   = `ShiftHub_Backup_${toDateKey(Date.now())}.json`;
 
     if (window.plugins && window.plugins.socialsharing) {
         const base64Data = btoa(unescape(encodeURIComponent(jsonString)));
-        window.plugins.socialsharing.share('Here is your STLA Shift Hub backup data.', fileName, 'data:application/json;base64,' + base64Data, null);
+        window.plugins.socialsharing.share('Here is your Shift Hub backup data.', fileName, 'data:application/json;base64,' + base64Data, null);
         showToast('Native Share Menu Opened');
     } else if (navigator.canShare) {
         const file = new File([jsonString], fileName, { type: 'application/json' });
         if (navigator.canShare({ files: [file] })) {
-            navigator.share({ files: [file], title: 'STLA Backup', text: 'Backup data' }).catch(err => console.log(err));
+            navigator.share({ files: [file], title: 'Shift Hub Backup', text: 'Backup data' }).catch(err => console.log(err));
         }
     } else {
         navigator.clipboard.writeText(jsonString).then(() => {

@@ -544,7 +544,7 @@ function exportPDF() {
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(22);
-    doc.text('STLA Shift Hub', 15, 20);
+    doc.text('Shift Hub', 15, 20);
     doc.setFontSize(14);
     doc.setTextColor(100);
     doc.text('Pay Period Summary & Financials', 15, 30);
@@ -564,7 +564,7 @@ function exportPDF() {
         if (y > 280) { doc.addPage(); y = 20; }
     });
 
-    const fileName = `STLA_Paystub_${Date.now()}.pdf`;
+    const fileName = `ShiftHub_Paystub_${Date.now()}.pdf`;
     if (window.plugins && window.plugins.socialsharing) {
         window.plugins.socialsharing.share('Paystub PDF attached.', fileName, doc.output('datauristring'), null);
     } else {
@@ -579,9 +579,9 @@ function sharePayPeriod() {
     if (!ppEl) return;
     const textToShare = ppEl.innerText;
     if (window.plugins && window.plugins.socialsharing) {
-        window.plugins.socialsharing.share(textToShare, 'STLA Pay Period Summary', null, null);
+        window.plugins.socialsharing.share(textToShare, 'Shift Hub Pay Period Summary', null, null);
     } else if (navigator.share) {
-        navigator.share({ title: 'STLA Pay Period Summary', text: textToShare }).catch(console.error);
+        navigator.share({ title: 'Shift Hub Pay Period Summary', text: textToShare }).catch(console.error);
     } else {
         navigator.clipboard.writeText(textToShare).then(() => showToast('Copied to clipboard!'));
     }
