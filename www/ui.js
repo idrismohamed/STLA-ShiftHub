@@ -27,6 +27,12 @@ function openSheet(id) {
     document.body.style.overflow = 'hidden';
     const overlay = document.getElementById('overlay');
     const sheet   = document.getElementById(id);
+    // Cancel any in-progress animation and clear leftover transform so the
+    // CSS bottom-transition can open the sheet from the correct position.
+    if (sheet) {
+        if (sheet._motionCancel) { sheet._motionCancel(); sheet._motionCancel = null; }
+        sheet.style.transform = '';
+    }
     if (overlay) { overlay.style.display = 'block'; overlay.style.opacity = '0'; }
     setTimeout(() => {
         if (overlay) {
@@ -117,11 +123,12 @@ function closeAllSheets(fromHistory = false) {
             }, { once: true });
         }
 
+        // Restore overlay to fully-open opacity (matches what openSheet set).
         if (overlay) {
             _cancelOverlay(overlay);
-            const oa = window.Motion?.animate(overlay, { opacity: 0.5 }, { duration: 0.3, easing: 'ease' });
+            const oa = window.Motion?.animate(overlay, { opacity: 1 }, { duration: 0.3, easing: 'ease' });
             if (oa) overlay._motionCancel = () => oa.cancel();
-            else { overlay.style.transition = 'opacity 0.3s ease'; overlay.style.opacity = '0.5'; }
+            else { overlay.style.transition = 'opacity 0.3s ease'; overlay.style.opacity = '1'; }
         }
     }
 
@@ -139,8 +146,12 @@ function closeAllSheets(fromHistory = false) {
             sheet._motionCancel = () => anim.cancel();
             anim.then(() => {
                 sheet._motionCancel = null;
-                sheet.style.transform = '';
-                sheet.classList.remove('active');
+                // Disable the CSS bottom transition so removing active doesn't
+                // trigger a second slide-out animation after Motion already dismissed.
+                sheet.style.transition = 'none';
+                sheet.classList.remove('active');  // bottom: -100% (instant, no CSS transition)
+                sheet.style.transform = '';         // safe to clear — sheet is off-screen via bottom
+                requestAnimationFrame(() => { sheet.style.transition = ''; }); // re-enable next frame
                 document.body.style.overflow = '';
                 if (overlay) overlay.style.display = 'none';
                 history.back();
@@ -150,11 +161,12 @@ function closeAllSheets(fromHistory = false) {
             sheet.style.transform  = 'translateY(110%)';
             sheet.addEventListener('transitionend', function h() {
                 sheet.removeEventListener('transitionend', h);
-                sheet.style.transition = '';
-                sheet.style.transform  = '';
+                sheet.style.transition = 'none';
                 sheet.classList.remove('active');
+                sheet.style.transform = '';
+                requestAnimationFrame(() => { sheet.style.transition = ''; });
                 document.body.style.overflow = '';
-                if (overlay) { overlay.style.display = 'none'; overlay.style.transition = ''; }
+                if (overlay) { overlay.style.display = 'none'; }
                 history.back();
             }, { once: true });
         }
@@ -171,8 +183,10 @@ function closeAllSheets(fromHistory = false) {
         const sheet = e.target.closest('.bottom-sheet.active');
         if (!sheet) return;
         if (getScrollParent(e.target)) return;
-        // Cancel any in-progress Motion animation before a new drag starts
+        // Cancel any in-progress animation and reset the transform so a new
+        // drag starts from the correct (fully-open) position.
         if (sheet._motionCancel) { sheet._motionCancel(); sheet._motionCancel = null; }
+        sheet.style.transform = '';
         _sheet  = sheet;
         _startY = e.touches[0].clientY;
         _dy     = 0;
@@ -200,7 +214,8 @@ function closeAllSheets(fromHistory = false) {
 
         const translated = damp(_dy);
         const overlay = document.getElementById('overlay');
-        if (overlay) overlay.style.opacity = String(Math.max(0, 0.5 * (1 - translated / 180)));
+        // Fade overlay from 1 (open) to 0 (dismissed) proportionally with drag.
+        if (overlay) overlay.style.opacity = String(Math.max(0, 1 - translated / 180));
 
         _sheet.style.transform = `translateY(${translated}px)`;
         e.preventDefault();
