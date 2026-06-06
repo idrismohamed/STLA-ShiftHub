@@ -223,7 +223,8 @@ function renderCalendar() {
     const cal = document.getElementById('calendar');
     if (!cal) return;
 
-    const savedScrollY = window.scrollY;
+    const savedScrollY  = window.scrollY;
+    const savedScrollX  = document.querySelector('.cal-scroll-area')?.scrollLeft ?? 0;
     const yearSelect = document.getElementById('year-select');
     const crewSelect = document.getElementById('crew-select');
     const year = yearSelect ? parseInt(yearSelect.value) : getLogicalToday().getFullYear();
@@ -240,7 +241,11 @@ function renderCalendar() {
 
     if (viewMode === 'week') {
         cal.innerHTML = renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTargetPPIndex);
-        requestAnimationFrame(() => window.scrollTo(0, savedScrollY));
+        requestAnimationFrame(() => {
+            window.scrollTo(0, savedScrollY);
+            const sa = document.querySelector('.cal-scroll-area');
+            if (sa) sa.scrollLeft = savedScrollX;
+        });
         renderCalendarWidget(crew, logicalT, todayStr);
         renderDashboardCard(crew, logicalT);
         renderAnalyticsDashboard(crew, logicalT);
