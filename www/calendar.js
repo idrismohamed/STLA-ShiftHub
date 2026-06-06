@@ -146,9 +146,46 @@ let _calFirstRender = true;
 
 
 function setCalendarViewMode(mode) {
-    calendarViewMode = mode;
-    localStorage.setItem('calendarViewMode', mode);
-    renderCalendar();
+    const cal      = document.getElementById('calendar');
+    const sideEl   = document.getElementById('analytics-side');
+    const existing = cal?.firstElementChild;
+
+    const doRender = () => {
+        calendarViewMode = mode;
+        localStorage.setItem('calendarViewMode', mode);
+        renderCalendar();
+        requestAnimationFrame(() => {
+            const newEl = cal?.firstElementChild;
+            if (newEl) {
+                newEl.style.transition = 'none';
+                newEl.style.opacity    = '0';
+                newEl.style.transform  = 'translateY(10px) scale(0.98)';
+                requestAnimationFrame(() => {
+                    newEl.style.transition = 'opacity 0.28s ease, transform 0.32s cubic-bezier(0.25,1,0.5,1)';
+                    newEl.style.opacity    = '1';
+                    newEl.style.transform  = 'translateY(0) scale(1)';
+                });
+            }
+            if (sideEl) {
+                sideEl.style.transition = 'none';
+                sideEl.style.opacity    = '0';
+                requestAnimationFrame(() => {
+                    sideEl.style.transition = 'opacity 0.32s ease';
+                    sideEl.style.opacity    = '1';
+                });
+            }
+        });
+    };
+
+    if (existing) {
+        existing.style.transition = 'opacity 0.14s ease, transform 0.14s ease';
+        existing.style.opacity    = '0';
+        existing.style.transform  = 'translateY(-6px) scale(0.98)';
+        if (sideEl) { sideEl.style.transition = 'opacity 0.14s ease'; sideEl.style.opacity = '0'; }
+        setTimeout(doRender, 150);
+    } else {
+        doRender();
+    }
 }
 
 function toggleMonthPanel() {
