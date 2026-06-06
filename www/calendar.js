@@ -620,15 +620,30 @@ function formatTimeUntil(targetDate, now) {
    ═══════════════════════════════════════════════════════════ */
 
 /** Build the crew selector bar rendered at the bottom of every calendar card. */
-function buildCrewBar(crew) {
+const LEGEND_HTML = `<div class="cal-legend">
+    <div class="legend-item"><span class="dot" style="background-color:var(--night)"></span> Nights</div>
+    <div class="legend-item"><span class="dot" style="background-color:var(--day)"></span> Days</div>
+    <div class="legend-item"><span class="dot" style="background-color:var(--off)"></span> Off</div>
+    <div class="legend-item"><span class="dot" style="background-color:var(--mod)"></span> Modified</div>
+    <div class="legend-item">💧 Drop Day</div>
+    <div class="legend-item">❌ 120H Max</div>
+</div>`;
+
+function buildViewBar(crew, ppIdx = null) {
     const opts = ['A','B','C','D'].map(c =>
         `<option value="${c}"${c === crew ? ' selected' : ''}>Crew ${c}</option>`).join('');
-    return `<div class="cal-crew-bar">
-        <span class="cal-crew-label">Viewing schedule for</span>
-        <div class="cal-crew-btn">
-            <span>Crew ${crew}</span>
-            <span class="cal-crew-chevron">▾</span>
-            <select id="crew-select" class="pill-chip-select" onchange="haptic(); updateNavLabels(); renderCalendar()">${opts}</select>
+    const payArg = ppIdx !== null ? ppIdx : '';
+    return `<div class="cal-week-bar">
+        ${LEGEND_HTML}
+        <div class="cal-view-bar-actions">
+            <button class="cal-week-bar-btn" onclick="haptic(); scrollToToday()">📅 Today</button>
+            <button class="cal-week-bar-btn" onclick="haptic(); triggerBiometricsAndOpenPay(${payArg})">💰 Pay Period</button>
+            <button class="cal-week-bar-btn" onclick="haptic(); openSettingsSheet()" style="margin-left:auto">⚙️</button>
+            <div class="cal-crew-btn">
+                <span>Crew ${crew}</span>
+                <span class="cal-crew-chevron">▾</span>
+                <select id="crew-select" class="pill-chip-select" onchange="haptic(); updateNavLabels(); renderCalendar()">${opts}</select>
+            </div>
         </div>
     </div>`;
 }
@@ -946,7 +961,7 @@ function buildNewMonthView(m, year, crew, todayStr, yearHols, currentTargetPPInd
             ${dowRow}
             <div class="cal-grid">${cells}</div>
         </div>
-        ${buildCrewBar(crew)}
+        ${buildViewBar(crew)}
     </div>`;
 }
 
@@ -1088,23 +1103,6 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         </div>`;
     }
 
-    const todayPI      = getPIndex(nowUTC);
-    const todayShift   = getShiftForCrew(todayPI, crew);
-    const todayNext    = getShiftForCrew((todayPI + 1) % 28, crew);
-    const todayFriendly = logicalT.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-    const crewOpts     = ['A','B','C','D'].map(c =>
-        `<option value="${c}"${c === crew ? ' selected' : ''}>Crew ${c}</option>`).join('');
-    const weekBar = `<div class="cal-week-bar">
-        <button class="cal-week-bar-btn" onclick="haptic(); openPickupSheet('${todayStr}','${todayFriendly}','${todayShift}','${todayNext}')">📅 Today</button>
-        <button class="cal-week-bar-btn" onclick="haptic(); triggerBiometricsAndOpenPay(${tgtPPIdx})">💰 Pay Period</button>
-        <button class="cal-week-bar-btn" onclick="haptic(); openSettingsSheet()" style="margin-left:auto">⚙️</button>
-        <div class="cal-crew-btn">
-            <span>Crew ${crew}</span>
-            <span class="cal-crew-chevron">▾</span>
-            <select id="crew-select" class="pill-chip-select" onchange="haptic(); updateNavLabels(); renderCalendar()">${crewOpts}</select>
-        </div>
-    </div>`;
-
     return `<div class="cal-redesign" ontouchstart="ppDragStart(event)" ontouchmove="ppDragMove(event)" ontouchend="ppDragEnd(event)">
         ${header}
         <div class="cal-scroll-area">
@@ -1113,7 +1111,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
                 <div class="cal-week-grid">${cards}</div>
             </div>
         </div>
-        ${weekBar}
+        ${buildViewBar(crew, tgtPPIdx)}
     </div>`;
 }
 
@@ -1145,7 +1143,7 @@ function renderYearView(year, crew, todayStr) {
     let miniMonths = '';
     for (let m = 0; m < 12; m++) miniMonths += buildMiniMonth(m, year, crew, todayStr);
 
-    return `<div class="cal-redesign">${header}<div class="cal-year-view">${miniMonths}</div>${buildCrewBar(crew)}</div>`;
+    return `<div class="cal-redesign">${header}<div class="cal-year-view">${miniMonths}</div>${buildViewBar(crew)}</div>`;
 }
 
 /** Build a compact mini-month grid for the year overview. */
