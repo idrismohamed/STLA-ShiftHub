@@ -6,7 +6,7 @@
 function getPIndex(currUTC) {
     const refParts = savedRot.date.split('-');
     const refDate = new Date(Date.UTC(refParts[0], refParts[1] - 1, refParts[2]));
-    return ((((Math.floor((currUTC - refDate.getTime()) / MS_DAY)) + savedRot.offset) % 28) + 28) % 28;
+    return ((((Math.floor((currUTC - refDate.getTime()) / MS_DAY)) + (savedRot.offset || 0)) % 28) + 28) % 28;
 }
 
 /**

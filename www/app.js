@@ -13,7 +13,7 @@ document.addEventListener('deviceready', function() {
         const isInputFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
         if (isInputFocused) { activeEl.blur(); return; }
         if (document.querySelector('.bottom-sheet.active')) closeAllSheets();
-        else navigator.app.exitApp();
+        else if (navigator.app && navigator.app.exitApp) navigator.app.exitApp();
     }, false);
 
     if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {

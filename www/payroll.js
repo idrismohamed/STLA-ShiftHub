@@ -463,6 +463,7 @@ function openPayrollSheet(target = null) {
             if (dayR > 0) {
                 if (holInfo.m === 2.0) { statWorked20H += dayR; gross += dayR * rate * 1.0; }
                 else                  { statWorked15H += dayR; gross += dayR * rate * 0.5; }
+                regH -= dayR; // move holiday worked hours out of regular tally
             }
         }
 
@@ -475,6 +476,7 @@ function openPayrollSheet(target = null) {
             const holPremH = Math.min(dayR, 10);
             if (nextHolInfo.m === 2.0) { statWorked20H += holPremH; gross += holPremH * rate * 1.0; }
             else                      { statWorked15H += holPremH; gross += holPremH * rate * 0.5; }
+            regH -= holPremH; // move holiday-eve worked hours out of regular tally
         }
     }
 
@@ -505,7 +507,7 @@ function openPayrollSheet(target = null) {
                 ${vacHtml}${lieuHtml}${statOffHtml}${stat15Html}${stat20Html}${lieuBankHtml}
                 <div class="pp-stat-row" style="margin-top:8px;"><span>OT (1.5x):</span> <strong style="color:#34a853;">${ot.toFixed(1)} hrs</strong></div>
                 <div class="pp-stat-row"><span>DT (2.0x):</span> <strong style="color:#4285f4;">${dt.toFixed(1)} hrs</strong></div>
-                <div class="pp-stat-row pp-total"><span>TOTAL:</span> <span>${(regH + vacH + ot + dt + statOffH).toFixed(1)} hrs</span></div>
+                <div class="pp-stat-row pp-total"><span>TOTAL:</span> <span>${(regH + vacH + ot + dt + statOffH + statWorked15H + statWorked20H).toFixed(1)} hrs</span></div>
             </div>
             <div class="pp-financials" style="margin-bottom:15px;border-color:var(--border);">
                 <div class="fin-section-title" style="margin-top:0;color:var(--text-muted);">${targetYear} YTD Worked Hours</div>

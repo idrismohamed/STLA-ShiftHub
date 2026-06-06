@@ -543,7 +543,8 @@ function saveShift() {
     if (cbOv && cbOv.checked) payload.overrideLockout = true;
 
     extraShifts[activeDate] = payload;
-    localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts));
+    try { localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts)); }
+    catch(e) { showToast('Storage full — shift not saved.', 'error'); return; }
     invalidateFatigueCache();
     updateNotifications();
     closeAllSheets();
@@ -552,8 +553,13 @@ function saveShift() {
 
 function removeShift() {
     haptic();
+    if (syncedEvents[activeDate]) {
+        delete syncedEvents[activeDate];
+        try { localStorage.setItem(STORAGE_KEYS.SYNCED_EVENTS, JSON.stringify(syncedEvents)); } catch(e) {}
+    }
     delete extraShifts[activeDate];
-    localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts));
+    try { localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts)); }
+    catch(e) { showToast('Storage full — could not remove shift.', 'error'); return; }
     invalidateFatigueCache();
     updateNotifications();
     closeAllSheets();

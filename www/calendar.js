@@ -188,7 +188,14 @@ function buildMonthHtml(m, year, crew, todayStr, yearHols, currentTargetPPIndex)
             }
 
             if (!['Vacation', 'Off', 'DropOff', 'Lieu'].includes(ex.type)) {
-                if (ex.type && ex.crew && ex.type !== 'DropPaid') {
+                if (ex.type === 'Day' || ex.type === 'Night') {
+                    lbl = ex.type === 'Day' ? 'DAY' : 'NIGHT';
+                    if (ex.crew) {
+                        eH = `<div class="extra-shift">${formatCrewLabel(ex.crew)} ${ex.type === 'Day' ? '☀️' : '🌙'}</div>`; sC = 'M';
+                    } else {
+                        sC = ex.type === 'Day' ? 'D' : 'N';
+                    }
+                } else if (ex.type && ex.crew && ex.type !== 'DropPaid') {
                     eH = `<div class="extra-shift">${formatCrewLabel(ex.crew)} ${ex.type === 'Day' ? '☀️' : '🌙'}</div>`; sC = 'M'; lbl = ex.type === 'Day' ? 'DAY' : 'NIGHT';
                 }
 
@@ -599,6 +606,8 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
         else if (ex.type === 'Lieu')     sC = (ex.startTime && ex.endTime) ? 'M' : 'O';
         else if (ex.type === 'DropOff')  sC = 'O';
         else if (ex.type === 'DropPaid') sC = 'M';
+        else if (ex.type === 'Day')  sC = 'D';
+        else if (ex.type === 'Night') sC = 'N';
         else if (ex.type && ex.crew && ex.type !== 'DropPaid') sC = 'M';
     }
 
@@ -845,6 +854,8 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
             else if (ex.type === 'Lieu')     sC = (ex.startTime && ex.endTime) ? 'M' : 'O';
             else if (ex.type === 'DropOff')  sC = 'O';
             else if (ex.type === 'DropPaid') sC = 'M';
+            else if (ex.type === 'Day')  sC = 'D';
+            else if (ex.type === 'Night') sC = 'N';
             else if (ex.type && ex.crew && ex.type !== 'DropPaid') sC = 'M';
         }
 
