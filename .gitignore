@@ -32,3 +32,6 @@ npm-debug.log*
 # Backup files
 *.bak
 *.backup
+
+# Signing certificates — keep off version control
+certificates/

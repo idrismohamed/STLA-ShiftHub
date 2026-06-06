@@ -1,11 +1,16 @@
 {
-    "build": "debug",
-    "platforms": ["android"],
-
-    "android": {
-        "release_body": "",
-        "release_alias": "",
-        "release_password": "",
-        "release_key_password": ""
-    }
+  "build": "debug",
+  "platforms": [
+    "android"
+  ],
+  "android": {
+    "release_body": "",
+    "release_alias": "",
+    "release_password": "",
+    "release_key_password": ""
+  },
+  "androidAlias": "key0",
+  "androidAliasPassword": "ShuftHub",
+  "androidKeystore": "certificates/android.p12",
+  "androidKeystorePassword": "ShuftHub"
 }
