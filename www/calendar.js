@@ -60,9 +60,15 @@ function calDragEnd(e) {
         el.style.opacity    = '0.5';
         setTimeout(() => { haptic(); navigateMonth(-1); }, 230);
     } else {
-        el.style.transition = 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease';
-        el.style.transform  = 'translateX(0)';
-        el.style.opacity    = '1';
+        el.style.transition = 'none';
+        if (window.Motion) {
+            Motion.animate(el, { transform: 'translateX(0px)', opacity: 1 },
+                { type: 'spring', stiffness: 280, damping: 18 });
+        } else {
+            el.style.transition = 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease';
+            el.style.transform  = 'translateX(0)';
+            el.style.opacity    = '1';
+        }
     }
     _calDragDx = 0;
 }
@@ -136,7 +142,16 @@ function ppDragEnd(e) {
         haptic();
         setTimeout(() => navigatePP(dir), 230);
     } else {
-        _ppSetStyle('transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease', 'translateX(0)', '1');
+        if (window.Motion) {
+            for (const el of _ppSwipeEls()) {
+                if (!el) continue;
+                el.style.transition = 'none';
+                Motion.animate(el, { transform: 'translateX(0px)', opacity: 1 },
+                    { type: 'spring', stiffness: 280, damping: 18 });
+            }
+        } else {
+            _ppSetStyle('transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease', 'translateX(0)', '1');
+        }
     }
     _ppEdgeHitX = null; _ppEdgeDir = 0; _ppDragDx = 0;
 }
@@ -154,9 +169,14 @@ function setCalendarViewMode(mode) {
         calendarViewMode = mode;
         localStorage.setItem('calendarViewMode', mode);
         renderCalendar();
-        requestAnimationFrame(() => {
-            const newEl = cal?.firstElementChild;
-            if (newEl) {
+        const newEl = cal?.firstElementChild;
+        if (newEl) {
+            if (window.Motion) {
+                Motion.animate(newEl,
+                    { opacity: [0, 1], transform: ['translateY(10px) scale(0.98)', 'translateY(0) scale(1)'] },
+                    { duration: 0.28, easing: [0.25, 1, 0.5, 1] }
+                );
+            } else {
                 newEl.style.transition = 'none';
                 newEl.style.opacity    = '0';
                 newEl.style.transform  = 'translateY(10px) scale(0.98)';
@@ -166,7 +186,11 @@ function setCalendarViewMode(mode) {
                     newEl.style.transform  = 'translateY(0) scale(1)';
                 });
             }
-            if (sideEl) {
+        }
+        if (sideEl) {
+            if (window.Motion) {
+                Motion.animate(sideEl, { opacity: [0, 1] }, { duration: 0.32, easing: 'ease' });
+            } else {
                 sideEl.style.transition = 'none';
                 sideEl.style.opacity    = '0';
                 requestAnimationFrame(() => {
@@ -174,15 +198,23 @@ function setCalendarViewMode(mode) {
                     sideEl.style.opacity    = '1';
                 });
             }
-        });
+        }
     };
 
     if (existing) {
-        existing.style.transition = 'opacity 0.14s ease, transform 0.14s ease';
-        existing.style.opacity    = '0';
-        existing.style.transform  = 'translateY(-6px) scale(0.98)';
-        if (sideEl) { sideEl.style.transition = 'opacity 0.14s ease'; sideEl.style.opacity = '0'; }
-        setTimeout(doRender, 150);
+        if (window.Motion) {
+            Motion.animate(existing,
+                { opacity: 0, transform: 'translateY(-6px) scale(0.98)' },
+                { duration: 0.14, easing: 'ease' }
+            ).then(doRender);
+            if (sideEl) Motion.animate(sideEl, { opacity: 0 }, { duration: 0.14, easing: 'ease' });
+        } else {
+            existing.style.transition = 'opacity 0.14s ease, transform 0.14s ease';
+            existing.style.opacity    = '0';
+            existing.style.transform  = 'translateY(-6px) scale(0.98)';
+            if (sideEl) { sideEl.style.transition = 'opacity 0.14s ease'; sideEl.style.opacity = '0'; }
+            setTimeout(doRender, 150);
+        }
     } else {
         doRender();
     }
@@ -227,11 +259,21 @@ function scrollToToday() {
                 const wrap   = document.getElementById('cal-pp-wrap');
                 const dowRow = document.querySelector('.cal-dow-row.week-mode');
                 if (!wrap) return;
-                const from = prevOffset > 0 ? '55vw' : '-55vw';
-                for (const el of [wrap, dowRow]) { if (!el) continue; el.style.transition = 'none'; el.style.transform = `translateX(${from})`; el.style.opacity = '0.5'; }
-                requestAnimationFrame(() => {
-                    for (const el of [wrap, dowRow]) { if (!el) continue; el.style.transition = 'transform 0.38s cubic-bezier(0.25,1,0.5,1), opacity 0.3s ease'; el.style.transform = 'translateX(0)'; el.style.opacity = '1'; }
-                });
+                const fromPx = prevOffset > 0 ? window.innerWidth * 0.55 : -window.innerWidth * 0.55;
+                if (window.Motion) {
+                    for (const el of [wrap, dowRow]) {
+                        if (!el) continue;
+                        Motion.animate(el,
+                            { transform: [`translateX(${fromPx}px)`, 'translateX(0px)'], opacity: [0.5, 1] },
+                            { type: 'spring', stiffness: 260, damping: 22 }
+                        );
+                    }
+                } else {
+                    for (const el of [wrap, dowRow]) { if (!el) continue; el.style.transition = 'none'; el.style.transform = `translateX(${fromPx}px)`; el.style.opacity = '0.5'; }
+                    requestAnimationFrame(() => {
+                        for (const el of [wrap, dowRow]) { if (!el) continue; el.style.transition = 'transform 0.38s cubic-bezier(0.25,1,0.5,1), opacity 0.3s ease'; el.style.transform = 'translateX(0)'; el.style.opacity = '1'; }
+                    });
+                }
             });
         }
         // Scroll page to calendar, then pulse today's card
@@ -1031,15 +1073,22 @@ function navigateMonth(dir) {
     requestAnimationFrame(() => {
         const panel = document.getElementById('cal-month-panel');
         if (!panel) return;
-        const from = dir > 0 ? '60vw' : '-60vw';
-        panel.style.transition = 'none';
-        panel.style.transform  = `translateX(${from})`;
-        panel.style.opacity    = '0.5';
-        requestAnimationFrame(() => {
-            panel.style.transition = 'transform 0.35s cubic-bezier(0.25,1,0.5,1), opacity 0.28s ease';
-            panel.style.transform  = 'translateX(0)';
-            panel.style.opacity    = '1';
-        });
+        const fromPx = dir > 0 ? window.innerWidth * 0.6 : -window.innerWidth * 0.6;
+        if (window.Motion) {
+            Motion.animate(panel,
+                { transform: [`translateX(${fromPx}px)`, 'translateX(0px)'], opacity: [0.5, 1] },
+                { type: 'spring', stiffness: 260, damping: 22 }
+            );
+        } else {
+            panel.style.transition = 'none';
+            panel.style.transform  = `translateX(${fromPx}px)`;
+            panel.style.opacity    = '0.5';
+            requestAnimationFrame(() => {
+                panel.style.transition = 'transform 0.35s cubic-bezier(0.25,1,0.5,1), opacity 0.28s ease';
+                panel.style.transform  = 'translateX(0)';
+                panel.style.opacity    = '1';
+            });
+        }
     });
 }
 
@@ -1160,11 +1209,21 @@ function navigatePP(dir) {
         const wrap   = document.getElementById('cal-pp-wrap');
         const dowRow = document.querySelector('.cal-dow-row.week-mode');
         if (!wrap) return;
-        const from = dir > 0 ? '55vw' : '-55vw';
-        for (const el of [wrap, dowRow]) { if (!el) continue; el.style.transition = 'none'; el.style.transform = `translateX(${from})`; el.style.opacity = '0.5'; }
-        requestAnimationFrame(() => {
-            for (const el of [wrap, dowRow]) { if (!el) continue; el.style.transition = 'transform 0.35s cubic-bezier(0.25,1,0.5,1), opacity 0.28s ease'; el.style.transform = 'translateX(0)'; el.style.opacity = '1'; }
-        });
+        const fromPx = dir > 0 ? window.innerWidth * 0.55 : -window.innerWidth * 0.55;
+        if (window.Motion) {
+            for (const el of [wrap, dowRow]) {
+                if (!el) continue;
+                Motion.animate(el,
+                    { transform: [`translateX(${fromPx}px)`, 'translateX(0px)'], opacity: [0.5, 1] },
+                    { type: 'spring', stiffness: 260, damping: 22 }
+                );
+            }
+        } else {
+            for (const el of [wrap, dowRow]) { if (!el) continue; el.style.transition = 'none'; el.style.transform = `translateX(${fromPx}px)`; el.style.opacity = '0.5'; }
+            requestAnimationFrame(() => {
+                for (const el of [wrap, dowRow]) { if (!el) continue; el.style.transition = 'transform 0.35s cubic-bezier(0.25,1,0.5,1), opacity 0.28s ease'; el.style.transform = 'translateX(0)'; el.style.opacity = '1'; }
+            });
+        }
     });
 }
 

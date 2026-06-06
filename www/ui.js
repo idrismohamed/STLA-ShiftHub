@@ -23,48 +23,52 @@ function showToast(msg, type = 'success') {
     }, 3000);
 }
 
-/**
- * Slide a bottom sheet into view and push a history entry so the back button closes it.
- * @param {string} id  element id of the sheet
- */
 function openSheet(id) {
     document.body.style.overflow = 'hidden';
     const overlay = document.getElementById('overlay');
     const sheet   = document.getElementById(id);
-    if (overlay) overlay.style.display = 'block';
+    if (overlay) { overlay.style.display = 'block'; overlay.style.opacity = '0'; }
     setTimeout(() => {
-        if (overlay) overlay.style.opacity = '1';
-        if (sheet)   sheet.classList.add('active');
+        if (overlay) {
+            if (overlay._motionCancel) { overlay._motionCancel(); overlay._motionCancel = null; }
+            const oa = window.Motion?.animate(overlay, { opacity: 1 }, { duration: 0.3, easing: 'ease' });
+            if (oa) overlay._motionCancel = () => oa.cancel();
+            else overlay.style.opacity = '1';
+        }
+        if (sheet) sheet.classList.add('active');
     }, 10);
     history.pushState({ sheetOpen: true }, '');
 }
 
-/**
- * Close all open bottom sheets and restore scroll.
- * @param {boolean} [fromHistory=false]  true when called from a popstate handler (skip history.back())
- */
 function closeAllSheets(fromHistory = false) {
     const isActive = document.querySelector('.bottom-sheet.active') !== null;
     if (!isActive) return;
     document.body.style.overflow = '';
     document.querySelectorAll('.bottom-sheet').forEach(s => {
+        if (s._motionCancel) { s._motionCancel(); s._motionCancel = null; }
         s.classList.remove('active');
         s.style.transform = '';
     });
     const overlay = document.getElementById('overlay');
-    if (overlay) { overlay.style.opacity = '0'; overlay.style.transition = 'opacity 0.3s'; }
-    setTimeout(() => { if (overlay) overlay.style.display = 'none'; }, 300);
+    if (overlay) {
+        if (overlay._motionCancel) { overlay._motionCancel(); overlay._motionCancel = null; }
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.3s';
+    }
+    setTimeout(() => {
+        if (overlay) { overlay.style.display = 'none'; overlay.style.transition = ''; }
+    }, 300);
     if (fromHistory !== true) history.back();
 }
 
 // ── Sheet drag-to-dismiss ─────────────────────────────────────────────────
 (function () {
     let _sheet = null, _startY = 0, _dy = 0, _active = false;
-    let _trail = []; // rolling touch points for stable velocity
+    let _trail = [];
 
-    const THRESHOLD_PX  = 80;   // px of raw drag to commit dismiss
-    const THRESHOLD_VEL = 0.35; // px/ms to commit on a fast flick
-    const DEAD_ZONE     = 10;   // px before direction is decided
+    const THRESHOLD_PX  = 80;
+    const THRESHOLD_VEL = 0.35;
+    const DEAD_ZONE     = 10;
 
     function getScrollParent(el) {
         while (el && el !== document.body) {
@@ -74,7 +78,6 @@ function closeAllSheets(fromHistory = false) {
         return null;
     }
 
-    // Average velocity over the last 100 ms — immune to single-frame spikes
     function calcVelocity() {
         const now = Date.now();
         const w = _trail.filter(p => now - p.t < 100);
@@ -83,45 +86,93 @@ function closeAllSheets(fromHistory = false) {
         return dt > 0 ? (w[w.length - 1].y - w[0].y) / dt : 0;
     }
 
-    // Rubber-band: first FREE px are 1:1, beyond that apply resistance
     function damp(dy) {
         const FREE = 60;
         return dy <= FREE ? dy : FREE + (dy - FREE) * 0.4;
     }
 
+    function _cancelOverlay(overlay) {
+        if (overlay && overlay._motionCancel) { overlay._motionCancel(); overlay._motionCancel = null; }
+    }
+
     function snapBack(sheet) {
         const overlay = document.getElementById('overlay');
-        sheet.style.transition = 'transform 0.44s cubic-bezier(0.34,1.56,0.64,1)';
-        sheet.style.transform  = 'translateY(0)';
-        if (overlay) { overlay.style.transition = 'opacity 0.3s ease'; overlay.style.opacity = '0.5'; }
-        sheet.addEventListener('transitionend', function h() {
-            sheet.removeEventListener('transitionend', h);
-            sheet.style.transition = '';
-            sheet.style.transform  = '';
-        }, { once: true });
+        if (sheet._motionCancel) { sheet._motionCancel(); sheet._motionCancel = null; }
+        sheet.style.transition = 'none';
+
+        const anim = window.Motion?.animate(sheet,
+            { transform: 'translateY(0px)' },
+            { type: 'spring', stiffness: 280, damping: 18, mass: 0.75 }
+        );
+        if (anim) {
+            sheet._motionCancel = () => anim.cancel();
+            anim.then(() => { sheet._motionCancel = null; sheet.style.transform = ''; });
+        } else {
+            sheet.style.transition = 'transform 0.44s cubic-bezier(0.34,1.56,0.64,1)';
+            sheet.style.transform  = 'translateY(0)';
+            sheet.addEventListener('transitionend', function h() {
+                sheet.removeEventListener('transitionend', h);
+                sheet.style.transition = '';
+                sheet.style.transform  = '';
+            }, { once: true });
+        }
+
+        if (overlay) {
+            _cancelOverlay(overlay);
+            const oa = window.Motion?.animate(overlay, { opacity: 0.5 }, { duration: 0.3, easing: 'ease' });
+            if (oa) overlay._motionCancel = () => oa.cancel();
+            else { overlay.style.transition = 'opacity 0.3s ease'; overlay.style.opacity = '0.5'; }
+        }
     }
 
     function dismiss(sheet) {
         haptic();
         const overlay = document.getElementById('overlay');
-        sheet.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.6,1)';
-        sheet.style.transform  = 'translateY(110%)';
-        if (overlay) { overlay.style.transition = 'opacity 0.22s ease'; overlay.style.opacity = '0'; }
-        sheet.addEventListener('transitionend', function h() {
-            sheet.removeEventListener('transitionend', h);
-            sheet.style.transition = '';
-            sheet.style.transform  = '';
-            sheet.classList.remove('active');
-            document.body.style.overflow = '';
-            if (overlay) { overlay.style.display = 'none'; overlay.style.transition = ''; }
-            history.back();
-        }, { once: true });
+        if (sheet._motionCancel) { sheet._motionCancel(); sheet._motionCancel = null; }
+        sheet.style.transition = 'none';
+
+        const anim = window.Motion?.animate(sheet,
+            { transform: 'translateY(110%)' },
+            { duration: 0.3, easing: [0.4, 0, 0.6, 1] }
+        );
+        if (anim) {
+            sheet._motionCancel = () => anim.cancel();
+            anim.then(() => {
+                sheet._motionCancel = null;
+                sheet.style.transform = '';
+                sheet.classList.remove('active');
+                document.body.style.overflow = '';
+                if (overlay) overlay.style.display = 'none';
+                history.back();
+            });
+        } else {
+            sheet.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.6,1)';
+            sheet.style.transform  = 'translateY(110%)';
+            sheet.addEventListener('transitionend', function h() {
+                sheet.removeEventListener('transitionend', h);
+                sheet.style.transition = '';
+                sheet.style.transform  = '';
+                sheet.classList.remove('active');
+                document.body.style.overflow = '';
+                if (overlay) { overlay.style.display = 'none'; overlay.style.transition = ''; }
+                history.back();
+            }, { once: true });
+        }
+
+        if (overlay) {
+            _cancelOverlay(overlay);
+            const oa = window.Motion?.animate(overlay, { opacity: 0 }, { duration: 0.22, easing: 'ease' });
+            if (oa) overlay._motionCancel = () => oa.cancel();
+            else { overlay.style.transition = 'opacity 0.22s ease'; overlay.style.opacity = '0'; }
+        }
     }
 
     document.addEventListener('touchstart', function (e) {
         const sheet = e.target.closest('.bottom-sheet.active');
         if (!sheet) return;
         if (getScrollParent(e.target)) return;
+        // Cancel any in-progress Motion animation before a new drag starts
+        if (sheet._motionCancel) { sheet._motionCancel(); sheet._motionCancel = null; }
         _sheet  = sheet;
         _startY = e.touches[0].clientY;
         _dy     = 0;
@@ -136,7 +187,7 @@ function closeAllSheets(fromHistory = false) {
 
         if (!_active) {
             if (Math.abs(dy) < DEAD_ZONE) return;
-            if (dy < 0) { _sheet = null; _trail = []; return; } // committed upward — let scroll take over
+            if (dy < 0) { _sheet = null; _trail = []; return; }
             _active = true;
             _sheet.style.transition = 'none';
         }
@@ -174,5 +225,5 @@ function closeAllSheets(fromHistory = false) {
     }
 
     document.addEventListener('touchend',    onRelease);
-    document.addEventListener('touchcancel', onRelease); // prevents stuck sheets
+    document.addEventListener('touchcancel', onRelease);
 }());
