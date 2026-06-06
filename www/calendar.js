@@ -21,54 +21,77 @@ function calSwipeEnd(e) {
     }
 }
 
-// PP swipe tracking
+// PP swipe tracking — elastic overscroll only activates at scroll boundary
 let _ppDragStartX = 0, _ppDragActive = false, _ppDragDx = 0;
+let _ppEdgeHitX = null, _ppEdgeDir = 0;
+
+function _ppSwipeEls() {
+    return [document.getElementById('cal-pp-wrap'), document.querySelector('.cal-dow-row.week-mode')];
+}
+function _ppSetStyle(transition, transform, opacity) {
+    for (const el of _ppSwipeEls()) {
+        if (!el) continue;
+        el.style.transition = transition;
+        el.style.transform  = transform;
+        el.style.opacity    = opacity;
+    }
+}
 
 function ppDragStart(e) {
     _ppDragStartX = e.touches[0].clientX;
     _ppDragActive = true;
-    _ppDragDx = 0;
-    const wrap = document.getElementById('cal-pp-wrap');
-    if (wrap) { wrap.style.transition = 'none'; wrap.style.opacity = '1'; }
+    _ppDragDx     = 0;
+    _ppEdgeHitX   = null;
+    _ppEdgeDir    = 0;
+    _ppSetStyle('none', '', '1');
 }
 
 function ppDragMove(e) {
     if (!_ppDragActive) return;
-    const dx = e.touches[0].clientX - _ppDragStartX;
-    _ppDragDx = dx;
-    // Elastic: free movement up to 70px then dampen progressively
-    const FREE = 70;
-    const abs  = Math.abs(dx);
+    const touch  = e.touches[0];
+    const rawDx  = touch.clientX - _ppDragStartX;
+    const scroll = document.querySelector('.cal-scroll-area');
+    const atLeft  = !scroll || scroll.scrollLeft <= 0;
+    const atRight = !scroll || scroll.scrollLeft >= scroll.scrollWidth - scroll.clientWidth - 1;
+
+    if (_ppEdgeHitX === null) {
+        // Only enter overscroll mode once we hit a boundary
+        if      (rawDx >  8 && atLeft)  { _ppEdgeHitX = touch.clientX; _ppEdgeDir =  1; }
+        else if (rawDx < -8 && atRight) { _ppEdgeHitX = touch.clientX; _ppEdgeDir = -1; }
+        else return; // still scrolling normally — don't interfere
+    }
+
+    _ppDragDx = touch.clientX - _ppEdgeHitX;
+
+    if (_ppDragDx * _ppEdgeDir < 0) {
+        // user pulled back into the scroll area — cancel overscroll
+        _ppEdgeHitX = null; _ppEdgeDir = 0; _ppDragDx = 0;
+        _ppSetStyle('', 'translateX(0)', '1');
+        return;
+    }
+
+    // Apply elastic resistance past the boundary
+    const FREE = 55;
+    const abs  = Math.abs(_ppDragDx);
     const eff  = abs <= FREE ? abs : FREE + (abs - FREE) * 0.22;
-    const wrap = document.getElementById('cal-pp-wrap');
-    if (wrap) wrap.style.transform = `translateX(${Math.sign(dx) * eff}px)`;
-    if (Math.abs(dx) > 8) e.preventDefault();
+    const disp = Math.sign(_ppDragDx) * eff;
+    for (const el of _ppSwipeEls()) { if (el) el.style.transform = `translateX(${disp}px)`; }
+    e.preventDefault();
 }
 
 function ppDragEnd(e) {
     if (!_ppDragActive) return;
     _ppDragActive = false;
-    const wrap = document.getElementById('cal-pp-wrap');
-    if (!wrap) return;
-    const THRESHOLD = 60;
-    if (_ppDragDx < -THRESHOLD) {
-        // Slide out left → navigate forward
-        wrap.style.transition = 'transform 0.25s cubic-bezier(0.4,0,1,1), opacity 0.25s ease';
-        wrap.style.transform  = 'translateX(-55vw)';
-        wrap.style.opacity    = '0.5';
-        setTimeout(() => navigatePP(1), 230);
-    } else if (_ppDragDx > THRESHOLD) {
-        // Slide out right → navigate backward
-        wrap.style.transition = 'transform 0.25s cubic-bezier(0.4,0,1,1), opacity 0.25s ease';
-        wrap.style.transform  = 'translateX(55vw)';
-        wrap.style.opacity    = '0.5';
-        setTimeout(() => navigatePP(-1), 230);
+    const THRESHOLD = 45;
+    if (_ppEdgeHitX !== null && Math.abs(_ppDragDx) > THRESHOLD) {
+        const exitDir = _ppDragDx > 0 ? '55vw' : '-55vw';
+        _ppSetStyle('transform 0.25s cubic-bezier(0.4,0,1,1), opacity 0.25s ease', `translateX(${exitDir})`, '0.5');
+        const dir = -_ppEdgeDir;
+        setTimeout(() => navigatePP(dir), 230);
     } else {
-        // Spring back with overshoot
-        wrap.style.transition = 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease';
-        wrap.style.transform  = 'translateX(0)';
-        wrap.style.opacity    = '1';
+        _ppSetStyle('transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease', 'translateX(0)', '1');
     }
+    _ppEdgeHitX = null; _ppEdgeDir = 0; _ppDragDx = 0;
 }
 const AGENDA_LOOKAHEAD_DAYS = 14;
 let monthObserver = null;
@@ -116,18 +139,14 @@ function scrollToToday() {
         localStorage.setItem('currentWeekOffset', 0);
         if (prevOffset !== 0) {
             renderCalendar();
-            // Slide new PP in from the appropriate direction
             requestAnimationFrame(() => {
-                const wrap = document.getElementById('cal-pp-wrap');
+                const wrap   = document.getElementById('cal-pp-wrap');
+                const dowRow = document.querySelector('.cal-dow-row.week-mode');
                 if (!wrap) return;
-                const enterFrom = prevOffset > 0 ? '55vw' : '-55vw';
-                wrap.style.transition = 'none';
-                wrap.style.transform  = `translateX(${enterFrom})`;
-                wrap.style.opacity    = '0.5';
+                const from = prevOffset > 0 ? '55vw' : '-55vw';
+                for (const el of [wrap, dowRow]) { if (!el) continue; el.style.transition = 'none'; el.style.transform = `translateX(${from})`; el.style.opacity = '0.5'; }
                 requestAnimationFrame(() => {
-                    wrap.style.transition = 'transform 0.38s cubic-bezier(0.25,1,0.5,1), opacity 0.3s ease';
-                    wrap.style.transform  = 'translateX(0)';
-                    wrap.style.opacity    = '1';
+                    for (const el of [wrap, dowRow]) { if (!el) continue; el.style.transition = 'transform 0.38s cubic-bezier(0.25,1,0.5,1), opacity 0.3s ease'; el.style.transform = 'translateX(0)'; el.style.opacity = '1'; }
                 });
             });
         }
@@ -1011,16 +1030,13 @@ function navigatePP(dir) {
     localStorage.setItem('currentWeekOffset', currentWeekOffset);
     renderCalendar();
     requestAnimationFrame(() => {
-        const wrap = document.getElementById('cal-pp-wrap');
+        const wrap   = document.getElementById('cal-pp-wrap');
+        const dowRow = document.querySelector('.cal-dow-row.week-mode');
         if (!wrap) return;
-        const enterFrom = dir > 0 ? '55vw' : '-55vw';
-        wrap.style.transition = 'none';
-        wrap.style.transform  = `translateX(${enterFrom})`;
-        wrap.style.opacity    = '0.5';
+        const from = dir > 0 ? '55vw' : '-55vw';
+        for (const el of [wrap, dowRow]) { if (!el) continue; el.style.transition = 'none'; el.style.transform = `translateX(${from})`; el.style.opacity = '0.5'; }
         requestAnimationFrame(() => {
-            wrap.style.transition = 'transform 0.35s cubic-bezier(0.25,1,0.5,1), opacity 0.28s ease';
-            wrap.style.transform  = 'translateX(0)';
-            wrap.style.opacity    = '1';
+            for (const el of [wrap, dowRow]) { if (!el) continue; el.style.transition = 'transform 0.35s cubic-bezier(0.25,1,0.5,1), opacity 0.28s ease'; el.style.transform = 'translateX(0)'; el.style.opacity = '1'; }
         });
     });
 }
