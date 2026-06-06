@@ -48,7 +48,7 @@ function importData(e) {
             applyTheme(sysSettings.theme);
 
             const gText = document.getElementById('greeting-text');
-            if (gText) gText.innerHTML = `Welcome, <span>${sysSettings.displayName}</span>`;
+            if (gText) gText.innerHTML = `<span>${sysSettings.displayName}</span>`;
 
             const cSel = document.getElementById('crew-select');
             if (cSel) cSel.value = sysSettings.defaultCrew;

@@ -55,7 +55,7 @@ window.addEventListener('orientationchange', () => {
 // ─── Initial page setup ───────────────────────────────────────────────────────
 
 const gText = document.getElementById('greeting-text');
-if (gText) gText.innerHTML = `Welcome, <span>${sysSettings.displayName}</span>`;
+if (gText) gText.innerHTML = `<span>${sysSettings.displayName}</span>`;
 populateYearSelect();
 
 const cSel = document.getElementById('crew-select');

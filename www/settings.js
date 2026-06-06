@@ -89,7 +89,7 @@ syncCalendar:      g('setting-cal-sync')    ? g('setting-cal-sync').checked    :
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(sysSettings));
 
     const gText = document.getElementById('greeting-text');
-    if (gText) gText.innerHTML = `Welcome, <span>${sysSettings.displayName}</span>`;
+    if (gText) gText.innerHTML = `<span>${sysSettings.displayName}</span>`;
 
     const rotInput = document.getElementById('rot-date-input');
     if (rotInput && rotInput.value && selectedRotOffset !== null) {
