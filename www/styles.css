@@ -1364,6 +1364,9 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     gap: 3px;
     cursor: pointer;
     transition: opacity 0.15s;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
 }
 .cal-week-card:active { opacity: 0.7; }
 /* Shift type — distinct background tint + coloured top accent bar */
