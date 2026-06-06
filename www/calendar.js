@@ -133,6 +133,7 @@ function ppDragEnd(e) {
         const exitDir = _ppDragDx > 0 ? '55vw' : '-55vw';
         _ppSetStyle('transform 0.25s cubic-bezier(0.4,0,1,1), opacity 0.25s ease', `translateX(${exitDir})`, '0.5');
         const dir = -_ppEdgeDir;
+        haptic();
         setTimeout(() => navigatePP(dir), 230);
     } else {
         _ppSetStyle('transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease', 'translateX(0)', '1');
