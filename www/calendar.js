@@ -1,7 +1,7 @@
 const CALENDAR_VIEWS = ['month', 'week', 'year'];
-let calendarViewMode = localStorage.getItem('calendarViewMode') || 'month';
+let calendarViewMode = localStorage.getItem('calendarViewMode') || 'week';
 // Clamp stored view to valid values (agenda no longer exists)
-if (!CALENDAR_VIEWS.includes(calendarViewMode)) calendarViewMode = 'month';
+if (!CALENDAR_VIEWS.includes(calendarViewMode)) calendarViewMode = 'week';
 let currentCalMonth = parseInt(localStorage.getItem('currentCalMonth') || new Date().getMonth());
 let currentWeekOffset = parseInt(localStorage.getItem('currentWeekOffset')) || 0;
 let calMonthExpanded = localStorage.getItem('calMonthExpanded') !== 'false';
@@ -18,6 +18,56 @@ function calSwipeEnd(e) {
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 55) {
         haptic();
         navigateMonth(dx < 0 ? 1 : -1);
+    }
+}
+
+// PP swipe tracking
+let _ppDragStartX = 0, _ppDragActive = false, _ppDragDx = 0;
+
+function ppDragStart(e) {
+    _ppDragStartX = e.touches[0].clientX;
+    _ppDragActive = true;
+    _ppDragDx = 0;
+    const wrap = document.getElementById('cal-pp-wrap');
+    if (wrap) { wrap.style.transition = 'none'; wrap.style.opacity = '1'; }
+}
+
+function ppDragMove(e) {
+    if (!_ppDragActive) return;
+    const dx = e.touches[0].clientX - _ppDragStartX;
+    _ppDragDx = dx;
+    // Elastic: free movement up to 70px then dampen progressively
+    const FREE = 70;
+    const abs  = Math.abs(dx);
+    const eff  = abs <= FREE ? abs : FREE + (abs - FREE) * 0.22;
+    const wrap = document.getElementById('cal-pp-wrap');
+    if (wrap) wrap.style.transform = `translateX(${Math.sign(dx) * eff}px)`;
+    if (Math.abs(dx) > 8) e.preventDefault();
+}
+
+function ppDragEnd(e) {
+    if (!_ppDragActive) return;
+    _ppDragActive = false;
+    const wrap = document.getElementById('cal-pp-wrap');
+    if (!wrap) return;
+    const THRESHOLD = 60;
+    if (_ppDragDx < -THRESHOLD) {
+        // Slide out left → navigate forward
+        wrap.style.transition = 'transform 0.25s cubic-bezier(0.4,0,1,1), opacity 0.25s ease';
+        wrap.style.transform  = 'translateX(-55vw)';
+        wrap.style.opacity    = '0.5';
+        setTimeout(() => navigatePP(1), 230);
+    } else if (_ppDragDx > THRESHOLD) {
+        // Slide out right → navigate backward
+        wrap.style.transition = 'transform 0.25s cubic-bezier(0.4,0,1,1), opacity 0.25s ease';
+        wrap.style.transform  = 'translateX(55vw)';
+        wrap.style.opacity    = '0.5';
+        setTimeout(() => navigatePP(-1), 230);
+    } else {
+        // Spring back with overshoot
+        wrap.style.transition = 'transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease';
+        wrap.style.transform  = 'translateX(0)';
+        wrap.style.opacity    = '1';
     }
 }
 const AGENDA_LOOKAHEAD_DAYS = 14;
@@ -47,7 +97,7 @@ function updateNavLabels() {
     if (crewEl && crewSel) crewEl.textContent = crewSel.value;
 }
 
-/** Navigate to today's month/week then scroll the page up to the calendar. */
+/** Navigate to today's month/PP then scroll the calendar into view and highlight today. */
 function scrollToToday() {
     if (calendarViewMode === 'month') {
         const logicalT = getLogicalToday();
@@ -61,9 +111,40 @@ function scrollToToday() {
             renderCalendar();
         }
     } else if (calendarViewMode === 'week') {
+        const prevOffset = currentWeekOffset;
         currentWeekOffset = 0;
         localStorage.setItem('currentWeekOffset', 0);
-        renderCalendar();
+        if (prevOffset !== 0) {
+            renderCalendar();
+            // Slide new PP in from the appropriate direction
+            requestAnimationFrame(() => {
+                const wrap = document.getElementById('cal-pp-wrap');
+                if (!wrap) return;
+                const enterFrom = prevOffset > 0 ? '55vw' : '-55vw';
+                wrap.style.transition = 'none';
+                wrap.style.transform  = `translateX(${enterFrom})`;
+                wrap.style.opacity    = '0.5';
+                requestAnimationFrame(() => {
+                    wrap.style.transition = 'transform 0.38s cubic-bezier(0.25,1,0.5,1), opacity 0.3s ease';
+                    wrap.style.transform  = 'translateX(0)';
+                    wrap.style.opacity    = '1';
+                });
+            });
+        }
+        // Scroll page to calendar, then pulse today's card
+        const calEl = document.getElementById('calendar');
+        if (calEl) calEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(() => {
+            const todayCard = document.querySelector('.cal-week-card.today');
+            if (todayCard) {
+                todayCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+                todayCard.classList.remove('today-pulse');
+                void todayCard.offsetWidth;
+                todayCard.classList.add('today-pulse');
+                todayCard.addEventListener('animationend', () => todayCard.classList.remove('today-pulse'), { once: true });
+            }
+        }, prevOffset !== 0 ? 420 : 150);
+        return;
     }
     const target = document.querySelector('.cal-analytics-row') || document.getElementById('calendar');
     if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -815,28 +896,44 @@ function navigateMonth(dir) {
 
 /** Build the new week view with prev/next navigation. */
 function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTargetPPIndex) {
-    const base = (year === logicalT.getFullYear()) ? new Date(logicalT) : new Date(year, 0, 1);
-    const weekStart = new Date(base);
-    weekStart.setDate(base.getDate() - base.getDay() + currentWeekOffset * 7);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
+    const nowUTC     = Date.UTC(logicalT.getFullYear(), logicalT.getMonth(), logicalT.getDate());
+    const nowPPIdx   = Math.floor((nowUTC - basePPStartUTC) / MS_PP);
+    const tgtPPIdx   = nowPPIdx + currentWeekOffset;
+    const ppStart    = basePPStartUTC + tgtPPIdx * MS_PP;
+    const ppEnd      = ppStart + MS_PP_TO_END;
 
-    const fmt = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const weekLabel = `${fmt(weekStart)} – ${fmt(weekEnd)}, ${weekEnd.getFullYear()}`;
+    // Ensure fatigue is calculated for the PP's year(s) — use UTC year from key
+    const ppStartYear = +toDateKey(ppStart).substring(0, 4);
+    const ppEndYear   = +toDateKey(ppEnd).substring(0, 4);
+    precalcFatigue(ppStartYear, crew);
+    if (ppEndYear !== ppStartYear) precalcFatigue(ppEndYear, crew);
+
+    // Build combined holiday map covering both years the PP might span
+    const holsMap = { ...getHolidays(ppStartYear) };
+    if (ppEndYear !== ppStartYear) Object.assign(holsMap, getHolidays(ppEndYear));
+
+    const utcFmt   = utc => { const s = toDateKey(utc).split('-'); return new Date(+s[0], +s[1]-1, +s[2]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); };
+    const ppLabel  = `${utcFmt(ppStart)} – ${utcFmt(ppEnd)}`;
 
     const leftContent = `
-        <button class="cal-nav-btn" onclick="haptic(); navigateWeek(-1)">&#8249;</button>
-        <span class="cal-month-label" style="font-size:14px;min-width:160px">${weekLabel}</span>
-        <button class="cal-nav-btn" onclick="haptic(); navigateWeek(1)">&#8250;</button>`;
+        <button class="cal-nav-btn" onclick="haptic(); navigatePP(-1)">&#8249;</button>
+        <div class="cal-pp-label-wrap">
+            <span class="cal-month-label" style="font-size:14px">${ppLabel}</span>
+            <span class="cal-pp-sublabel">Pay Period</span>
+        </div>
+        <button class="cal-nav-btn" onclick="haptic(); navigatePP(1)">&#8250;</button>`;
 
     const header = buildCalendarHeader('week', leftContent);
-    const dowRow = `<div class="cal-dow-row week-mode">${daysOfWeek.map(d => `<div class="cal-dow-cell">${d}</div>`).join('')}</div>`;
 
+    // DOW header aligned to PP start day-of-week (use UTC day)
+    const ppStartDow  = new Date(ppStart).getUTCDay(); // UTC midnight → correct DOW
+    const orderedDows = [...daysOfWeek.slice(ppStartDow), ...daysOfWeek.slice(0, ppStartDow)];
+    const dowRow = `<div class="cal-dow-row week-mode">${orderedDows.map(d => `<div class="cal-dow-cell">${d}</div>`).join('')}</div>`;
+
+    // Build 14 day cards (2 rows of 7)
     let cards = '';
-    for (let i = 0; i < 7; i++) {
-        const target = new Date(weekStart);
-        target.setDate(weekStart.getDate() + i);
-        const tUTC  = Date.UTC(target.getFullYear(), target.getMonth(), target.getDate());
+    for (let i = 0; i < 14; i++) {
+        const tUTC  = ppStart + i * MS_DAY;
         const dStr  = toDateKey(tUTC);
         const pI    = getPIndex(tUTC);
         let   shift = getShiftForCrew(pI, crew);
@@ -854,8 +951,8 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
             else if (ex.type === 'Lieu')     sC = (ex.startTime && ex.endTime) ? 'M' : 'O';
             else if (ex.type === 'DropOff')  sC = 'O';
             else if (ex.type === 'DropPaid') sC = 'M';
-            else if (ex.type === 'Day')  sC = 'D';
-            else if (ex.type === 'Night') sC = 'N';
+            else if (ex.type === 'Day')      sC = 'D';
+            else if (ex.type === 'Night')    sC = 'N';
             else if (ex.type && ex.crew && ex.type !== 'DropPaid') sC = 'M';
         }
 
@@ -865,17 +962,18 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
 
         let cardCls = `cal-week-card ${sC}`;
         cardCls += ` pp-${f.ppIndex !== undefined ? f.ppIndex % 4 : 0}`;
-        if (isToday)     cardCls += ' today';
-        else if (isPast) cardCls += isCurrentPP ? ' current-pp past' : ' past';
+        if (isToday)          cardCls += ' today';
+        else if (isPast)      cardCls += isCurrentPP ? ' current-pp past' : ' past';
         else if (isCurrentPP) cardCls += ' current-pp';
         if (f.isLockout && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(ex?.type)) cardCls += ' lockout';
 
-        const dateLabel = target.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
-        const friendly  = target.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-        const baseShift = getShiftForCrew(pI, crew);
+        const [dy, dm, dd] = dStr.split('-').map(Number);
+        const localDate = new Date(dy, dm - 1, dd);
+        const dateLabel = localDate.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
+        const friendly  = localDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
-        const pills   = buildCellPills(dStr, shift, ex, f, baseH, yearHols);
-        const visible = pills.slice(0, 5);
+        const pills    = buildCellPills(dStr, shift, ex, f, baseH, holsMap);
+        const visible  = pills.slice(0, 5);
         const overflow = pills.length - 5;
 
         let pillsHtml = '<div class="cal-pills">';
@@ -886,21 +984,49 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         }
         pillsHtml += '</div>';
 
-        cards += `<div class="${cardCls}" onclick="haptic(); openPickupSheet('${dStr}','${friendly}','${baseShift}','${next}')">
+        // Add a subtle row divider after the 7th card (between the two weeks)
+        if (i === 6) cards += '</div><div class="cal-pp-row-gap"></div><div class="cal-week-grid">';
+
+        cards += `<div class="${cardCls}" onclick="haptic(); openPickupSheet('${dStr}','${friendly}','${shift}','${next}')">
             <div class="cal-week-date">${dateLabel}</div>
             ${pillsHtml}
         </div>`;
     }
 
-    return `<div class="cal-redesign">${header}<div class="cal-scroll-area">${dowRow}<div class="cal-week-grid">${cards}</div></div>${buildCrewBar(crew)}</div>`;
+    return `<div class="cal-redesign" ontouchstart="ppDragStart(event)" ontouchmove="ppDragMove(event)" ontouchend="ppDragEnd(event)">
+        ${header}
+        <div class="cal-scroll-area">
+            ${dowRow}
+            <div id="cal-pp-wrap" class="cal-pp-wrap">
+                <div class="cal-week-grid">${cards}</div>
+            </div>
+        </div>
+        ${buildCrewBar(crew)}
+    </div>`;
 }
 
-/** Navigate the week view by dir weeks. */
-function navigateWeek(dir) {
+/** Navigate the PP view by dir pay periods, with a slide-in animation. */
+function navigatePP(dir) {
     currentWeekOffset += dir;
     localStorage.setItem('currentWeekOffset', currentWeekOffset);
     renderCalendar();
+    requestAnimationFrame(() => {
+        const wrap = document.getElementById('cal-pp-wrap');
+        if (!wrap) return;
+        const enterFrom = dir > 0 ? '55vw' : '-55vw';
+        wrap.style.transition = 'none';
+        wrap.style.transform  = `translateX(${enterFrom})`;
+        wrap.style.opacity    = '0.5';
+        requestAnimationFrame(() => {
+            wrap.style.transition = 'transform 0.35s cubic-bezier(0.25,1,0.5,1), opacity 0.28s ease';
+            wrap.style.transform  = 'translateX(0)';
+            wrap.style.opacity    = '1';
+        });
+    });
 }
+
+/** Alias kept for any existing references. */
+function navigateWeek(dir) { navigatePP(dir); }
 
 /** Build the year overview with 12 mini-month grids. */
 function renderYearView(year, crew, todayStr) {

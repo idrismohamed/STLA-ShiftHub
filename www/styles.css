@@ -1165,6 +1165,36 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
 .pill-pp     { background: rgba(255,107,53,0.16);         color: #ffffff; }
 
 /* ── Week View ── */
+/* PP view wrapper — receives swipe transform */
+.cal-pp-wrap {
+    will-change: transform, opacity;
+}
+.cal-pp-row-gap {
+    height: 6px;
+    padding: 0 8px;
+}
+/* Label under the date range in the PP header */
+.cal-pp-label-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.2;
+    gap: 1px;
+}
+.cal-pp-sublabel {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+/* Today-card pulse when scrolling to today */
+@keyframes today-pulse {
+    0%   { box-shadow: 0 0 0 0   rgba(56,189,248,0.55); }
+    55%  { box-shadow: 0 0 0 14px rgba(56,189,248,0);   }
+    100% { box-shadow: 0 0 0 0   rgba(56,189,248,0);    }
+}
+.cal-week-card.today-pulse { animation: today-pulse 0.75s ease-out; }
+
 .cal-week-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(110px, 1fr));
