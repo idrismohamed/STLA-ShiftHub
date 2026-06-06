@@ -1666,7 +1666,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     .cal-main-col .cal-year-view   { overflow-y: visible; }
 
     #analytics-side {
-        flex: 1 1 0;
+        flex: 0 0 300px;
         min-width: 0;
         align-self: stretch;
     }
