@@ -882,23 +882,17 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
 .cal-pp-label-current .cal-pp-sublabel {
     color: #fff;
 }
-/* Drop cycle badge in week view header */
-.cal-drop-pp-badge {
-    background: rgba(255,107,53,0.15);
+/* Drop cycle banner — full-width strip below the header in week view */
+.cal-drop-pp-banner {
+    background: rgba(255,107,53,0.10);
+    border-bottom: 1px solid rgba(255,107,53,0.22);
     color: var(--accent);
-    border: 1.5px solid rgba(255,107,53,0.38);
-    border-radius: 20px;
-    padding: 2px 8px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.02em;
-    margin-top: 1px;
-    white-space: nowrap;
-}
-.cal-pp-label-current .cal-drop-pp-badge {
-    background: rgba(255,255,255,0.2);
-    color: #fff;
-    border-color: rgba(255,255,255,0.45);
+    text-align: center;
+    padding: 5px 16px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
 }
 
 /* M3 week row — always-visible "this week" anchor above the collapsible month */
@@ -1377,7 +1371,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
 }
 .cal-week-card.O {
     background-color: rgba(255, 255, 255, 0.025);
-    border-color: rgba(255, 255, 255, 0.06);
+    border-color: var(--cal-cell-border);
 }
 .cal-week-card.M {
     background-color: rgba(255, 107, 53, 0.10);

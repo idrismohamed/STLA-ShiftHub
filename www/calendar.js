@@ -10,7 +10,7 @@ let calMonthExpanded = localStorage.getItem('calMonthExpanded') !== 'false';
 let _calDragStartX = 0, _calDragStartY = 0, _calDragActive = false;
 let _calDragDx = 0, _calDragDir = null; // 'h' | 'v' | null
 
-function _calPanelEl() { return document.getElementById('cal-month-panel'); }
+function _calPanelEl() { return document.getElementById('cal-month-panel') || document.getElementById('cal-year-panel'); }
 
 function calDragStart(e) {
     _calDragStartX  = e.touches[0].clientX;
@@ -53,12 +53,12 @@ function calDragEnd(e) {
         el.style.transition = 'transform 0.25s cubic-bezier(0.4,0,1,1), opacity 0.25s ease';
         el.style.transform  = 'translateX(-60vw)';
         el.style.opacity    = '0.5';
-        setTimeout(() => { haptic(); navigateMonth(1); }, 230);
+        setTimeout(() => { haptic(); calendarViewMode === 'year' ? navigateYear(1) : navigateMonth(1); }, 230);
     } else if (_calDragDx > THRESHOLD) {
         el.style.transition = 'transform 0.25s cubic-bezier(0.4,0,1,1), opacity 0.25s ease';
         el.style.transform  = 'translateX(60vw)';
         el.style.opacity    = '0.5';
-        setTimeout(() => { haptic(); navigateMonth(-1); }, 230);
+        setTimeout(() => { haptic(); calendarViewMode === 'year' ? navigateYear(-1) : navigateMonth(-1); }, 230);
     } else {
         el.style.transition = 'none';
         if (window.Motion) {
@@ -1110,16 +1110,10 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
     const utcFmt   = utc => { const s = toDateKey(utc).split('-'); return new Date(+s[0], +s[1]-1, +s[2]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); };
     const ppLabel  = `${utcFmt(ppStart)} – ${utcFmt(ppEnd)}`;
 
-    const dropBadgeHtml = isDropPP
-        ? `<span class="cal-drop-pp-badge">💧 Drop Cycle</span>`
-        : '';
-
     const leftContent = `
         <button class="cal-nav-btn" onclick="haptic(); navigatePP(-1)">&#8249;</button>
         <div class="cal-pp-label-wrap${isCurrentPPView ? ' cal-pp-label-current' : ''}">
             <span class="cal-month-label" style="font-size:14px">${ppLabel}</span>
-            <span class="cal-pp-sublabel">Pay Period</span>
-            ${dropBadgeHtml}
         </div>
         <button class="cal-nav-btn" onclick="haptic(); navigatePP(1)">&#8250;</button>`;
 
@@ -1194,6 +1188,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
 
     return `<div class="cal-redesign" ontouchstart="ppDragStart(event)" ontouchmove="ppDragMove(event)" ontouchend="ppDragEnd(event)">
         ${header}
+        ${isDropPP ? `<div class="cal-drop-pp-banner">💧 Drop Cycle</div>` : ''}
         <div class="cal-scroll-area">
             ${dowRow}
             <div id="cal-pp-wrap" class="cal-pp-wrap">
@@ -1236,13 +1231,31 @@ function navigateWeek(dir) { navigatePP(dir); }
 
 /** Build the year overview with 12 mini-month grids. */
 function renderYearView(year, crew, todayStr) {
-    const leftContent = `<span class="cal-month-label">${year}</span>`;
+    const yearSelect = document.getElementById('year-select');
+    const minYear = yearSelect ? parseInt(yearSelect.options[0]?.value) : year;
+    const maxYear = yearSelect ? parseInt(yearSelect.options[yearSelect.options.length - 1]?.value) : year;
+
+    const leftContent = `
+        <button class="cal-nav-btn" onclick="haptic(); navigateYear(-1)" ${year <= minYear ? 'disabled' : ''}>&#8249;</button>
+        <span class="cal-month-label">${year}</span>
+        <button class="cal-nav-btn" onclick="haptic(); navigateYear(1)" ${year >= maxYear ? 'disabled' : ''}>&#8250;</button>`;
     const header = buildCalendarHeader('year', leftContent);
 
     let miniMonths = '';
     for (let m = 0; m < 12; m++) miniMonths += buildMiniMonth(m, year, crew, todayStr);
 
-    return `<div class="cal-redesign">${header}<div class="cal-year-view">${miniMonths}</div>${buildViewBar(crew)}</div>`;
+    return `<div class="cal-redesign" ontouchstart="calDragStart(event)" ontouchmove="calDragMove(event)" ontouchend="calDragEnd(event)">${header}<div class="cal-year-view" id="cal-year-panel">${miniMonths}</div>${buildViewBar(crew)}</div>`;
+}
+
+/** Navigate the year view by dir (+1 or -1). */
+function navigateYear(dir) {
+    const yearSelect = document.getElementById('year-select');
+    if (!yearSelect) return;
+    const newYear = parseInt(yearSelect.value) + dir;
+    const opt = yearSelect.querySelector(`option[value="${newYear}"]`);
+    if (!opt) return;
+    yearSelect.value = newYear;
+    renderCalendar();
 }
 
 /** Build a compact mini-month grid for the year overview. */
