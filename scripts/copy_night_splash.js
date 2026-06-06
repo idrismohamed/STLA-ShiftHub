@@ -43,23 +43,9 @@ module.exports = function (context) {
         }
     });
 
-    // ── Style XMLs (night overrides only — Cordova owns values/ and values-v31/) ──
-    // Injecting into values/ or values-v31/ conflicts with Cordova's cdv_themes.xml.
-    // We only add the night-specific variants that Cordova does not generate.
-    const styleMap = [
-        ['splash_styles_night.xml',    'values-night',    'splash_styles.xml'],
-        ['splash_styles_night_v31.xml','values-night-v31','splash_styles.xml'],
-    ];
-
-    const valSrc = path.join(root, 'res', 'values', 'android');
-    styleMap.forEach(([srcFile, dstFolder, dstFile]) => {
-        const src = path.join(valSrc, srcFile);
-        const dst = path.join(resBase, dstFolder, dstFile);
-        if (fs.existsSync(src)) {
-            fs.mkdirSync(path.dirname(dst), { recursive: true });
-            fs.copyFileSync(src, dst);
-        }
-    });
+    // Style XMLs skipped — they reference @style/AppTheme which cordova-android 15
+    // does not expose at resource-link time, causing a build failure. The night-mode
+    // PNG drawables alone are sufficient to show the correct dark splash screen.
 
     console.log('copy_night_splash: night-mode splash assets copied.');
 };

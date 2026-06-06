@@ -11,7 +11,7 @@
     <allow-intent href="https://*/*" />
     
     <preference name="Orientation" value="portrait" />
-    <preference name="BackgroundColor" value="ff121212" />
+    <preference name="BackgroundColor" value="#ff121212" />
     <preference name="DisallowOverscroll" value="true" />
 
     <hook type="after_prepare" src="scripts/copy_night_splash.js" />
