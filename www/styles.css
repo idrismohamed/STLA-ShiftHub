@@ -1579,7 +1579,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
         flex-direction: column;
     }
     .cal-main-col #calendar { display: block; }
-    .cal-main-col .cal-redesign { margin-bottom: 0; }
+    .cal-main-col .cal-redesign { margin: 0; }
     .cal-main-col .cal-month-panel { overflow-y: visible; }
     .cal-main-col .cal-scroll-area { overflow-x: auto; }
     .cal-main-col .cal-year-view   { overflow-y: visible; }
@@ -1590,7 +1590,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
         align-self: stretch;
     }
     #analytics-side .analytics-wrap {
-        padding: 10px 0 24px 0;
+        padding: 0 0 24px 0;
         display: flex;
         flex-direction: column;
         gap: 10px;
