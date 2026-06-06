@@ -43,11 +43,11 @@ module.exports = function (context) {
         }
     });
 
-    // ── Style XMLs (dark background colours) ─────────────────────────────
+    // ── Style XMLs (night overrides only — Cordova owns values/ and values-v31/) ──
+    // Injecting into values/ or values-v31/ conflicts with Cordova's cdv_themes.xml.
+    // We only add the night-specific variants that Cordova does not generate.
     const styleMap = [
-        ['splash_styles.xml',          'values',          'splash_styles.xml'],
         ['splash_styles_night.xml',    'values-night',    'splash_styles.xml'],
-        ['splash_styles_v31.xml',      'values-v31',      'splash_styles.xml'],
         ['splash_styles_night_v31.xml','values-night-v31','splash_styles.xml'],
     ];
 
