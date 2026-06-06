@@ -112,17 +112,14 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; ov
 
 /* Enhanced Modern Header (Glassmorphism) */
 .app-header {
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    padding: 30px 20px 20px 20px;
+    background: var(--card);
+    padding: 20px 20px 16px 20px;
     display: flex;
     align-items: center;
-    border-bottom: 1px solid var(--glass-border);
+    border-bottom: 1px solid var(--border);
     position: static;
     z-index: 50;
     transition: background 0.3s, border-color 0.3s;
-    box-shadow: 0 1px 0 var(--glass-border);
 }
 .app-logo {
     width: 54px;
@@ -1362,7 +1359,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--text-muted);
-    margin: 20px 0 10px 2px;
+    margin: 10px 0 8px 2px;
 }
 .an-section-sub {
     font-weight: 500;
@@ -1534,10 +1531,26 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     .cal-cell-time     { display: none; }
     .cal-grid          { gap: 2px; padding: 3px 3px 8px 3px; }
     .cal-wr-num        { width: 26px; height: 26px; font-size: 15px; }
-    .app-header        { padding: 22px 14px 14px 14px; }
+    .app-header        { padding: 16px 14px 12px 14px; }
     .app-title         { font-size: 20px; }
     .app-logo          { width: 44px; height: 44px; }
     .crew-float-value  { font-size: 16px; }
+}
+
+/* Phone-only analytics spacing (below tablet breakpoint) */
+@media (max-width: 767px) {
+    #analytics-side {
+        border-top: 1px solid var(--border);
+        margin-top: 4px;
+    }
+    #analytics-side .analytics-wrap { padding: 12px 14px 12px 14px; }
+    #analytics-side .an-section-title { margin: 8px 0 6px 2px; }
+    #analytics-side .an-flat-card { margin-bottom: 8px; }
+    #analytics-below { padding: 0 14px; }
+    #analytics-below .analytics-wrap { padding: 0 0 24px 0; }
+    #analytics-below .an-section-title { margin: 8px 0 6px 2px; }
+    #analytics-below .an-flat-card { margin-bottom: 8px; }
+    #analytics-below .an-grid-2 { margin-bottom: 8px; }
 }
 
 /* Expanded — inner foldable display / tablet (≥ 768px) */
@@ -1545,7 +1558,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     body { padding-bottom: 40px; }
 
     /* ── App header ── */
-    .app-header { padding: 28px 20px 14px 20px; }
+    .app-header { padding: 18px 20px 14px 20px; }
     .app-title  { font-size: 26px; }
 
     /* ── PP top summary ── */
