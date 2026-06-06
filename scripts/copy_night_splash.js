@@ -17,19 +17,21 @@ module.exports = function (context) {
 
     // ── Night splash PNGs ─────────────────────────────────────────────────
     const nightSrc = path.join(root, 'res', 'screen', 'android-night');
+    // Android qualifier order: orientation(land) < ui-mode(night) < density
+    // smallestWidth(sw*dp) must come BEFORE ui-mode(night)
     const splashMap = [
         ['splash-port-mdpi.png',    'drawable-night-mdpi'],
         ['splash-port-hdpi.png',    'drawable-night-hdpi'],
         ['splash-port-xhdpi.png',   'drawable-night-xhdpi'],
         ['splash-port-xxhdpi.png',  'drawable-night-xxhdpi'],
         ['splash-port-xxxhdpi.png', 'drawable-night-xxxhdpi'],
-        ['splash-land-mdpi.png',    'drawable-night-land-mdpi'],
-        ['splash-land-hdpi.png',    'drawable-night-land-hdpi'],
-        ['splash-land-xhdpi.png',   'drawable-night-land-xhdpi'],
-        ['splash-land-xxhdpi.png',  'drawable-night-land-xxhdpi'],
-        ['splash-land-xxxhdpi.png', 'drawable-night-land-xxxhdpi'],
-        ['splash-sw600dp.png',      'drawable-night-sw600dp'],
-        ['splash-sw720dp.png',      'drawable-night-sw720dp'],
+        ['splash-land-mdpi.png',    'drawable-land-night-mdpi'],
+        ['splash-land-hdpi.png',    'drawable-land-night-hdpi'],
+        ['splash-land-xhdpi.png',   'drawable-land-night-xhdpi'],
+        ['splash-land-xxhdpi.png',  'drawable-land-night-xxhdpi'],
+        ['splash-land-xxxhdpi.png', 'drawable-land-night-xxxhdpi'],
+        ['splash-sw600dp.png',      'drawable-sw600dp-night'],
+        ['splash-sw720dp.png',      'drawable-sw720dp-night'],
     ];
 
     splashMap.forEach(([file, folder]) => {
