@@ -22,35 +22,10 @@
         </div>
     </div>
     
+    <div id="pp-top-summary"></div>
+
     <div class="cal-analytics-row">
         <div class="cal-main-col">
-            <div class="dashboard-card" onclick="triggerBiometricsAndOpenPay()">
-                <div class="dash-left">
-                    <div class="dash-icon">💰</div>
-                    <div class="dash-text">
-                        <p class="dash-title">Current Pay Period</p>
-                        <p class="dash-subtitle">View Dashboard</p>
-                        <p class="dash-meta" id="dashboard-next-shift">Next shift loading…</p>
-                    </div>
-                </div>
-                <div class="dash-arrow">❯</div>
-            </div>
-
-            <div class="calendar-widget" id="calendar-widget">
-                <div class="widget-header">
-                    <div>
-                        <div class="widget-overline">Quick Schedule</div>
-                        <h2 class="widget-title" id="next-shift-title">Next shift loading…</h2>
-                        <p class="widget-subtitle" id="next-shift-details">Select a crew and see your upcoming shift details.</p>
-                    </div>
-                </div>
-                <div class="widget-actions">
-                    <button class="widget-action-btn" onclick="haptic(); scrollToToday()">📍 Today</button>
-                    <button class="widget-action-btn" onclick="haptic(); triggerBiometricsAndOpenPay()">💰 Pay</button>
-                    <button class="widget-action-btn" onclick="haptic(); openSettingsSheet()">⚙️ Settings</button>
-                </div>
-            </div>
-
             <div class="legend">
                 <div class="legend-item"><span class="dot" style="background-color: var(--night);"></span> Nights</div>
                 <div class="legend-item"><span class="dot" style="background-color: var(--day);"></span> Days</div>
@@ -68,11 +43,6 @@
     <div id="analytics-below"></div>
 
     <select id="year-select" style="display:none" onchange="haptic(); renderCalendar()"></select>
-
-    <div class="pill-bar">
-        <button class="pill-btn-secondary" onclick="haptic(); openSettingsSheet()">⚙️ Settings</button>
-        <button class="pill-btn-primary" onclick="haptic(); scrollToToday()">📅 Today</button>
-    </div>
 
     <div class="modal-overlay" id="overlay" onclick="closeAllSheets()"></div>
 

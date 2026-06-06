@@ -1097,7 +1097,8 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
     const weekBar = `<div class="cal-week-bar">
         <button class="cal-week-bar-btn" onclick="haptic(); openPickupSheet('${todayStr}','${todayFriendly}','${todayShift}','${todayNext}')">📅 Today</button>
         <button class="cal-week-bar-btn" onclick="haptic(); triggerBiometricsAndOpenPay(${tgtPPIdx})">💰 Pay Period</button>
-        <div class="cal-crew-btn" style="margin-left:auto">
+        <button class="cal-week-bar-btn" onclick="haptic(); openSettingsSheet()" style="margin-left:auto">⚙️</button>
+        <div class="cal-crew-btn">
             <span>Crew ${crew}</span>
             <span class="cal-crew-chevron">▾</span>
             <select id="crew-select" class="pill-chip-select" onchange="haptic(); updateNavLabels(); renderCalendar()">${crewOpts}</select>
@@ -1463,25 +1464,28 @@ function renderAnalyticsDashboard(crew, logicalT) {
         lieuDays   > 0 ? `<div class="an-row"><span>Lieu Days</span><strong style="color:#fbbc04">${lieuDays}d</strong></div>` : '',
     ].join('');
 
-    const _sideHTML = `
-<div class="analytics-wrap">
-
-  <div class="an-flat-card">
+    const elTop = document.getElementById('pp-top-summary');
+    if (elTop) elTop.innerHTML = `
+<div class="pp-top-wrap">
+  <div class="an-flat-card" style="margin-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom:none;">
     <div class="an-flat-card-title">Current Pay Period <span class="an-section-sub" style="text-transform:none;letter-spacing:0;font-size:10px">${ppStartLabel}–${ppEndLabel}</span></div>
     <div class="an-pp-bar-labels"><span>Day ${ppDayDisplay} of 14</span><span>${ppDaysLeft} day${ppDaysLeft !== 1 ? 's' : ''} left</span></div>
     <div class="an-progress" style="margin:5px 0 0"><div class="an-progress-fill" style="width:${ppPct}%;background:var(--accent)"></div></div>
   </div>
-
-  <div class="an-grid-2">
-    <div class="an-hero-card" style="--hero-color:#7c3aed">
+  <div class="an-grid-2" style="margin:0;border-top-left-radius:0;border-top-right-radius:0;">
+    <div class="an-hero-card" style="--hero-color:#7c3aed;border-top-left-radius:0;border-top-right-radius:0;">
       <div class="an-hero-label">Gross</div>
       <div class="an-hero-value">${f$(gross)}</div>
     </div>
-    <div class="an-hero-card" style="--hero-color:#34d399">
+    <div class="an-hero-card" style="--hero-color:#34d399;border-top-left-radius:0;border-top-right-radius:0;">
       <div class="an-hero-label">Net Pay</div>
       <div class="an-hero-value">${f$(gross - t.total)}</div>
     </div>
   </div>
+</div>`;
+
+    const _sideHTML = `
+<div class="analytics-wrap">
 
   <div class="an-flat-card">
     <div class="an-row"><span>Regular</span><strong>${fH(regH)}</strong></div>
