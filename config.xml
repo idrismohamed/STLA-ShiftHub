@@ -14,13 +14,32 @@
     <preference name="BackgroundColor" value="ff121212" />
     <preference name="DisallowOverscroll" value="true" />
 
+    <hook type="after_prepare" src="scripts/copy_night_splash.js" />
+
     <platform name="android">
         <preference name="android-minSdkVersion" value="24" />
 
-        <preference name="SplashScreenDelay" value="2000" />
-        <preference name="AutoHideSplashScreen" value="true" />
-        <preference name="AndroidWindowSplashScreenAnimatedIcon" value="resources/splashTemplate.png" />
-        <preference name="AndroidWindowSplashScreenBackground" value="#181A1C" />
+        <!-- Splash screens — day mode (Cordova handles these via <splash> tags) -->
+        <splash src="res/screen/android/splash-port-mdpi.png"    density="port-mdpi" />
+        <splash src="res/screen/android/splash-port-hdpi.png"    density="port-hdpi" />
+        <splash src="res/screen/android/splash-port-xhdpi.png"   density="port-xhdpi" />
+        <splash src="res/screen/android/splash-port-xxhdpi.png"  density="port-xxhdpi" />
+        <splash src="res/screen/android/splash-port-xxxhdpi.png" density="port-xxxhdpi" />
+        <splash src="res/screen/android/splash-land-mdpi.png"    density="land-mdpi" />
+        <splash src="res/screen/android/splash-land-hdpi.png"    density="land-hdpi" />
+        <splash src="res/screen/android/splash-land-xhdpi.png"   density="land-xhdpi" />
+        <splash src="res/screen/android/splash-land-xxhdpi.png"  density="land-xxhdpi" />
+        <splash src="res/screen/android/splash-land-xxxhdpi.png" density="land-xxxhdpi" />
+        <splash src="res/screen/android/splash-sw600dp.png"      density="port-hdpi" />
+        <splash src="res/screen/android/splash-sw720dp.png"      density="port-xhdpi" />
+        <!-- Night mode splash screens copied by scripts/copy_night_splash.js hook -->
+
+        <preference name="SplashScreen"             value="screen" />
+        <preference name="SplashScreenDelay"        value="2000" />
+        <preference name="AutoHideSplashScreen"     value="true" />
+        <preference name="FadeSplashScreen"         value="true" />
+        <preference name="FadeSplashScreenDuration" value="400" />
+        <preference name="ShowSplashScreenSpinner"  value="false" />
 
         <!-- Adaptive launcher icons (Android 8.0+ API 26) — separate foreground/background layers -->
         <icon density="mdpi"    foreground="resources/android/icon-foreground/drawable-mdpi-foreground.png"    background="resources/android/icon-background/drawable-mdpi-background.png" />
@@ -42,6 +61,7 @@
         <icon density="xxxhdpi" src="resources/android/icon/drawable-xxxhdpi-icon.png" />
     </platform>
 
+    <plugin name="cordova-plugin-splashscreen" spec="^6.0.0" />
     <plugin name="@moodlehq/cordova-plugin-local-notification" />
     
 <plugin name="cordova-plugin-x-socialsharing" />
