@@ -715,7 +715,6 @@ function buildViewBar(crew, ppIdx = null) {
     return `<div class="cal-week-bar">
         ${LEGEND_HTML}
         <div class="cal-view-bar-actions">
-            <button class="cal-week-bar-btn" onclick="haptic(); scrollToToday()">📅 Today</button>
             <button class="cal-week-bar-btn" onclick="haptic(); triggerBiometricsAndOpenPay(${payArg})">💰 Pay Period</button>
             <div class="cal-crew-btn" style="margin-left:auto">
                 <span>Crew ${crew}</span>
@@ -726,13 +725,13 @@ function buildViewBar(crew, ppIdx = null) {
     </div>`;
 }
 
-/** Build the shared .cal-header HTML with nav content on left and view tabs on right. */
+/** Build the shared .cal-header HTML with nav content on left and view tabs + today button on right. */
 function buildCalendarHeader(viewMode, leftContent) {
     const tabs = CALENDAR_VIEWS.map(v => {
         const label = v.charAt(0).toUpperCase() + v.slice(1);
         return `<div class="cal-tab${v === viewMode ? ' active' : ''}" onclick="haptic(); setCalendarViewMode('${v}')">${label}</div>`;
     }).join('');
-    return `<div class="cal-header"><div class="cal-header-left">${leftContent}</div><div class="cal-view-tabs">${tabs}</div></div>`;
+    return `<div class="cal-header"><div class="cal-header-left">${leftContent}</div><div class="cal-header-right"><div class="cal-view-tabs">${tabs}</div><button class="cal-today-top-btn" onclick="haptic(); scrollToToday()">Today</button></div></div>`;
 }
 
 /**
@@ -1009,13 +1008,9 @@ function buildNewMonthView(m, year, crew, todayStr, yearHols, currentTargetPPInd
     const canPrev = !(m === 0 && year <= minYear);
     const canNext = !(m === 11 && year >= maxYear);
 
-    const chevronCls = calMonthExpanded ? 'cal-chevron' : 'cal-chevron rotated';
     const leftContent = `
         <button class="cal-nav-btn" onclick="haptic(); navigateMonth(-1)" ${canPrev ? '' : 'disabled'}>&#8249;</button>
-        <button class="cal-month-label-btn" onclick="toggleMonthPanel()">
-            <span class="cal-month-label">${monthLabel}</span>
-            <span class="${chevronCls}" id="cal-expand-chevron">▾</span>
-        </button>
+        <span class="cal-month-label">${monthLabel}</span>
         <button class="cal-nav-btn" onclick="haptic(); navigateMonth(1)" ${canNext ? '' : 'disabled'}>&#8250;</button>`;
 
     const header  = buildCalendarHeader('month', leftContent);
@@ -1030,12 +1025,10 @@ function buildNewMonthView(m, year, crew, todayStr, yearHols, currentTargetPPInd
     for (let i = 0; i < startDay; i++) cells += '<div class="cal-cell empty"></div>';
     for (let d = 1; d <= last.getDate(); d++) cells += buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex);
 
-    const panelCls = calMonthExpanded ? 'cal-month-panel' : 'cal-month-panel collapsed';
-
     return `<div class="cal-redesign" ontouchstart="calDragStart(event)" ontouchmove="calDragMove(event)" ontouchend="calDragEnd(event)">
         ${header}
         ${weekRow}
-        <div class="${panelCls}" id="cal-month-panel">
+        <div class="cal-month-panel" id="cal-month-panel">
             ${dowRow}
             <div class="cal-grid">${cells}</div>
         </div>
@@ -1110,14 +1103,23 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
     const holsMap = { ...getHolidays(ppStartYear) };
     if (ppEndYear !== ppStartYear) Object.assign(holsMap, getHolidays(ppEndYear));
 
+    const isCurrentPPView = tgtPPIdx === nowPPIdx;
+    const firstDayStr     = toDateKey(ppStart);
+    const isDropPP        = (dayFatigue[firstDayStr] || {}).isDropPeriod === true;
+
     const utcFmt   = utc => { const s = toDateKey(utc).split('-'); return new Date(+s[0], +s[1]-1, +s[2]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); };
     const ppLabel  = `${utcFmt(ppStart)} – ${utcFmt(ppEnd)}`;
 
+    const dropBadgeHtml = isDropPP
+        ? `<span class="cal-drop-pp-badge">💧 Drop Cycle</span>`
+        : '';
+
     const leftContent = `
         <button class="cal-nav-btn" onclick="haptic(); navigatePP(-1)">&#8249;</button>
-        <div class="cal-pp-label-wrap">
+        <div class="cal-pp-label-wrap${isCurrentPPView ? ' cal-pp-label-current' : ''}">
             <span class="cal-month-label" style="font-size:14px">${ppLabel}</span>
             <span class="cal-pp-sublabel">Pay Period</span>
+            ${dropBadgeHtml}
         </div>
         <button class="cal-nav-btn" onclick="haptic(); navigatePP(1)">&#8250;</button>`;
 
@@ -1170,7 +1172,9 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         const dateLabel = localDate.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
         const friendly  = localDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
-        const pills    = buildCellPills(dStr, shift, ex, f, baseH, holsMap);
+        // Drop cycle is shown in the header for the week view — omit from individual cards
+        const pills    = buildCellPills(dStr, shift, ex, f, baseH, holsMap)
+            .filter(p => !(p.cls === 'pill-drop' && p.text === '💧 Drop Cycle'));
         const visible  = pills.slice(0, 5);
         const overflow = pills.length - 5;
 
