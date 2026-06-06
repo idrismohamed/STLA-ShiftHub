@@ -969,10 +969,26 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
 .cal-cell.pp-2 { background-color: rgba(139,92,246,0.18); }    /* violet  */
 .cal-cell.pp-3 { background-color: rgba(244,114,182,0.15); }   /* rose    */
 
-/* Shift type — border only; no background so the PP colour shows uniformly */
-.cal-cell.D { border-color: rgba(56,189,248,0.45); }
-.cal-cell.N { border-color: rgba(244,63,94,0.40); }
-.cal-cell.M { border-color: rgba(167,139,250,0.45); }
+/* Shift type — distinct background tint + coloured top accent bar */
+.cal-cell.D {
+    background-color: rgba(56, 189, 248, 0.10);
+    border-color: rgba(56, 189, 248, 0.22);
+    border-top: 3px solid #38bdf8;
+}
+.cal-cell.N {
+    background-color: rgba(244, 63, 94, 0.10);
+    border-color: rgba(244, 63, 94, 0.22);
+    border-top: 3px solid #f43f5e;
+}
+.cal-cell.O {
+    background-color: rgba(255, 255, 255, 0.025);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+.cal-cell.M {
+    background-color: rgba(255, 107, 53, 0.10);
+    border-color: rgba(255, 107, 53, 0.25);
+    border-top: 3px solid var(--accent);
+}
 /* Vacation — bold teal so it stands out from Off/Day/Night at a glance */
 .cal-cell.vac {
     background: rgba(0,188,212,0.28) !important;
@@ -986,6 +1002,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
 .cal-cell.today {
     background: var(--cal-cell-bg-today) !important;
     border: 2px solid var(--cal-today-accent) !important;
+    border-top-color: var(--cal-today-accent) !important;
 }
 .cal-cell.past { opacity: 0.42; filter: grayscale(40%); }
 /* current-pp: no border override — subtle enough without extra outline */
@@ -1247,13 +1264,26 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     transition: opacity 0.15s;
 }
 .cal-week-card:active { opacity: 0.7; }
-.cal-week-card.pp-0 { background-color: rgba(251,191,36,0.18); }
-.cal-week-card.pp-1 { background-color: rgba(20,184,166,0.16); }
-.cal-week-card.pp-2 { background-color: rgba(139,92,246,0.18); }
-.cal-week-card.pp-3 { background-color: rgba(244,114,182,0.15); }
-.cal-week-card.D { border-color: rgba(56,189,248,0.45); }
-.cal-week-card.N { border-color: rgba(244,63,94,0.40); }
-.cal-week-card.M { border-color: rgba(167,139,250,0.45); }
+/* Shift type — distinct background tint + coloured top accent bar */
+.cal-week-card.D {
+    background-color: rgba(56, 189, 248, 0.10);
+    border-color: rgba(56, 189, 248, 0.22);
+    border-top: 3px solid #38bdf8;
+}
+.cal-week-card.N {
+    background-color: rgba(244, 63, 94, 0.10);
+    border-color: rgba(244, 63, 94, 0.22);
+    border-top: 3px solid #f43f5e;
+}
+.cal-week-card.O {
+    background-color: rgba(255, 255, 255, 0.025);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+.cal-week-card.M {
+    background-color: rgba(255, 107, 53, 0.10);
+    border-color: rgba(255, 107, 53, 0.25);
+    border-top: 3px solid var(--accent);
+}
 .cal-week-card.today {
     background: var(--cal-cell-bg-today) !important;
     border-left: 3px solid var(--cal-today-border) !important;
