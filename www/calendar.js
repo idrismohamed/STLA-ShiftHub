@@ -748,6 +748,8 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
         else if (t === 'DropPaid') { typeLabel = '💰 Drop+'; }
         else if (t === 'Day')      { typeLabel = '☀️ Day';   timeLabel = ht ? formatTime24(ex.startTime) : '6:30'; }
         else if (t === 'Night')    { typeLabel = '🌙 Night'; timeLabel = ht ? formatTime24(ex.startTime) : '18:30'; }
+        else if (shift === 'D')    { typeLabel = '☀️ Day'; }
+        else if (shift === 'N')    { typeLabel = '🌙 Night'; }
         if (ht && !timeLabel) timeLabel = formatTime24(ex.startTime);
     } else if (f.isLockout) {
         typeLabel = '❌ Max';
