@@ -415,6 +415,29 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 100px; o
 /* Crew selector — anchored to bottom-right of the calendar */
 .crew-anchor { display: none; }
 
+.cal-week-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--cal-header-bg);
+}
+.cal-week-bar-btn {
+    background: var(--m3-surface-container-high);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.15s;
+}
+.cal-week-bar-btn:active { transform: scale(0.96); }
 .cal-crew-bar {
     display: flex;
     align-items: center;

@@ -1077,9 +1077,6 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         let pillsHtml = '<div class="cal-pills">';
         for (const p of visible) pillsHtml += `<div class="cal-pill ${p.cls}">${p.text}</div>`;
         if (overflow > 0) pillsHtml += `<div class="cal-see-more">+${overflow} more</div>`;
-        if (f.isPPBoundary) {
-            pillsHtml += `<div class="cal-pill pill-pp" onclick="event.stopPropagation(); haptic(); triggerBiometricsAndOpenPay(${f.ppIndex})">💰 Pay Period</div>`;
-        }
         pillsHtml += '</div>';
 
         // Insert row divider before the 8th card (split into two rows of 7)
@@ -1091,6 +1088,22 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         </div>`;
     }
 
+    const todayPI      = getPIndex(nowUTC);
+    const todayShift   = getShiftForCrew(todayPI, crew);
+    const todayNext    = getShiftForCrew((todayPI + 1) % 28, crew);
+    const todayFriendly = logicalT.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const crewOpts     = ['A','B','C','D'].map(c =>
+        `<option value="${c}"${c === crew ? ' selected' : ''}>Crew ${c}</option>`).join('');
+    const weekBar = `<div class="cal-week-bar">
+        <button class="cal-week-bar-btn" onclick="haptic(); openPickupSheet('${todayStr}','${todayFriendly}','${todayShift}','${todayNext}')">📅 Today</button>
+        <button class="cal-week-bar-btn" onclick="haptic(); triggerBiometricsAndOpenPay(${tgtPPIdx})">💰 Pay Period</button>
+        <div class="cal-crew-btn" style="margin-left:auto">
+            <span>Crew ${crew}</span>
+            <span class="cal-crew-chevron">▾</span>
+            <select id="crew-select" class="pill-chip-select" onchange="haptic(); updateNavLabels(); renderCalendar()">${crewOpts}</select>
+        </div>
+    </div>`;
+
     return `<div class="cal-redesign" ontouchstart="ppDragStart(event)" ontouchmove="ppDragMove(event)" ontouchend="ppDragEnd(event)">
         ${header}
         <div class="cal-scroll-area">
@@ -1099,7 +1112,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
                 <div class="cal-week-grid">${cards}</div>
             </div>
         </div>
-        ${buildCrewBar(crew)}
+        ${weekBar}
     </div>`;
 }
 
