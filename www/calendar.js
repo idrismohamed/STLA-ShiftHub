@@ -252,6 +252,13 @@ function renderCalendar() {
     const cal = document.getElementById('calendar');
     if (!cal) return;
 
+    // Remove .cal-animating after all cell entry animations finish so WebView
+    // doesn't replay them on subsequent scroll repaints.
+    setTimeout(() => {
+        document.querySelectorAll('.cal-animating')
+            .forEach(el => el.classList.remove('cal-animating'));
+    }, 750);
+
     const savedScrollY  = window.scrollY;
     const savedScrollX  = document.querySelector('.cal-scroll-area')?.scrollLeft ?? 0;
     const yearSelect = document.getElementById('year-select');
@@ -896,7 +903,7 @@ function buildNewMonthView(m, year, crew, todayStr, yearHols, currentTargetPPInd
         ${weekRow}
         <div class="cal-month-panel" id="cal-month-panel">
             ${dowRow}
-            <div class="cal-grid">${cells}</div>
+            <div class="cal-grid cal-animating">${cells}</div>
         </div>
         ${buildViewBar(crew)}
     </div>`;
@@ -1050,7 +1057,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         ${_dropBanner}
         <div class="cal-scroll-area">
             ${dowRow}
-            <div id="cal-pp-wrap" class="cal-pp-wrap">
+            <div id="cal-pp-wrap" class="cal-pp-wrap cal-animating">
                 <div class="cal-week-grid">${cards}</div>
             </div>
         </div>
