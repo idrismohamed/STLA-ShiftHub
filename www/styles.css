@@ -1156,10 +1156,11 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     border-color: rgba(255, 255, 255, 0.06);
 }
 .cal-cell.M {
-    background-color: rgba(255, 107, 53, 0.10);
-    border-color: rgba(255, 107, 53, 0.25);
-    border-top: 3px solid var(--accent);
+    background-color: rgba(192, 163, 255, 0.10);
+    border-color: rgba(192, 163, 255, 0.25);
+    border-bottom: 3px solid var(--mod);
 }
+.cal-cell.M::before { background: transparent !important; }
 /* Vacation — bold teal so it stands out from Off/Day/Night at a glance */
 .cal-cell.vac {
     background: rgba(0,188,212,0.28) !important;
