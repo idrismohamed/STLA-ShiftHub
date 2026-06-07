@@ -474,7 +474,7 @@ function buildMonthHtml(m, year, crew, todayStr, yearHols, currentTargetPPIndex)
         const isCurrentPP = (f.ppIndex === currentTargetPPIndex);
         const timeC       = isToday ? 'today' : (isPast ? (isCurrentPP ? 'current-pp' : 'past') : (isCurrentPP ? 'current-pp' : ''));
 
-        html += `<div class="day ${sC} ${timeC}" id="day-${dStr}" onclick="haptic(); openPickupSheet('${dStr}', '${months[m]} ${d}, ${year}', '${getShiftForCrew(pI, crew)}', '${next}')" ontouchstart="calLpStart(event,'${dStr}','${months[m]} ${d}, ${year}','${getShiftForCrew(pI, crew)}','${next}','month')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd()" oncontextmenu="return false">${d}${alt}${oH}<div class="label">${lbl}</div>${tH}${eH}${ppB}</div>`;
+        html += `<div class="day ${sC} ${timeC}" id="day-${dStr}" onclick="calDayClick('${dStr}','${months[m]} ${d}, ${year}','${getShiftForCrew(pI, crew)}','${next}')" ontouchstart="calLpStart(event,'${dStr}','${months[m]} ${d}, ${year}','${getShiftForCrew(pI, crew)}','${next}','month')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd(event)" ontouchcancel="calLpEnd()" oncontextmenu="return false">${d}${alt}${oH}<div class="label">${lbl}</div>${tH}${eH}${ppB}</div>`;
     }
     return html + `</div></div>`;
 }
@@ -1180,7 +1180,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         // Insert row divider before the 8th card (split into two rows of 7)
         if (i === 7) cards += '</div><div class="cal-pp-row-gap"></div><div class="cal-week-grid">';
 
-        cards += `<div class="${cardCls}" onclick="haptic(); openPickupSheet('${dStr}','${friendly}','${shift}','${next}')" ontouchstart="calLpStart(event,'${dStr}','${friendly}','${shift}','${next}')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd()" oncontextmenu="return false">
+        cards += `<div class="${cardCls}" onclick="calDayClick('${dStr}','${friendly}','${shift}','${next}')" ontouchstart="calLpStart(event,'${dStr}','${friendly}','${shift}','${next}')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd(event)" ontouchcancel="calLpEnd()" oncontextmenu="return false">
             <div class="cal-week-date">${dateLabel}</div>
             ${pillsHtml}
         </div>`;
@@ -1745,13 +1745,15 @@ function renderAnalyticsDashboard(crew, logicalT) {
 }
 
 // ── Long-press context menu ───────────────────────────────────────────────────
-let _ctxLpTimer = null, _ctxLpX = 0, _ctxLpY = 0;
+let _ctxLpTimer = null, _ctxLpX = 0, _ctxLpY = 0, _ctxLpFired = false;
 
 function calLpStart(e, dStr, friendly, shift, next, view) {
     _ctxLpX = e.touches[0].clientX;
     _ctxLpY = e.touches[0].clientY;
+    _ctxLpFired = false;
     _ctxLpTimer = setTimeout(() => {
         _ctxLpTimer = null;
+        _ctxLpFired = true;
         showCtxMenu(dStr, friendly, shift, next, _ctxLpX, _ctxLpY, view);
     }, 500);
 }
@@ -1763,8 +1765,15 @@ function calLpMove(e) {
     if (Math.abs(dx) > 8 || Math.abs(dy) > 8) { clearTimeout(_ctxLpTimer); _ctxLpTimer = null; }
 }
 
-function calLpEnd() {
+function calLpEnd(e) {
     if (_ctxLpTimer) { clearTimeout(_ctxLpTimer); _ctxLpTimer = null; }
+    if (_ctxLpFired && e) e.preventDefault(); // block the synthetic click Android fires after long press
+}
+
+function calDayClick(dStr, friendly, shift, next) {
+    if (_ctxLpFired) { _ctxLpFired = false; return; } // long press just fired — eat this click
+    haptic();
+    openPickupSheet(dStr, friendly, shift, next);
 }
 
 function goToWeekPP(dStr) {
