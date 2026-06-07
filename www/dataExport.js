@@ -1,6 +1,6 @@
 // ─── Data export / import ─────────────────────────────────────────────────────
 
-function exportData() {
+async function exportData() {
     haptic();
     const data = {
         shifts:      localStorage.getItem(STORAGE_KEYS.SHIFTS),
@@ -12,20 +12,33 @@ function exportData() {
     };
     const jsonString = JSON.stringify(data);
     const fileName   = `ShiftHub_Backup_${toDateKey(Date.now())}.json`;
+    const file       = new File([jsonString], fileName, { type: 'application/json' });
 
+    // Web Share API with a proper File object — shares via FileProvider, no Intent size limits
+    if (navigator.share) {
+        try {
+            await navigator.share({ files: [file], title: 'Shift Hub Backup' });
+            return;
+        } catch (e) {
+            if (e.name === 'AbortError') return; // user cancelled
+            // share failed — fall through to socialsharing
+        }
+    }
+
+    // Socialsharing plugin fallback (base64 data URI — can fail on large backups)
     if (window.plugins && window.plugins.socialsharing) {
         const base64Data = btoa(unescape(encodeURIComponent(jsonString)));
         window.plugins.socialsharing.share('Here is your Shift Hub backup data.', fileName, 'data:application/json;base64,' + base64Data, null);
         showToast('Native Share Menu Opened');
-    } else if (navigator.canShare) {
-        const file = new File([jsonString], fileName, { type: 'application/json' });
-        if (navigator.canShare({ files: [file] })) {
-            navigator.share({ files: [file], title: 'Shift Hub Backup', text: 'Backup data' }).catch(err => console.log(err));
-        }
-    } else {
-        navigator.clipboard.writeText(jsonString).then(() => {
-            showToast('Backup COPIED to clipboard! Paste into your notes/email to save.', 'success');
-        });
+        return;
+    }
+
+    // Clipboard last resort
+    try {
+        await navigator.clipboard.writeText(jsonString);
+        showToast('Backup COPIED to clipboard! Paste into your notes/email to save.', 'success');
+    } catch (e) {
+        showToast('Export failed. Try again.', 'error');
     }
 }
 
