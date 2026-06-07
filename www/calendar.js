@@ -1767,6 +1767,16 @@ function calLpEnd() {
     if (_ctxLpTimer) { clearTimeout(_ctxLpTimer); _ctxLpTimer = null; }
 }
 
+function goToWeekPP(dStr) {
+    const [y, m, d] = dStr.split('-').map(Number);
+    const dayUTC  = Date.UTC(y, m - 1, d);
+    const lt      = getLogicalToday();
+    const nowUTC  = Date.UTC(lt.getFullYear(), lt.getMonth(), lt.getDate());
+    currentWeekOffset = Math.floor((dayUTC - basePPStartUTC) / MS_PP) - Math.floor((nowUTC - basePPStartUTC) / MS_PP);
+    localStorage.setItem('currentWeekOffset', currentWeekOffset);
+    setCalendarViewMode('week');
+}
+
 function clearDayMod(dStr) {
     if (!extraShifts[dStr]) return;
     const _undo = { ...extraShifts[dStr] };
@@ -1803,6 +1813,7 @@ function showCtxMenu(dStr, friendly, shift, next, x, y) {
     }
     items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();openPickupSheet('${dStr}','${friendly}','${shift}','${next}');requestAnimationFrame(()=>requestAnimationFrame(()=>selectType('Vacation')))">🏖️ Vacation</div>`;
     items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();triggerBiometricsAndOpenPay(Math.floor((Date.UTC(...'${dStr}'.split('-').map(Number).map((v,i)=>i===1?v-1:v))-basePPStartUTC)/MS_PP))">💰 View Pay Period</div>`;
+    items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();goToWeekPP('${dStr}')">📅 Go to Pay Period</div>`;
     if (hasMod) {
         items += `<div style="height:1px;background:var(--border);margin:4px 8px"></div>`;
         items += `<div class="cal-ctx-item" onclick="hideCtxMenu();clearDayMod('${dStr}')">↩️ Clear Modifications</div>`;
