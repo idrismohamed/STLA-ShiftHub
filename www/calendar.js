@@ -1491,7 +1491,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
     <div id="chart-paybar" class="ch-host-bar"></div>
     <div class="ch-legend" id="chart-paybar-legend"></div>
     <div class="an-sep" style="margin:12px 0 10px"></div>
-    <div class="ch-sub-label">120h Fatigue${fatigueAtMax ? ' · ⛔ MAX' : ''} <span class="ch-sub-val" style="color:${fatigueColor}">${fatigueAtMax ? 'Limit reached' : fatigueRem.toFixed(1) + 'h left'}</span></div>
+    <div class="ch-sub-label">120H Limit${fatigueAtMax ? ' · ⛔ MAX' : ''} <span class="ch-sub-val" style="color:${fatigueColor}">${fatigueAtMax ? 'Limit reached' : fatigueRem.toFixed(1) + 'h left'}</span></div>
     <div id="chart-fatigue-bar" class="ch-host-bar"></div>
     <div class="ch-legend" id="chart-fatigue-legend"></div>
   </div>
