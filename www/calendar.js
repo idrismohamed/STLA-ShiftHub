@@ -1815,8 +1815,10 @@ function showCtxMenu(dStr, friendly, shift, next, x, y, view) {
     if (view === 'month') {
         items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();goToWeekPP('${dStr}')">📅 Go to Pay Period</div>`;
     }
-    items += `<div style="height:1px;background:var(--border);margin:4px 8px"></div>`;
-    items += `<div class="cal-ctx-item" onclick="hideCtxMenu();clearDayMod('${dStr}')">↩️ Clear Modifications</div>`;
+    if (extraShifts[dStr]) {
+        items += `<div style="height:1px;background:var(--border);margin:4px 8px"></div>`;
+        items += `<div class="cal-ctx-item" onclick="hideCtxMenu();clearDayMod('${dStr}')">↩️ Clear Modifications</div>`;
+    }
     menu.innerHTML = items;
     const menuW = 210;
     let top  = y - 220;
