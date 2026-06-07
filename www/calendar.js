@@ -474,7 +474,7 @@ function buildMonthHtml(m, year, crew, todayStr, yearHols, currentTargetPPIndex)
         const isCurrentPP = (f.ppIndex === currentTargetPPIndex);
         const timeC       = isToday ? 'today' : (isPast ? (isCurrentPP ? 'current-pp' : 'past') : (isCurrentPP ? 'current-pp' : ''));
 
-        html += `<div class="day ${sC} ${timeC}" id="day-${dStr}" onclick="haptic(); openPickupSheet('${dStr}', '${months[m]} ${d}, ${year}', '${getShiftForCrew(pI, crew)}', '${next}')" ontouchstart="calLpStart(event,'${dStr}','${months[m]} ${d}, ${year}','${getShiftForCrew(pI, crew)}','${next}')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd()" oncontextmenu="return false">${d}${alt}${oH}<div class="label">${lbl}</div>${tH}${eH}${ppB}</div>`;
+        html += `<div class="day ${sC} ${timeC}" id="day-${dStr}" onclick="haptic(); openPickupSheet('${dStr}', '${months[m]} ${d}, ${year}', '${getShiftForCrew(pI, crew)}', '${next}')" ontouchstart="calLpStart(event,'${dStr}','${months[m]} ${d}, ${year}','${getShiftForCrew(pI, crew)}','${next}','month')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd()" oncontextmenu="return false">${d}${alt}${oH}<div class="label">${lbl}</div>${tH}${eH}${ppB}</div>`;
     }
     return html + `</div></div>`;
 }
@@ -1747,12 +1747,12 @@ function renderAnalyticsDashboard(crew, logicalT) {
 // ── Long-press context menu ───────────────────────────────────────────────────
 let _ctxLpTimer = null, _ctxLpX = 0, _ctxLpY = 0;
 
-function calLpStart(e, dStr, friendly, shift, next) {
+function calLpStart(e, dStr, friendly, shift, next, view) {
     _ctxLpX = e.touches[0].clientX;
     _ctxLpY = e.touches[0].clientY;
     _ctxLpTimer = setTimeout(() => {
         _ctxLpTimer = null;
-        showCtxMenu(dStr, friendly, shift, next, _ctxLpX, _ctxLpY);
+        showCtxMenu(dStr, friendly, shift, next, _ctxLpX, _ctxLpY, view);
     }, 500);
 }
 
@@ -1798,11 +1798,10 @@ function clearDayMod(dStr) {
     showToastWithUndo('Day Reset', dStr, _undo);
 }
 
-function showCtxMenu(dStr, friendly, shift, next, x, y) {
+function showCtxMenu(dStr, friendly, shift, next, x, y, view) {
     const menu = document.getElementById('ctx-menu');
     if (!menu) return;
     hideCtxMenu();
-    const hasMod = !!extraShifts[dStr];
     let items = '';
     if (shift === 'O') {
         items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();openPickupSheet('${dStr}','${friendly}','D','${next}')">☀️ Day Shift</div>`;
@@ -1813,11 +1812,11 @@ function showCtxMenu(dStr, friendly, shift, next, x, y) {
     }
     items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();openPickupSheet('${dStr}','${friendly}','${shift}','${next}');requestAnimationFrame(()=>requestAnimationFrame(()=>selectType('Vacation')))">🏖️ Vacation</div>`;
     items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();triggerBiometricsAndOpenPay(Math.floor((Date.UTC(...'${dStr}'.split('-').map(Number).map((v,i)=>i===1?v-1:v))-basePPStartUTC)/MS_PP))">💰 View Pay Period</div>`;
-    items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();goToWeekPP('${dStr}')">📅 Go to Pay Period</div>`;
-    if (hasMod) {
-        items += `<div style="height:1px;background:var(--border);margin:4px 8px"></div>`;
-        items += `<div class="cal-ctx-item" onclick="hideCtxMenu();clearDayMod('${dStr}')">↩️ Clear Modifications</div>`;
+    if (view === 'month') {
+        items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();goToWeekPP('${dStr}')">📅 Go to Pay Period</div>`;
     }
+    items += `<div style="height:1px;background:var(--border);margin:4px 8px"></div>`;
+    items += `<div class="cal-ctx-item" onclick="hideCtxMenu();clearDayMod('${dStr}')">↩️ Clear Modifications</div>`;
     menu.innerHTML = items;
     const menuW = 210;
     let top  = y - 220;
