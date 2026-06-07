@@ -474,7 +474,7 @@ function buildMonthHtml(m, year, crew, todayStr, yearHols, currentTargetPPIndex)
         const isCurrentPP = (f.ppIndex === currentTargetPPIndex);
         const timeC       = isToday ? 'today' : (isPast ? (isCurrentPP ? 'current-pp' : 'past') : (isCurrentPP ? 'current-pp' : ''));
 
-        html += `<div class="day ${sC} ${timeC}" id="day-${dStr}" onclick="calDayClick('${dStr}','${months[m]} ${d}, ${year}','${getShiftForCrew(pI, crew)}','${next}')" oncontextmenu="calCtxMenu(event,'${dStr}','${months[m]} ${d}, ${year}','${getShiftForCrew(pI, crew)}','${next}','month')">${d}${alt}${oH}<div class="label">${lbl}</div>${tH}${eH}${ppB}</div>`;
+        html += `<div class="day ${sC} ${timeC}" id="day-${dStr}" onclick="calDayClick('${dStr}','${months[m]} ${d}, ${year}','${getShiftForCrew(pI, crew)}','${next}')" ontouchstart="calLpStart(event,'${dStr}','${months[m]} ${d}, ${year}','${getShiftForCrew(pI, crew)}','${next}','month')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd(event)" oncontextmenu="return false">${d}${alt}${oH}<div class="label">${lbl}</div>${tH}${eH}${ppB}</div>`;
     }
     return html + `</div></div>`;
 }
