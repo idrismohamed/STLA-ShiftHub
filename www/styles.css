@@ -1120,12 +1120,12 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     -webkit-touch-callout: none;
 }
 @keyframes cal-cell-in {
-    from { opacity: 0; transform: translateY(7px) scale(0.96); }
-    to   { opacity: 1; transform: none; }
+    from { transform: translateY(8px) scale(0.95); }
+    to   { transform: none; }
 }
 .cal-cell:not(.empty) {
-    animation: cal-cell-in 0.38s var(--spring) both;
-    animation-delay: calc(var(--cell-i, 0) * 15ms);
+    animation: cal-cell-in 0.36s var(--spring) backwards;
+    animation-delay: calc(var(--cell-i, 0) * 8ms);
 }
 @media (prefers-reduced-motion: reduce) {
     .cal-cell, .cal-week-card { animation: none !important; }
@@ -1446,8 +1446,8 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     flex-direction: column;
     gap: 3px;
     cursor: pointer;
-    animation: cal-cell-in 0.42s var(--spring) both;
-    animation-delay: calc(var(--cell-i, 0) * 38ms);
+    animation: cal-cell-in 0.38s var(--spring) backwards;
+    animation-delay: calc(var(--cell-i, 0) * 22ms);
     transition: opacity 0.15s;
     -webkit-user-select: none;
     user-select: none;

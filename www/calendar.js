@@ -161,38 +161,10 @@ let _calFirstRender = true;
 
 
 function setCalendarViewMode(mode) {
-    const cal      = document.getElementById('calendar');
-    const sideEl   = document.getElementById('analytics-side');
-    const existing = cal?.firstElementChild;
-
-    const doRender = () => {
-        calendarViewMode = mode;
-        localStorage.setItem('calendarViewMode', mode);
-        renderCalendar();
-        // CSS @keyframes cal-cell-in handles per-cell stagger entry
-        if (sideEl) {
-            sideEl.style.transition = 'opacity 0.28s ease';
-            sideEl.style.opacity    = '1';
-        }
-    };
-
-    if (existing) {
-        if (window.Motion) {
-            Motion.animate(existing,
-                { opacity: 0, transform: 'translateY(-6px) scale(0.98)' },
-                { duration: 0.14, easing: 'ease' }
-            ).then(doRender);
-            if (sideEl) Motion.animate(sideEl, { opacity: 0 }, { duration: 0.14, easing: 'ease' });
-        } else {
-            existing.style.transition = 'opacity 0.14s ease, transform 0.14s ease';
-            existing.style.opacity    = '0';
-            existing.style.transform  = 'translateY(-6px) scale(0.98)';
-            if (sideEl) { sideEl.style.transition = 'opacity 0.14s ease'; sideEl.style.opacity = '0'; }
-            setTimeout(doRender, 150);
-        }
-    } else {
-        doRender();
-    }
+    calendarViewMode = mode;
+    localStorage.setItem('calendarViewMode', mode);
+    renderCalendar();
+    // Per-cell spring stagger via CSS @keyframes cal-cell-in — no container-level exit/entry
 }
 
 function toggleMonthPanel() {
@@ -954,16 +926,7 @@ function navigateMonth(dir) {
     }
 
     localStorage.setItem('currentCalMonth', currentCalMonth);
-    const _exitPanel = document.getElementById('cal-month-panel');
-    if (_exitPanel) {
-        const nudge = dir > 0 ? '-24px' : '24px';
-        _exitPanel.style.transition = 'opacity 0.1s ease, transform 0.1s ease';
-        _exitPanel.style.opacity    = '0';
-        _exitPanel.style.transform  = `translateX(${nudge})`;
-        setTimeout(renderCalendar, 110);
-    } else {
-        renderCalendar();
-    }
+    renderCalendar();
 }
 
 /** Build the new week view with prev/next navigation. */
@@ -1093,22 +1056,11 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
     </div>`;
 }
 
-/** Navigate the PP view by dir pay periods, with a stagger-in animation. */
+/** Navigate the PP view by dir pay periods. */
 function navigatePP(dir) {
     currentWeekOffset += dir;
     localStorage.setItem('currentWeekOffset', currentWeekOffset);
-    const nudge = dir > 0 ? '-24px' : '24px';
-    const _exitEls = [document.getElementById('cal-pp-wrap'), document.querySelector('.cal-dow-row.week-mode')].filter(Boolean);
-    if (_exitEls.length) {
-        for (const el of _exitEls) {
-            el.style.transition = 'opacity 0.1s ease, transform 0.1s ease';
-            el.style.opacity    = '0';
-            el.style.transform  = `translateX(${nudge})`;
-        }
-        setTimeout(renderCalendar, 110);
-    } else {
-        renderCalendar();
-    }
+    renderCalendar();
 }
 
 /** Alias kept for any existing references. */
