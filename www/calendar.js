@@ -185,17 +185,19 @@ function updateNavLabels() {
 
 /** Navigate to today's month/PP then scroll the calendar into view and highlight today. */
 function scrollToToday() {
+    const logicalT   = getLogicalToday();
+    const yearSelect = document.getElementById('year-select');
+
     if (calendarViewMode === 'month') {
-        const logicalT = getLogicalToday();
-        const yearSelect = document.getElementById('year-select');
-        const year = yearSelect ? parseInt(yearSelect.value) : logicalT.getFullYear();
-        if (year === logicalT.getFullYear()) {
-            currentCalMonth = logicalT.getMonth();
-            localStorage.setItem('currentCalMonth', currentCalMonth);
-            currentWeekOffset = 0;
-            localStorage.setItem('currentWeekOffset', 0);
-            renderCalendar();
-        }
+        if (yearSelect) yearSelect.value = logicalT.getFullYear();
+        currentCalMonth = logicalT.getMonth();
+        localStorage.setItem('currentCalMonth', currentCalMonth);
+        currentWeekOffset = 0;
+        localStorage.setItem('currentWeekOffset', 0);
+        renderCalendar();
+    } else if (calendarViewMode === 'year') {
+        if (yearSelect) yearSelect.value = logicalT.getFullYear();
+        renderCalendar();
     } else if (calendarViewMode === 'week') {
         const prevOffset = currentWeekOffset;
         currentWeekOffset = 0;
