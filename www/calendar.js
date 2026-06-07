@@ -325,6 +325,7 @@ function renderCalendar() {
             window.scrollTo(0, savedScrollY);
             const sa = document.querySelector('.cal-scroll-area');
             if (sa) sa.scrollLeft = savedScrollX;
+            positionTabIndicator();
         });
         renderCalendarWidget(crew, logicalT, todayStr);
         renderDashboardCard(crew, logicalT);
@@ -333,7 +334,7 @@ function renderCalendar() {
     }
     if (viewMode === 'year') {
         cal.innerHTML = renderYearView(year, crew, todayStr);
-        requestAnimationFrame(() => window.scrollTo(0, savedScrollY));
+        requestAnimationFrame(() => { window.scrollTo(0, savedScrollY); positionTabIndicator(); });
         renderCalendarWidget(crew, logicalT, todayStr);
         renderDashboardCard(crew, logicalT);
         renderAnalyticsDashboard(crew, logicalT);
@@ -353,7 +354,7 @@ function renderCalendar() {
     }
 
     cal.innerHTML = buildNewMonthView(currentCalMonth, year, crew, todayStr, yearHols, currentTargetPPIndex);
-    requestAnimationFrame(() => window.scrollTo(0, savedScrollY));
+    requestAnimationFrame(() => { window.scrollTo(0, savedScrollY); positionTabIndicator(); });
     renderCalendarWidget(crew, logicalT, todayStr);
     renderDashboardCard(crew, logicalT);
     renderAnalyticsDashboard(crew, logicalT);
@@ -612,7 +613,41 @@ function buildCalendarHeader(viewMode, leftContent) {
         const label = v.charAt(0).toUpperCase() + v.slice(1);
         return `<div class="cal-tab${v === viewMode ? ' active' : ''}" onclick="haptic(); setCalendarViewMode('${v}')">${label}</div>`;
     }).join('');
-    return `<div class="cal-header"><div class="cal-header-left">${leftContent}</div><div class="cal-header-right"><div class="cal-view-tabs">${tabs}</div><button class="cal-today-top-btn" onclick="haptic(); scrollToToday()">Today</button></div></div>`;
+    return `<div class="cal-header"><div class="cal-header-left">${leftContent}</div><div class="cal-header-right"><div class="cal-view-tabs"><span class="cal-tab-ind" id="cal-tab-ind"></span>${tabs}</div><button class="cal-today-top-btn" onclick="haptic(); scrollToToday()">Today</button></div></div>`;
+}
+
+/** Position the sliding view-tab indicator under the active tab. Slides from the
+ *  previously-active tab when the view changes; snaps instantly otherwise. */
+let _lastTabIndex = null;
+function positionTabIndicator() {
+    const wrap = document.querySelector('.cal-view-tabs');
+    const ind  = document.getElementById('cal-tab-ind');
+    if (!wrap || !ind) return;
+    const tabs = [...wrap.querySelectorAll('.cal-tab')];
+    const activeIdx = tabs.findIndex(t => t.classList.contains('active'));
+    if (activeIdx < 0) { ind.style.opacity = '0'; return; }
+    ind.style.opacity = '1';
+
+    const wrapLeft = wrap.getBoundingClientRect().left;
+    const setTo = idx => {
+        const r = tabs[idx].getBoundingClientRect();
+        ind.style.width = r.width + 'px';
+        ind.style.transform = `translateX(${r.left - wrapLeft}px)`;
+    };
+
+    if (_lastTabIndex === null || _lastTabIndex === activeIdx) {
+        ind.style.transition = 'none';
+        setTo(activeIdx);
+        void ind.offsetWidth;          // flush, then re-enable transitions
+        ind.style.transition = '';
+    } else {
+        ind.style.transition = 'none';
+        setTo(_lastTabIndex);          // start at old tab
+        void ind.offsetWidth;
+        ind.style.transition = '';
+        requestAnimationFrame(() => setTo(activeIdx)); // slide to new tab
+    }
+    _lastTabIndex = activeIdx;
 }
 
 /**
@@ -1623,6 +1658,62 @@ function renderAnalyticsDashboard(crew, logicalT) {
 
     if (elSide)  elSide.innerHTML  = _sideHTML;
     if (elBelow) elBelow.innerHTML = _belowHTML;
+    animateHeroCountUps();
+}
+
+// ── Count-up animation for hero pay figures ───────────────────────────────────
+const _cuCache = {};
+function _parseFigure(txt) {
+    const m = txt.match(/[-+]?[\d,]*\.?\d+/);
+    if (!m) return null;
+    const numStr   = m[0];
+    const start    = txt.indexOf(numStr);
+    const dot      = numStr.indexOf('.');
+    return {
+        prefix:   txt.slice(0, start),
+        suffix:   txt.slice(start + numStr.length),
+        value:    parseFloat(numStr.replace(/,/g, '')),
+        decimals: dot >= 0 ? numStr.length - dot - 1 : 0,
+        hasComma: numStr.includes(',')
+    };
+}
+function _fmtFigure(v, info) {
+    const s = info.hasComma
+        ? v.toLocaleString('en-US', { minimumFractionDigits: info.decimals, maximumFractionDigits: info.decimals })
+        : v.toFixed(info.decimals);
+    return info.prefix + s + info.suffix;
+}
+/** Animate every .an-hero-value: from 0 on first sight, from prev when it changes,
+ *  untouched when unchanged (so plain navigation doesn't re-trigger it). */
+function animateHeroCountUps() {
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const els = document.querySelectorAll(
+        '#pp-top-summary .an-hero-value, #analytics-side .an-hero-value, #analytics-below .an-hero-value'
+    );
+    els.forEach((el, i) => {
+        const info = _parseFigure(el.textContent);
+        if (!info) return;
+        const label  = el.previousElementSibling ? el.previousElementSibling.textContent : '';
+        const key    = (el.closest('[id]') ? el.closest('[id]').id : 'x') + ':' + i + ':' + label;
+        const target = info.value;
+        const prev   = _cuCache[key];
+        _cuCache[key] = target;
+
+        if (el._cuRAF) { cancelAnimationFrame(el._cuRAF); el._cuRAF = null; }
+        if (reduce || prev === target || !window.requestAnimationFrame) return; // already correct / no motion
+
+        const from = (prev === undefined) ? 0 : prev;
+        const dur  = 700, t0 = performance.now();
+        el.textContent = _fmtFigure(from, info);
+        const step = now => {
+            const p = Math.min(1, (now - t0) / dur);
+            const e = 1 - Math.pow(1 - p, 3); // easeOutCubic
+            el.textContent = _fmtFigure(from + (target - from) * e, info);
+            if (p < 1) el._cuRAF = requestAnimationFrame(step);
+            else { el._cuRAF = null; el.textContent = _fmtFigure(target, info); }
+        };
+        el._cuRAF = requestAnimationFrame(step);
+    });
 }
 
 // ── Long-press context menu ───────────────────────────────────────────────────
