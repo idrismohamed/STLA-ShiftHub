@@ -474,7 +474,7 @@ function buildMonthHtml(m, year, crew, todayStr, yearHols, currentTargetPPIndex)
         const isCurrentPP = (f.ppIndex === currentTargetPPIndex);
         const timeC       = isToday ? 'today' : (isPast ? (isCurrentPP ? 'current-pp' : 'past') : (isCurrentPP ? 'current-pp' : ''));
 
-        html += `<div class="day ${sC} ${timeC}" id="day-${dStr}" onclick="haptic(); openPickupSheet('${dStr}', '${months[m]} ${d}, ${year}', '${getShiftForCrew(pI, crew)}', '${next}')">${d}${alt}${oH}<div class="label">${lbl}</div>${tH}${eH}${ppB}</div>`;
+        html += `<div class="day ${sC} ${timeC}" id="day-${dStr}" onclick="haptic(); openPickupSheet('${dStr}', '${months[m]} ${d}, ${year}', '${getShiftForCrew(pI, crew)}', '${next}')" ontouchstart="calLpStart(event,'${dStr}','${months[m]} ${d}, ${year}','${getShiftForCrew(pI, crew)}','${next}')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd()" oncontextmenu="return false">${d}${alt}${oH}<div class="label">${lbl}</div>${tH}${eH}${ppB}</div>`;
     }
     return html + `</div></div>`;
 }
@@ -1767,17 +1767,49 @@ function calLpEnd() {
     if (_ctxLpTimer) { clearTimeout(_ctxLpTimer); _ctxLpTimer = null; }
 }
 
+function clearDayMod(dStr) {
+    if (!extraShifts[dStr]) return;
+    const _undo = { ...extraShifts[dStr] };
+    delete extraShifts[dStr];
+    try {
+        localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts));
+    } catch(e) {
+        showToast('Storage full — could not clear.', 'error');
+        extraShifts[dStr] = _undo;
+        return;
+    }
+    if (syncedEvents[dStr]) {
+        delete syncedEvents[dStr];
+        try { localStorage.setItem(STORAGE_KEYS.SYNCED_EVENTS, JSON.stringify(syncedEvents)); } catch(e) {}
+    }
+    invalidateFatigueCache();
+    updateNotifications();
+    renderCalendar();
+    showToastWithUndo('Day Reset', dStr, _undo);
+}
+
 function showCtxMenu(dStr, friendly, shift, next, x, y) {
     const menu = document.getElementById('ctx-menu');
     if (!menu) return;
     hideCtxMenu();
-    const icon = shift === 'D' ? '☀️' : shift === 'N' ? '🌙' : '📅';
-    menu.innerHTML = `
-        <div class="cal-ctx-item" onclick="hideCtxMenu();haptic();openPickupSheet('${dStr}','${friendly}','${shift}','${next}')">${icon} Log Shift</div>
-        <div class="cal-ctx-item" onclick="hideCtxMenu();haptic();openPickupSheet('${dStr}','${friendly}','${shift}','${next}');requestAnimationFrame(()=>requestAnimationFrame(()=>selectType('Vacation')))">🏖️ Vacation</div>
-        <div class="cal-ctx-item" onclick="hideCtxMenu();haptic();triggerBiometricsAndOpenPay(Math.floor((Date.UTC(...'${dStr}'.split('-').map(Number).map((v,i)=>i===1?v-1:v))-basePPStartUTC)/MS_PP))">💰 View Pay Period</div>`;
-    const menuW = 190;
-    let top  = y - 148;
+    const hasMod = !!extraShifts[dStr];
+    let items = '';
+    if (shift === 'O') {
+        items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();openPickupSheet('${dStr}','${friendly}','D','${next}')">☀️ Day Shift</div>`;
+        items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();openPickupSheet('${dStr}','${friendly}','N','${next}')">🌙 Night Shift</div>`;
+    } else {
+        const icon = shift === 'D' ? '☀️' : '🌙';
+        items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();openPickupSheet('${dStr}','${friendly}','${shift}','${next}')">${icon} Log Shift</div>`;
+    }
+    items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();openPickupSheet('${dStr}','${friendly}','${shift}','${next}');requestAnimationFrame(()=>requestAnimationFrame(()=>selectType('Vacation')))">🏖️ Vacation</div>`;
+    items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();triggerBiometricsAndOpenPay(Math.floor((Date.UTC(...'${dStr}'.split('-').map(Number).map((v,i)=>i===1?v-1:v))-basePPStartUTC)/MS_PP))">💰 View Pay Period</div>`;
+    if (hasMod) {
+        items += `<div style="height:1px;background:var(--border);margin:4px 8px"></div>`;
+        items += `<div class="cal-ctx-item" onclick="hideCtxMenu();clearDayMod('${dStr}')">↩️ Clear Modifications</div>`;
+    }
+    menu.innerHTML = items;
+    const menuW = 210;
+    let top  = y - 220;
     let left = x - menuW / 2;
     if (top < 8)  top = y + 10;
     if (left < 8) left = 8;
