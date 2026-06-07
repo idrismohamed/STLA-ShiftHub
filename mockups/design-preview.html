@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en" data-direction="A">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Shift Hub — Design Directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ============================================================= *
+ *  SHIFT HUB — DESIGN DIRECTION PREVIEW (throwaway mockup)       *
+ *  Toggle A / B / C at the top to compare full visual systems.  *
+ * ============================================================= */
+
+/* ---- Shared base tokens (overridden per direction) ---- */
+:root{
+  --font-ui: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-num: -apple-system, system-ui, sans-serif;
+  --num-feat: "tnum" 1;
+
+  --bg:#141218; --bg2:#141218;
+  --card:rgba(28,26,36,.70); --card-solid:#1E1C24;
+  --text:#E6E1E8; --text-muted:#938F99;
+  --accent:#ff6b35; --accent2:#fbbf24;
+  --accent-grad:linear-gradient(135deg,#ff6b35,#fbbf24);
+  --day:#38bdf8; --night:#f43f5e; --off:#34d399; --mod:#a78bfa;
+  --border:#2B2830; --glass-border:rgba(255,255,255,.08);
+  --cell-bg:#1A1820; --cell-radius:14px; --card-radius:20px;
+  --pp0:#fbbf24; --pp1:#14b8a6; --pp2:#8b5cf6; --pp3:#f472b6;
+
+  --press-scale:.96;
+  --spring:cubic-bezier(.34,1.56,.64,1);
+  --ease:cubic-bezier(.4,0,.2,1);
+  --sheet-ease:cubic-bezier(.16,1,.3,1);
+  --hero-size:44px; --hero-weight:800; --hero-track:-1px;
+  --label-track:0;
+  --label-transform:none;
+  --tab-radius:999px;
+  --today-style:ring; /* ring | bracket | glow */
+}
+
+/* ===================== DIRECTION A — REFINED GLASS ===================== */
+[data-direction="A"]{
+  --font-ui:'Inter',sans-serif;
+  --font-num:'Inter',sans-serif;
+  --num-feat:"tnum" 1;
+  --bg:#141218; --bg2:#1a1622;
+  --card:rgba(28,26,36,.66); --card-solid:#1E1C24;
+  --text:#E6E1E8; --text-muted:#938F99;
+  --accent:#ff6b35; --accent2:#fbbf24;
+  --accent-grad:linear-gradient(135deg,#ff6b35,#fbbf24);
+  --border:#2B2830;
+  --cell-bg:#1A1820; --cell-radius:14px; --card-radius:22px;
+  --hero-size:46px; --hero-weight:800; --hero-track:-1.5px;
+  --tab-radius:999px;
+  --today-style:ring;
+  --press-scale:.96; --spring:cubic-bezier(.34,1.56,.64,1);
+}
+
+/* =============== DIRECTION B — INDUSTRIAL INSTRUMENT CLUSTER =============== */
+[data-direction="B"]{
+  --font-ui:'Archivo',sans-serif;
+  --font-num:'JetBrains Mono',monospace;
+  --num-feat:"tnum" 1;
+  --bg:#0D0D0F; --bg2:#0D0D0F;
+  --card:#161619; --card-solid:#161619;
+  --text:#EDEDEF; --text-muted:#8A8A92;
+  --accent:#ff6b35; --accent2:#ff9100;
+  --accent-grad:linear-gradient(135deg,#ff6b35,#ff9100);
+  --day:#3aa0ff; --night:#ff4d4d; --off:#27c08a; --mod:#b18cff;
+  --border:#26262B;
+  --cell-bg:#131316; --cell-radius:6px; --card-radius:8px;
+  --pp0:#ff9100; --pp1:#00bcd4; --pp2:#9d7bff; --pp3:#ff5da2;
+  --hero-size:48px; --hero-weight:700; --hero-track:-1px;
+  --label-track:.10em; --label-transform:uppercase;
+  --tab-radius:6px;
+  --today-style:bracket;
+  --press-scale:.97; --spring:cubic-bezier(.2,.9,.3,1);
+}
+
+/* ===================== DIRECTION C — SOFT & CALM ===================== */
+[data-direction="C"]{
+  --font-ui:'Nunito',sans-serif;
+  --font-num:'Nunito',sans-serif;
+  --num-feat:"tnum" 1;
+  --bg:#1A1820; --bg2:#221c26;
+  --card:rgba(42,38,52,.72); --card-solid:#272231;
+  --text:#E9E4EF; --text-muted:#A89FB2;
+  --accent:#ff8a5c; --accent2:#ffb27a;
+  --accent-grad:linear-gradient(135deg,#ff8a5c,#ffb27a);
+  --day:#5cb8ff; --night:#ff7a8a; --off:#5fd6a6; --mod:#c0a3ff;
+  --border:#352F40;
+  --cell-bg:#241f2e; --cell-radius:20px; --card-radius:28px;
+  --pp0:#ffcf8a; --pp1:#7fe3c6; --pp2:#c0a3ff; --pp3:#ff9ec6;
+  --hero-size:44px; --hero-weight:800; --hero-track:-.5px;
+  --tab-radius:999px;
+  --today-style:glow;
+  --press-scale:.93; --spring:cubic-bezier(.34,1.8,.5,1);
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;}
+html,body{height:100%;}
+body{
+  font-family:var(--font-ui);
+  background:radial-gradient(120% 80% at 50% -10%,var(--bg2),var(--bg) 60%);
+  color:var(--text);
+  padding-bottom:120px;
+  overflow-x:hidden;
+  transition:background .4s var(--ease),color .4s var(--ease);
+}
+.num{font-family:var(--font-num);font-feature-settings:var(--num-feat);font-variant-numeric:tabular-nums;}
+
+/* ---- Direction switcher ---- */
+.switcher{
+  position:sticky;top:0;z-index:50;
+  display:flex;gap:6px;padding:10px;
+  background:color-mix(in srgb,var(--bg) 80%,transparent);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+}
+.switcher button{
+  flex:1;padding:11px 8px;border:1px solid var(--border);
+  background:transparent;color:var(--text-muted);
+  font-family:var(--font-ui);font-weight:700;font-size:12px;
+  letter-spacing:.04em;border-radius:10px;cursor:pointer;
+  transition:all .25s var(--ease);
+  text-transform:uppercase;
+}
+.switcher button.active{background:var(--accent-grad);color:#fff;border-color:transparent;box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 40%,transparent);}
+.switcher .dlabel{display:block;font-size:9px;font-weight:600;opacity:.85;margin-top:2px;text-transform:none;letter-spacing:0;}
+
+.wrap{max-width:440px;margin:0 auto;padding:0 14px;}
+
+/* ---- Header ---- */
+.app-header{display:flex;align-items:center;gap:12px;padding:18px 2px 14px;}
+.logo{width:46px;height:46px;border-radius:14px;background:var(--accent-grad);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px;color:#fff;box-shadow:0 8px 22px color-mix(in srgb,var(--accent) 35%,transparent);}
+[data-direction="B"] .logo{border-radius:6px;}
+.app-titles h1{font-size:18px;font-weight:900;letter-spacing:var(--hero-track);}
+.app-titles h1 span{background:var(--accent-grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.app-titles p{font-size:13px;color:var(--text-muted);margin-top:1px;}
+.gear{margin-left:auto;width:40px;height:40px;border-radius:12px;border:1px solid var(--border);background:var(--card);display:flex;align-items:center;justify-content:center;font-size:18px;}
+[data-direction="B"] .gear{border-radius:6px;}
+
+/* ---- Hero pay card ---- */
+.hero{
+  position:relative;overflow:hidden;
+  background:var(--card);
+  border:1px solid var(--glass-border);
+  border-radius:var(--card-radius);
+  padding:20px;margin-bottom:14px;
+  backdrop-filter:blur(16px) saturate(160%);-webkit-backdrop-filter:blur(16px) saturate(160%);
+  box-shadow:0 10px 34px rgba(0,0,0,.30);
+}
+[data-direction="B"] .hero{backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--card-solid);
+  background-image:repeating-linear-gradient(90deg,transparent,transparent 7px,rgba(255,255,255,.012) 7px,rgba(255,255,255,.012) 8px);}
+.hero::after{content:"";position:absolute;inset:0 0 auto auto;width:160px;height:160px;background:var(--accent-grad);filter:blur(60px);opacity:.16;border-radius:50%;transform:translate(40px,-60px);}
+.hero-label{font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:var(--label-track);text-transform:var(--label-transform);}
+.hero-figure{
+  font-size:var(--hero-size);font-weight:var(--hero-weight);
+  letter-spacing:var(--hero-track);line-height:1.05;margin:6px 0 2px;
+  background:var(--accent-grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+[data-direction="B"] .hero-figure{-webkit-text-fill-color:var(--text);background:none;}
+[data-direction="B"] .hero-cur{color:var(--accent);}
+.hero-sub{font-size:13px;color:var(--text-muted);}
+.hero-sub b{color:var(--off);}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:16px;}
+.hero-stat{background:color-mix(in srgb,var(--cell-bg) 70%,transparent);border:1px solid var(--border);border-radius:calc(var(--cell-radius) - 2px);padding:10px;}
+.hero-stat .k{font-size:10px;color:var(--text-muted);text-transform:var(--label-transform);letter-spacing:var(--label-track);}
+.hero-stat .v{font-size:18px;font-weight:800;margin-top:3px;}
+.progress{height:7px;border-radius:99px;background:color-mix(in srgb,var(--cell-bg) 80%,transparent);margin-top:16px;overflow:hidden;}
+.progress > i{display:block;height:100%;width:64%;border-radius:99px;background:var(--accent-grad);transform-origin:left;transform:scaleX(0);transition:transform .9s var(--sheet-ease);}
+
+/* ---- Tabs ---- */
+.tabs{position:relative;display:flex;background:var(--card-solid);border:1px solid var(--border);border-radius:var(--tab-radius);padding:4px;margin-bottom:14px;}
+.tabs button{flex:1;position:relative;z-index:2;background:none;border:none;color:var(--text-muted);font-family:var(--font-ui);font-weight:700;font-size:13px;padding:9px;cursor:pointer;transition:color .25s var(--ease);text-transform:var(--label-transform);letter-spacing:var(--label-track);}
+.tabs button.active{color:#fff;}
+[data-direction="B"] .tabs button.active{color:#0D0D0F;}
+.tab-ind{position:absolute;z-index:1;top:4px;bottom:4px;border-radius:calc(var(--tab-radius) - 2px);background:var(--accent-grad);transition:transform .4s var(--spring),width .4s var(--spring);box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 38%,transparent);}
+[data-direction="B"] .tab-ind{background:var(--text);box-shadow:none;}
+
+/* ---- Calendar ---- */
+.dow{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px;padding:0 2px;}
+.dow span{text-align:center;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:var(--label-transform);}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+.cell{
+  position:relative;min-height:62px;border-radius:var(--cell-radius);
+  background:var(--cell-bg);border:1px solid var(--border);
+  padding:6px 5px;display:flex;flex-direction:column;gap:2px;cursor:pointer;
+  transition:transform .28s var(--spring),border-color .2s,background .2s;
+  overflow:hidden;
+}
+.cell:active{transform:scale(var(--press-scale));}
+.cell.empty{background:transparent;border:none;}
+.daynum{font-family:var(--font-num);font-size:13px;font-weight:700;color:var(--text-muted);font-variant-numeric:tabular-nums;}
+.cell.work .daynum{color:var(--text);}
+.tag{margin-top:auto;font-size:9px;font-weight:800;padding:2px 5px;border-radius:6px;width:fit-content;letter-spacing:var(--label-track);}
+.tag.d{background:color-mix(in srgb,var(--day) 22%,transparent);color:var(--day);}
+.tag.n{background:color-mix(in srgb,var(--night) 22%,transparent);color:var(--night);}
+
+/* shift fill emphasis (A & C tint the whole cell lightly; B uses edge bars) */
+.cell.d{background:color-mix(in srgb,var(--day) 12%,var(--cell-bg));border-color:color-mix(in srgb,var(--day) 30%,var(--border));}
+.cell.n{background:color-mix(in srgb,var(--night) 12%,var(--cell-bg));border-color:color-mix(in srgb,var(--night) 30%,var(--border));}
+
+/* PP hierarchy: A = left stripe, B = top segment marker, C = soft low-alpha band */
+.cell{border-left:3px solid transparent;}
+.cell.pp0{border-left-color:var(--pp0);}
+.cell.pp1{border-left-color:var(--pp1);}
+.cell.pp2{border-left-color:var(--pp2);}
+.cell.pp3{border-left-color:var(--pp3);}
+[data-direction="B"] .cell{border-left:1px solid var(--border);}
+[data-direction="B"] .cell.d{box-shadow:inset 3px 0 0 var(--day);}
+[data-direction="B"] .cell.n{box-shadow:inset 3px 0 0 var(--night);}
+[data-direction="C"] .cell{border-left:1px solid var(--border);}
+[data-direction="C"] .cell.pp0{background:color-mix(in srgb,var(--pp0) 7%,var(--cell-bg));}
+[data-direction="C"] .cell.pp1{background:color-mix(in srgb,var(--pp1) 7%,var(--cell-bg));}
+[data-direction="C"] .cell.pp2{background:color-mix(in srgb,var(--pp2) 7%,var(--cell-bg));}
+[data-direction="C"] .cell.pp3{background:color-mix(in srgb,var(--pp3) 7%,var(--cell-bg));}
+[data-direction="C"] .cell.d{background:color-mix(in srgb,var(--day) 14%,var(--cell-bg));}
+[data-direction="C"] .cell.n{background:color-mix(in srgb,var(--night) 14%,var(--cell-bg));}
+
+/* today indicator variants */
+.cell.today .daynum{position:relative;}
+[data-direction="A"] .cell.today .daynum,
+[data-direction="C"] .cell.today .daynum{
+  background:var(--accent-grad);color:#fff;width:22px;height:22px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+[data-direction="C"] .cell.today{box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 50%,transparent),0 0 18px color-mix(in srgb,var(--accent) 30%,transparent);}
+[data-direction="B"] .cell.today{border-color:var(--accent);}
+[data-direction="B"] .cell.today .daynum::before{content:"[";color:var(--accent);margin-right:1px;}
+[data-direction="B"] .cell.today .daynum::after{content:"]";color:var(--accent);margin-left:1px;}
+
+.hint{text-align:center;color:var(--text-muted);font-size:12px;margin:16px 0 0;}
+
+/* ---- FAB pill bar ---- */
+.fab{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:40;display:flex;gap:6px;padding:6px;border-radius:50px;background:var(--card);border:1px solid var(--border);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 10px 30px rgba(0,0,0,.4);}
+[data-direction="B"] .fab{border-radius:10px;backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--card-solid);}
+.fab button{border:none;border-radius:44px;padding:12px 18px;font-family:var(--font-ui);font-weight:800;font-size:13px;cursor:pointer;background:transparent;color:var(--text);text-transform:var(--label-transform);letter-spacing:var(--label-track);}
+[data-direction="B"] .fab button{border-radius:6px;}
+.fab button.primary{background:var(--accent-grad);color:#fff;}
+
+/* ---- Bottom sheet ---- */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .35s var(--ease);z-index:60;}
+.scrim.open{opacity:1;pointer-events:auto;}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:61;max-width:440px;margin:0 auto;
+  background:var(--card-solid);border:1px solid var(--border);border-bottom:none;
+  border-radius:28px 28px 0 0;padding:10px 18px 26px;
+  transform:translateY(110%);transition:transform .5s var(--sheet-ease);
+  box-shadow:0 -10px 40px rgba(0,0,0,.5);}
+[data-direction="B"] .sheet{border-radius:12px 12px 0 0;}
+.sheet.open{transform:translateY(0);}
+.grab{width:38px;height:4px;border-radius:99px;background:var(--border);margin:2px auto 14px;}
+.sheet h3{font-size:17px;font-weight:800;margin-bottom:3px;}
+.sheet .sub{color:var(--text-muted);font-size:13px;margin-bottom:16px;}
+.opt{display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;border:1px solid var(--border);background:var(--cell-bg);margin-bottom:8px;opacity:0;transform:translateY(10px);}
+[data-direction="B"] .opt{border-radius:6px;}
+.sheet.open .opt{animation:rise .45s var(--sheet-ease) forwards;}
+.sheet.open .opt:nth-child(3){animation-delay:.05s;}
+.sheet.open .opt:nth-child(4){animation-delay:.10s;}
+.sheet.open .opt:nth-child(5){animation-delay:.15s;}
+@keyframes rise{to{opacity:1;transform:translateY(0);}}
+.opt .ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;background:color-mix(in srgb,var(--accent) 16%,transparent);}
+.opt .t{font-weight:700;font-size:14px;}
+.opt .t small{display:block;color:var(--text-muted);font-weight:600;font-size:11px;}
+
+.foot{text-align:center;color:var(--text-muted);font-size:11px;padding:8px 0 0;}
+</style>
+</head>
+<body>
+
+<div class="switcher">
+  <button data-dir="A" class="active">A<span class="dlabel">Refined Glass</span></button>
+  <button data-dir="B">B<span class="dlabel">Industrial</span></button>
+  <button data-dir="C">C<span class="dlabel">Soft &amp; Calm</span></button>
+</div>
+
+<div class="wrap">
+  <div class="app-header">
+    <div class="logo">S</div>
+    <div class="app-titles">
+      <h1>Shift <span>Hub</span></h1>
+      <p>Good evening, Idris</p>
+    </div>
+    <div class="gear">⚙️</div>
+  </div>
+
+  <!-- HERO PAY CARD -->
+  <div class="hero">
+    <div class="hero-label">Current Pay Period · Net</div>
+    <div class="hero-figure num"><span class="hero-cur">$</span><span id="hero">0</span></div>
+    <div class="hero-sub">Gross <b class="num">$4,182.50</b> · 6 days worked</div>
+    <div class="hero-grid">
+      <div class="hero-stat"><div class="k">Reg Hrs</div><div class="v num">72.0</div></div>
+      <div class="hero-stat"><div class="k">OT Hrs</div><div class="v num">8.5</div></div>
+      <div class="hero-stat"><div class="k">Prem</div><div class="v num">$214</div></div>
+    </div>
+    <div class="progress"><i id="prog"></i></div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs" id="tabs">
+    <span class="tab-ind" id="ind"></span>
+    <button class="active">Month</button>
+    <button>Week</button>
+    <button>Year</button>
+  </div>
+
+  <!-- CALENDAR -->
+  <div class="dow"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+  <div class="grid" id="grid"></div>
+
+  <p class="hint">Tap any day to preview the action sheet ↑</p>
+</div>
+
+<!-- FAB -->
+<div class="fab">
+  <button>Today</button>
+  <button class="primary">+ Log Shift</button>
+</div>
+
+<!-- SHEET -->
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet">
+  <div class="grab"></div>
+  <h3 id="sheetTitle">Tuesday, June 9</h3>
+  <div class="sub">Scheduled: ☀️ Day Shift · 06:30–18:30</div>
+  <div class="opt"><div class="ic">☀️</div><div class="t">Log Day Shift<small>06:30 – 18:30 · 12h</small></div></div>
+  <div class="opt"><div class="ic">🌙</div><div class="t">Log Night Shift<small>18:30 – 06:30 · 12h</small></div></div>
+  <div class="opt"><div class="ic">🏖️</div><div class="t">Vacation<small>Paid time off</small></div></div>
+  <div class="opt"><div class="ic">💰</div><div class="t">View Pay Period<small>Breakdown &amp; premiums</small></div></div>
+</div>
+
+<div class="foot">Throwaway preview · not the live app · toggle A/B/C above</div>
+
+<script>
+/* ---- Build a representative month grid ---- */
+const grid=document.getElementById('grid');
+// 30-day month starting on Wednesday(3); today = 9
+const startDow=3, days=30, today=9;
+// shift pattern (rough 28-day rota feel): D/N/Off cycles
+const pat=['d','d','d','','','n','n','n','','','d','d','d','','','n','n','n','','','d','d','d','','','n','n','n','',''];
+let html='';
+for(let i=0;i<startDow;i++) html+='<div class="cell empty"></div>';
+for(let d=1;d<=days;d++){
+  const s=pat[(d-1)%pat.length];
+  const pp='pp'+(Math.floor((d-1)/7)%4);
+  const cls=['cell',pp]; let tag='';
+  if(s==='d'){cls.push('d','work');tag='<span class="tag d">DAY</span>';}
+  else if(s==='n'){cls.push('n','work');tag='<span class="tag n">NIGHT</span>';}
+  if(d===today)cls.push('today');
+  html+=`<div class="${cls.join(' ')}" onclick="openSheet(${d})"><span class="daynum">${d}</span>${tag}</div>`;
+}
+grid.innerHTML=html;
+
+/* ---- Count-up hero figure ---- */
+const heroEl=document.getElementById('hero');
+const target=3247.86;
+function countUp(){
+  const dur=900, t0=performance.now();
+  function step(now){
+    const p=Math.min(1,(now-t0)/dur);
+    const e=1-Math.pow(1-p,3); // easeOutCubic
+    const v=target*e;
+    heroEl.textContent=v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    if(p<1)requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+function animateProg(){const p=document.getElementById('prog');p.style.transform='scaleX(0)';requestAnimationFrame(()=>requestAnimationFrame(()=>p.style.transform='scaleX(.64)'));}
+
+/* ---- Tabs sliding indicator ---- */
+const tabs=document.getElementById('tabs');
+const ind=document.getElementById('ind');
+const tabBtns=[...tabs.querySelectorAll('button')];
+function moveInd(btn){const r=btn.getBoundingClientRect();const pr=tabs.getBoundingClientRect();ind.style.width=r.width+'px';ind.style.transform=`translateX(${r.left-pr.left-4}px)`;}
+tabBtns.forEach(b=>b.addEventListener('click',()=>{tabBtns.forEach(x=>x.classList.remove('active'));b.classList.add('active');moveInd(b);}));
+
+/* ---- Bottom sheet ---- */
+const scrim=document.getElementById('scrim'),sheet=document.getElementById('sheet');
+const names=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+window.openSheet=function(d){
+  const dow=(startDow+d-1)%7;
+  document.getElementById('sheetTitle').textContent=`${names[dow]}, June ${d}`;
+  scrim.classList.add('open');sheet.classList.add('open');
+};
+scrim.addEventListener('click',()=>{scrim.classList.remove('open');sheet.classList.remove('open');});
+
+/* ---- Direction switching ---- */
+document.querySelectorAll('.switcher button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.switcher button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.documentElement.setAttribute('data-direction',b.dataset.dir);
+    // re-run animations so the feel is visible per direction
+    countUp();animateProg();
+    requestAnimationFrame(()=>moveInd(tabs.querySelector('button.active')));
+  });
+});
+
+/* ---- init ---- */
+window.addEventListener('load',()=>{
+  countUp();animateProg();
+  setTimeout(()=>moveInd(tabs.querySelector('button.active')),60);
+});
+window.addEventListener('resize',()=>moveInd(tabs.querySelector('button.active')));
+</script>
+</body>
+</html>
