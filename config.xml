@@ -42,6 +42,7 @@
         <icon density="xxxhdpi" src="resources/android/icon/drawable-xxxhdpi-icon.png" />
     </platform>
 
+    <plugin name="cordova-plugin-vibration" />
     <plugin name="@moodlehq/cordova-plugin-local-notification" />
     
 <plugin name="cordova-plugin-x-socialsharing" />
