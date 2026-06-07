@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Shift Hub — Analytics Viz Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ============================================================= *
+ *  SHIFT HUB — ANALYTICS DATA-VIZ PREVIEW (throwaway mockup)     *
+ *  All charts are hand-built inline SVG, themed to the app's     *
+ *  "Soft & Calm" palette. Pick which to ship.                    *
+ * ============================================================= */
+:root{
+  --bg:#1A1820; --card:rgba(42,38,52,.72); --card-solid:#272231;
+  --text:#E9E4EF; --text-muted:#A89FB2;
+  --accent:#ff8a5c; --accent2:#ffb27a;
+  --accent-grad:linear-gradient(135deg,#ff8a5c,#ffb27a);
+  --day:#5cb8ff; --night:#ff7a8a; --off:#5fd6a6; --mod:#c0a3ff;
+  --border:#352F40; --glass-border:rgba(255,255,255,.07);
+  --spring:cubic-bezier(.34,1.8,.5,1);
+  /* semantic data colours */
+  --c-net:#5fd6a6; --c-reg:#5cb8ff; --c-ot:#ffcf6b; --c-dt:#ff8a5c;
+  --c-tax:#ff7a8a; --c-cpp:#c0a3ff; --c-ei:#7fd4e8; --c-prem:#ffb27a;
+  --good:#5fd6a6; --warn:#ffcf6b; --bad:#ff7a8a;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{
+  font-family:'Nunito',-apple-system,system-ui,sans-serif;
+  background:radial-gradient(120% 80% at 50% -10%,#221c26,#1A1820 60%);
+  color:var(--text); padding:0 0 60px; line-height:1.4;
+}
+.num{font-variant-numeric:tabular-nums;}
+header{position:sticky;top:0;z-index:10;padding:16px 16px 12px;background:rgba(26,24,32,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--border);}
+header h1{font-size:18px;font-weight:900;}
+header h1 span{background:var(--accent-grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+header p{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.wrap{max-width:480px;margin:0 auto;padding:16px;}
+
+.viz{background:var(--card);border:1px solid var(--glass-border);border-radius:24px;padding:18px;margin-bottom:16px;box-shadow:0 6px 22px rgba(0,0,0,.22);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);}
+.viz-num{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:.06em;text-transform:uppercase;}
+.viz-title{font-size:17px;font-weight:900;margin:2px 0 3px;}
+.viz-sub{font-size:12px;color:var(--text-muted);margin-bottom:14px;}
+.an-section-title{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin:0 0 8px 2px;}
+
+/* current-vs-proposed split */
+.cmp{display:grid;grid-template-columns:1fr;gap:12px;}
+.cmp-box{background:rgba(0,0,0,.16);border:1px solid var(--border);border-radius:16px;padding:12px;}
+.cmp-tag{font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;display:inline-block;}
+.cmp-box.now .cmp-tag{color:var(--text-muted);}
+.cmp-box.new .cmp-tag{color:var(--accent);}
+
+/* "current" thin bar (for before shots) */
+.an-progress{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin:8px 0 4px;}
+.an-progress-fill{height:100%;border-radius:3px;}
+.an-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;}
+.an-row span{color:var(--text-muted);}
+.an-hero-value{font-size:24px;font-weight:900;letter-spacing:-.5px;}
+.an-hero-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);}
+
+/* legends */
+.legend{display:flex;flex-wrap:wrap;gap:10px 14px;margin-top:12px;}
+.legend.small{margin-top:8px;gap:8px 12px;}
+.lg{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--text-muted);}
+.lg .sw{width:10px;height:10px;border-radius:3px;}
+
+/* toggle */
+.seg{display:inline-flex;background:var(--border);border-radius:999px;padding:3px;gap:2px;margin-bottom:12px;}
+.seg button{border:none;background:transparent;color:var(--text-muted);font-family:inherit;font-weight:800;font-size:12px;padding:6px 14px;border-radius:999px;cursor:pointer;transition:color .2s;}
+.seg button.active{background:var(--accent-grad);color:#fff;box-shadow:0 3px 10px rgba(255,138,92,.4);}
+
+svg{display:block;overflow:visible;}
+.svg-grid{display:grid;gap:14px;}
+.g2{grid-template-columns:1fr 1fr;}
+.g3{grid-template-columns:1fr 1fr 1fr;}
+.ring-cap{text-align:center;}
+.ring-cap .v{font-size:15px;font-weight:900;margin-top:2px;}
+.ring-cap .k{font-size:10px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+.center-label{display:flex;flex-direction:column;align-items:center;}
+
+.foot{text-align:center;color:var(--text-muted);font-size:11px;padding:8px 16px 0;}
+.pick{font-size:11px;color:var(--text-muted);margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);}
+.pick b{color:var(--accent);}
+@media(min-width:520px){.cmp{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Analytics <span>Viz Preview</span></h1>
+  <p>Inline-SVG mockups in your Soft &amp; Calm theme · tell me which to ship (by number)</p>
+</header>
+
+<div class="wrap">
+
+  <!-- 1 — TREND -->
+  <div class="viz">
+    <div class="viz-num">Viz 1</div>
+    <div class="viz-title">Pay / Hours Trend</div>
+    <div class="viz-sub">Last 8 pay periods. The per-PP series is already computed in the YTD loop — it's just thrown away today.</div>
+    <div class="seg" id="trendSeg">
+      <button class="active" data-k="gross">Gross</button>
+      <button data-k="hours">Hours</button>
+      <button data-k="ot">OT</button>
+    </div>
+    <div id="trend"></div>
+    <div class="pick">Replaces nothing — this is <b>net-new insight</b>: "are my paychecks trending up?"</div>
+  </div>
+
+  <!-- 2 — PAY BREAKDOWN -->
+  <div class="viz">
+    <div class="viz-num">Viz 2</div>
+    <div class="viz-title">Where Your Pay Goes</div>
+    <div class="viz-sub">Current pay period, 100% stacked — take-home vs every deduction at a glance.</div>
+    <div class="cmp">
+      <div class="cmp-box now">
+        <span class="cmp-tag">Current</span>
+        <div class="an-row"><span>Gross</span><strong class="num">$4,182.50</strong></div>
+        <div class="an-row"><span>Net Pay</span><strong class="num">$3,247.86</strong></div>
+        <div class="an-row"><span>Tax (Fed+ON)</span><strong class="num" style="color:var(--night)">-$612.40</strong></div>
+        <div class="an-row"><span>CPP + EI</span><strong class="num" style="color:var(--night)">-$322.24</strong></div>
+      </div>
+      <div class="cmp-box new">
+        <span class="cmp-tag">Proposed</span>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+          <div><div class="an-hero-label">Net Pay</div><div class="an-hero-value num" style="color:var(--c-net)">$3,247.86</div></div>
+          <div style="text-align:right"><div class="an-hero-label">Gross</div><div class="num" style="font-weight:800;font-size:15px">$4,182.50</div></div>
+        </div>
+        <div id="paybar"></div>
+        <div class="legend small" id="paybarLegend"></div>
+      </div>
+    </div>
+    <div class="pick">Replaces the isolated <b>Gross / Net numbers</b> with a money story.</div>
+  </div>
+
+  <!-- 3 — FATIGUE GAUGE -->
+  <div class="viz">
+    <div class="viz-num">Viz 3</div>
+    <div class="viz-title">120h Fatigue Gauge</div>
+    <div class="viz-sub">Safety-critical "how close to the legal max" — deserves prominence, not a 6px bar.</div>
+    <div class="cmp">
+      <div class="cmp-box now">
+        <span class="cmp-tag">Current</span>
+        <div class="an-row" style="font-size:12px"><span>120h Fatigue — 96.5h used</span><span style="color:var(--warn);font-weight:700">23.5h left</span></div>
+        <div class="an-progress"><div class="an-progress-fill" style="width:80%;background:var(--warn)"></div></div>
+      </div>
+      <div class="cmp-box new">
+        <span class="cmp-tag">Proposed</span>
+        <div style="display:flex;justify-content:center" id="gauge"></div>
+      </div>
+    </div>
+    <div class="pick">Replaces the <b>120h fatigue bar</b> in the top summary.</div>
+  </div>
+
+  <!-- 4 — RINGS -->
+  <div class="viz">
+    <div class="viz-num">Viz 4</div>
+    <div class="viz-title">Annual Cap Rings</div>
+    <div class="viz-sub">CPP, EI and Vacation are all "progress toward an annual cap" — group them as rings.</div>
+    <div class="svg-grid g3" id="rings"></div>
+    <div class="pick">Replaces the <b>CPP/EI thin bars</b> + <b>vacation bar</b> (scattered) with one grouped panel.</div>
+  </div>
+
+  <!-- 5 — DONUTS -->
+  <div class="viz">
+    <div class="viz-num">Viz 5</div>
+    <div class="viz-title">Composition Donuts</div>
+    <div class="viz-sub">Shape beats lists: month shift mix + this period's hours mix.</div>
+    <div class="svg-grid g2">
+      <div>
+        <div class="an-section-title">Month · Shift Mix</div>
+        <div style="display:flex;justify-content:center" id="donutShift"></div>
+        <div class="legend small" id="donutShiftLegend"></div>
+      </div>
+      <div>
+        <div class="an-section-title">PP · Hours Mix</div>
+        <div style="display:flex;justify-content:center" id="donutHours"></div>
+        <div class="legend small" id="donutHoursLegend"></div>
+      </div>
+    </div>
+    <div class="pick">Replaces/augments the <b>3 shift-count cards</b> and the hours rows.</div>
+  </div>
+
+  <!-- 6 — MONTH VS MONTH -->
+  <div class="viz">
+    <div class="viz-num">Viz 6</div>
+    <div class="viz-title">Month vs Month — Paired Bars</div>
+    <div class="viz-sub">The 4-column delta table, made visual.</div>
+    <div class="cmp">
+      <div class="cmp-box now">
+        <span class="cmp-tag">Current</span>
+        <div style="font-size:12px">
+          <div class="an-row" style="color:var(--text-muted);font-size:10px;letter-spacing:.05em;text-transform:uppercase"><span></span><span>Jun&nbsp;&nbsp;May&nbsp;&nbsp;Δ</span></div>
+          <div class="an-row"><span>Days worked</span><span class="num">13&nbsp;&nbsp;11&nbsp;&nbsp;<b style="color:var(--good)">+2</b></span></div>
+          <div class="an-row"><span>Hours</span><span class="num">168&nbsp;&nbsp;142&nbsp;&nbsp;<b style="color:var(--good)">+26</b></span></div>
+          <div class="an-row"><span>OT/DT hrs</span><span class="num">12&nbsp;&nbsp;18&nbsp;&nbsp;<b style="color:var(--bad)">-6</b></span></div>
+        </div>
+      </div>
+      <div class="cmp-box new">
+        <span class="cmp-tag">Proposed</span>
+        <div id="paired"></div>
+      </div>
+    </div>
+    <div class="pick">Replaces the dense <b>comparison table</b>.</div>
+  </div>
+
+</div>
+
+<div class="foot">Throwaway preview · not the live app · reply with the Viz numbers you want shipped</div>
+
+<script>
+const NS='http://www.w3.org/2000/svg';
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function el(tag,attrs){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);return e;}
+function svg(w,h){const s=el('svg',{viewBox:`0 0 ${w} ${h}`,width:'100%',height:h,preserveAspectRatio:'xMidYMid meet'});return s;}
+
+/* ---------- 1. TREND (bar + line) ---------- */
+const trendData={
+  gross:{vals:[3120,3340,2980,3610,3247,3890,3450,3247],unit:'$',fmt:v=>'$'+(v/1000).toFixed(1)+'k',color:css('--c-net')},
+  hours:{vals:[156,168,150,180,162,184,170,168],unit:'h',fmt:v=>v+'h',color:css('--c-reg')},
+  ot:{vals:[6,12,4,20,9,24,14,12],unit:'h',fmt:v=>v+'h',color:css('--c-ot')}
+};
+let trendKey='gross';
+function drawTrend(){
+  const host=document.getElementById('trend');host.innerHTML='';
+  const d=trendData[trendKey];
+  const W=440,H=150,padL=8,padR=8,padT=14,padB=26;
+  const s=svg(W,H);
+  const n=d.vals.length, max=Math.max(...d.vals)*1.12;
+  const bw=(W-padL-padR)/n, gap=bw*0.30;
+  const x=i=>padL+i*bw+gap/2, bwi=bw-gap;
+  const y=v=>padT+(H-padT-padB)*(1-v/max);
+  // baseline
+  s.appendChild(el('line',{x1:padL,y1:H-padB,x2:W-padR,y2:H-padB,stroke:css('--border'),'stroke-width':1}));
+  // bars
+  d.vals.forEach((v,i)=>{
+    const bh=(H-padT-padB)*(v/max);
+    const last=i===n-1;
+    const r=el('rect',{x:x(i),y:H-padB,width:bwi,height:0,rx:6,
+      fill:last?d.color:css('--border'),opacity:last?1:.55});
+    s.appendChild(r);
+    animate(t=>{r.setAttribute('height',bh*t);r.setAttribute('y',H-padB-bh*t);},520,i*45);
+    // label last
+    if(last){
+      const tx=el('text',{x:x(i)+bwi/2,y:y(v)-6,'text-anchor':'middle',fill:css('--text'),'font-size':12,'font-weight':800,'font-family':'Nunito'});
+      tx.textContent=d.fmt(v);tx.style.opacity=0;s.appendChild(tx);
+      animate(t=>tx.style.opacity=t,300,n*45);
+    }
+  });
+  // trend line
+  const pts=d.vals.map((v,i)=>[x(i)+bwi/2,y(v)]);
+  const path=el('polyline',{fill:'none',stroke:d.color,'stroke-width':2.5,'stroke-linecap':'round','stroke-linejoin':'round',points:pts.map(p=>p.join(',')).join(' '),opacity:.9});
+  const len=pathLen(pts);path.setAttribute('stroke-dasharray',len);path.setAttribute('stroke-dashoffset',len);
+  s.appendChild(path);
+  animate(t=>path.setAttribute('stroke-dashoffset',len*(1-t)),700,120);
+  // dots
+  pts.forEach((p,i)=>{const c=el('circle',{cx:p[0],cy:p[1],r:i===n-1?4:2.6,fill:i===n-1?d.color:css('--card-solid'),stroke:d.color,'stroke-width':2});c.style.opacity=0;s.appendChild(c);animate(t=>c.style.opacity=t,200,300+i*30);});
+  // x labels
+  ['PP1','','PP3','','PP5','','PP7',''].forEach((lb,i)=>{if(!lb)return;const tx=el('text',{x:x(i)+bwi/2,y:H-8,'text-anchor':'middle',fill:css('--text-muted'),'font-size':9,'font-weight':700,'font-family':'Nunito'});tx.textContent=lb;s.appendChild(tx);});
+  host.appendChild(s);
+}
+function pathLen(pts){let l=0;for(let i=1;i<pts.length;i++){l+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);}return l;}
+document.getElementById('trendSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;[...e.currentTarget.children].forEach(x=>x.classList.remove('active'));b.classList.add('active');trendKey=b.dataset.k;drawTrend();});
+
+/* ---------- 2. PAY BREAKDOWN (100% stacked) ---------- */
+function drawPaybar(){
+  const host=document.getElementById('paybar');host.innerHTML='';
+  const segs=[
+    ['Net',3247.86,css('--c-net')],
+    ['Fed Tax',402.10,css('--c-tax')],
+    ['ON Tax',210.30,css('--c-cpp')],
+    ['CPP',248.00,css('--c-ot')],
+    ['EI',74.24,css('--c-ei')]
+  ];
+  const total=segs.reduce((a,s)=>a+s[1],0);
+  const W=440,H=34,r=10;
+  const s=svg(W,H);
+  // track
+  s.appendChild(el('rect',{x:0,y:0,width:W,height:H,rx:r,fill:css('--border')}));
+  let xpos=0;
+  const clip=el('clipPath',{id:'pbclip'});clip.appendChild(el('rect',{x:0,y:0,width:W,height:H,rx:r}));s.appendChild(clip);
+  const g=el('g',{'clip-path':'url(#pbclip)'});s.appendChild(g);
+  segs.forEach((seg,i)=>{
+    const w=W*(seg[1]/total);
+    const rect=el('rect',{x:xpos,y:0,width:0,height:H,fill:seg[2]});
+    g.appendChild(rect);
+    const fx=xpos;
+    animate(t=>rect.setAttribute('width',w*t),600,i*70);
+    // pct label if wide enough
+    if(w>46){const tx=el('text',{x:fx+w/2,y:H/2+4,'text-anchor':'middle',fill:'#1a1820','font-size':11,'font-weight':900,'font-family':'Nunito'});tx.textContent=Math.round(seg[1]/total*100)+'%';tx.style.opacity=0;g.appendChild(tx);animate(t=>tx.style.opacity=t,300,300+i*70);}
+    xpos+=w;
+  });
+  host.appendChild(s);
+  // legend
+  const lg=document.getElementById('paybarLegend');lg.innerHTML='';
+  segs.forEach(seg=>{const d=document.createElement('div');d.className='lg';d.innerHTML=`<span class="sw" style="background:${seg[2]}"></span>${seg[0]} <span class="num" style="color:var(--text);margin-left:2px">$${seg[1].toFixed(0)}</span>`;lg.appendChild(d);});
+}
+
+/* ---------- 3. FATIGUE GAUGE (semicircle, zones) ---------- */
+function drawGauge(){
+  const host=document.getElementById('gauge');host.innerHTML='';
+  const used=96.5,max=120,pct=used/max;
+  const W=220,H=140,cx=W/2,cy=120,R=92,sw=16;
+  const s=svg(W,H);
+  const a0=Math.PI, a1=0; // 180deg -> 0deg (left to right)
+  const ang=t=>a0+(a1-a0)*t;
+  const pt=(t,r)=>[cx+Math.cos(ang(t))*r, cy+Math.sin(ang(t))*r];
+  function arc(t0,t1,r,color,width,opacity){
+    const [x0,y0]=pt(t0,r),[x1,y1]=pt(t1,r);
+    const large=(t1-t0)>0.5?1:0;
+    const p=el('path',{d:`M ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1}`,fill:'none',stroke:color,'stroke-width':width,'stroke-linecap':'round',opacity:opacity==null?1:opacity});
+    return p;
+  }
+  // zone track: green 0-.75, amber .75-.9, red .9-1
+  s.appendChild(arc(0,0.75,R,css('--good'),sw,.22));
+  s.appendChild(arc(0.75,0.9,R,css('--warn'),sw,.22));
+  s.appendChild(arc(0.9,1,R,css('--bad'),sw,.22));
+  // value arc
+  const zoneColor=pct>=0.9?css('--bad'):pct>=0.75?css('--warn'):css('--good');
+  const val=arc(0,Math.max(0.001,pct),R,zoneColor,sw,1);
+  const total=Math.PI*R;val.setAttribute('stroke-dasharray',total);val.setAttribute('stroke-dashoffset',total);
+  s.appendChild(val);
+  animate(t=>{const cur=pct*t;const[x1,y1]=pt(cur,R);const large=cur>0.5?1:0;const[x0,y0]=pt(0,R);val.setAttribute('d',`M ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1}`);},900,80);
+  // needle tick
+  // center text
+  const t1=el('text',{x:cx,y:cy-22,'text-anchor':'middle',fill:css('--text'),'font-size':30,'font-weight':900,'font-family':'Nunito'});t1.setAttribute('class','num');
+  const t2=el('text',{x:cx,y:cy-4,'text-anchor':'middle',fill:css('--text-muted'),'font-size':12,'font-weight':700,'font-family':'Nunito'});t2.textContent='of 120h used';
+  s.appendChild(t1);s.appendChild(t2);
+  animate(t=>{t1.textContent=(used*t).toFixed(1)+'h';},900,80);
+  // end labels
+  s.appendChild(Object.assign(el('text',{x:cx-R,y:cy+18,'text-anchor':'middle',fill:css('--text-muted'),'font-size':10,'font-family':'Nunito','font-weight':700}),{textContent:'0'}));
+  s.appendChild(Object.assign(el('text',{x:cx+R,y:cy+18,'text-anchor':'middle',fill:css('--text-muted'),'font-size':10,'font-family':'Nunito','font-weight':700}),{textContent:'120'}));
+  host.appendChild(s);
+}
+
+/* ---------- 4. RINGS ---------- */
+function ring(host,label,valTxt,pct,color){
+  const W=110,H=110,cx=55,cy=55,R=44,sw=10;
+  const s=svg(W,H+4);
+  const C=2*Math.PI*R;
+  s.appendChild(el('circle',{cx,cy,r:R,fill:'none',stroke:css('--border'),'stroke-width':sw}));
+  const arc=el('circle',{cx,cy,r:R,fill:'none',stroke:color,'stroke-width':sw,'stroke-linecap':'round',transform:`rotate(-90 ${cx} ${cy})`,'stroke-dasharray':C,'stroke-dashoffset':C});
+  s.appendChild(arc);
+  animate(t=>arc.setAttribute('stroke-dashoffset',C*(1-pct*t)),900,60);
+  const pctT=el('text',{x:cx,y:cy+5,'text-anchor':'middle',fill:css('--text'),'font-size':17,'font-weight':900,'font-family':'Nunito'});pctT.setAttribute('class','num');
+  s.appendChild(pctT);
+  animate(t=>pctT.textContent=Math.round(pct*100*t)+'%',900,60);
+  const box=document.createElement('div');box.className='ring-cap';
+  box.appendChild(s);
+  box.insertAdjacentHTML('beforeend',`<div class="k">${label}</div><div class="v num">${valTxt}</div>`);
+  host.appendChild(box);
+}
+function drawRings(){
+  const host=document.getElementById('rings');host.innerHTML='';
+  ring(host,'CPP','$2,140 / $4,034',0.53,css('--c-cpp'));
+  ring(host,'EI','$612 / $1,077',0.57,css('--c-ei'));
+  ring(host,'Vacation','64h / 150h',0.43,css('--c-net'));
+}
+
+/* ---------- 5. DONUTS ---------- */
+function donut(host,segs,centerTop,centerBot){
+  const W=130,H=130,cx=65,cy=65,R=50,sw=18;
+  const s=svg(W,H);
+  const total=segs.reduce((a,x)=>a+x[1],0);
+  const C=2*Math.PI*R;
+  let off=0;
+  segs.forEach((seg,i)=>{
+    const frac=seg[1]/total;
+    const arc=el('circle',{cx,cy,r:R,fill:'none',stroke:seg[2],'stroke-width':sw,
+      transform:`rotate(-90 ${cx} ${cy})`,'stroke-dasharray':`0 ${C}`});
+    s.appendChild(arc);
+    const start=off, seglen=C*frac;
+    animate(t=>{arc.setAttribute('stroke-dasharray',`${seglen*t} ${C}`);arc.setAttribute('stroke-dashoffset',-C*start);},650,i*90);
+    off+=frac;
+  });
+  const tTop=el('text',{x:cx,y:cy-1,'text-anchor':'middle',fill:css('--text'),'font-size':19,'font-weight':900,'font-family':'Nunito'});tTop.setAttribute('class','num');tTop.textContent=centerTop;
+  const tBot=el('text',{x:cx,y:cy+15,'text-anchor':'middle',fill:css('--text-muted'),'font-size':10,'font-weight':700,'font-family':'Nunito'});tBot.textContent=centerBot;
+  s.appendChild(tTop);s.appendChild(tBot);
+  host.appendChild(s);
+}
+function legend(host,segs){host.innerHTML='';segs.forEach(seg=>{const d=document.createElement('div');d.className='lg';d.innerHTML=`<span class="sw" style="background:${seg[2]}"></span>${seg[0]} <b style="color:var(--text);margin-left:2px" class="num">${seg[1]}</b>`;host.appendChild(d);});}
+function drawDonuts(){
+  const shift=[['Days',13,css('--day')],['Nights',8,css('--night')],['Off',9,css('--off')]];
+  donut(document.getElementById('donutShift'),shift,'30','shifts');
+  legend(document.getElementById('donutShiftLegend'),shift);
+  const hours=[['Reg',144,css('--c-reg')],['OT',8,css('--c-ot')],['DT',4,css('--c-dt')],['Prem',36,css('--c-prem')]];
+  donut(document.getElementById('donutHours'),hours,'168','hrs');
+  legend(document.getElementById('donutHoursLegend'),hours);
+}
+
+/* ---------- 6. PAIRED BARS ---------- */
+function drawPaired(){
+  const host=document.getElementById('paired');host.innerHTML='';
+  const rows=[['Days worked',13,11],['Hours',168,142],['OT/DT hrs',12,18]];
+  const W=300,rowH=46,H=rows.length*rowH;
+  const s=svg(W,H);
+  const labelW=92, barX=labelW, barW=W-labelW-44;
+  rows.forEach((r,i)=>{
+    const max=Math.max(r[1],r[2])*1.1;
+    const y=i*rowH+6;
+    const lab=el('text',{x:0,y:y+16,fill:css('--text'),'font-size':12,'font-weight':700,'font-family':'Nunito'});lab.textContent=r[0];s.appendChild(lab);
+    // this month (accent) + prev (muted)
+    [[r[1],css('--accent'),y+2,1],[r[2],css('--border'),y+15,0.9]].forEach(([v,color,yy,op],j)=>{
+      const w=barW*(v/max);
+      const bar=el('rect',{x:barX,y:yy,width:0,height:11,rx:5.5,fill:color,opacity:op});
+      s.appendChild(bar);
+      animate(t=>bar.setAttribute('width',w*t),600,i*80+j*60);
+      const vt=el('text',{x:barX+w+6,y:yy+10,fill:css('--text-muted'),'font-size':10,'font-weight':800,'font-family':'Nunito'});vt.setAttribute('class','num');vt.textContent=v;vt.style.opacity=0;s.appendChild(vt);
+      animate(t=>vt.style.opacity=t,300,i*80+j*60+200);
+    });
+    const dv=r[1]-r[2];
+    const dt=el('text',{x:W,y:y+16,'text-anchor':'end',fill:dv>=0?css('--good'):css('--bad'),'font-size':12,'font-weight':900,'font-family':'Nunito'});dt.textContent=(dv>=0?'+':'')+dv;s.appendChild(dt);
+  });
+  host.appendChild(s);
+  host.insertAdjacentHTML('beforeend','<div class="legend small"><div class="lg"><span class="sw" style="background:var(--accent)"></span>Jun</div><div class="lg"><span class="sw" style="background:var(--border)"></span>May</div></div>');
+}
+
+/* ---------- tiny animation helper ---------- */
+function animate(fn,dur,delay){
+  if(reduce){fn(1);return;}
+  delay=delay||0;
+  setTimeout(()=>{
+    const t0=performance.now();
+    function step(now){const p=Math.min(1,(now-t0)/dur);const e=1-Math.pow(1-p,3);fn(e);if(p<1)requestAnimationFrame(step);}
+    requestAnimationFrame(step);
+  },delay);
+}
+
+/* init (re-run once fonts settle) */
+function drawAll(){drawTrend();drawPaybar();drawGauge();drawRings();drawDonuts();drawPaired();}
+window.addEventListener('load',()=>{drawAll();if(document.fonts&&document.fonts.ready)document.fonts.ready.then(drawAll);});
+</script>
+</body>
+</html>
