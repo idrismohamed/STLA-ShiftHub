@@ -325,12 +325,23 @@
                     <input type="number" id="setting-tl-rate" class="settings-input" step="0.01">
                 </div>
                 <div class="settings-row">
-                    <div class="settings-label">Stop CPP Deductions:</div>
+                    <div class="settings-label">Stop CPP1 Deductions:</div>
                     <select id="cpp-max-pp" class="settings-select" onchange="haptic()"></select>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">Stop CPP2 Deductions:</div>
+                    <select id="cpp2-max-pp" class="settings-select" onchange="haptic()"></select>
                 </div>
                 <div class="settings-row">
                     <div class="settings-label">Stop EI Deductions:</div>
                     <select id="ei-max-pp" class="settings-select" onchange="haptic()"></select>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label" style="flex-direction:column;align-items:flex-start;gap:2px">
+                        Yearly Tax Rates
+                        <span id="tax-fetched-date" style="font-size:11px;opacity:0.55"></span>
+                    </div>
+                    <button class="btn-action btn-save" style="padding:6px 14px;font-size:13px;white-space:nowrap" onclick="fetchTaxRates()">Update Now</button>
                 </div>
             </div>
 

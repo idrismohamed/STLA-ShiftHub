@@ -9,14 +9,16 @@ function openSettingsSheet() {
     const yearSelect = document.getElementById('year-select');
     const year       = yearSelect ? parseInt(yearSelect.value) : getLogicalToday().getFullYear();
     const cppS       = document.getElementById('cpp-max-pp');
+    const cpp2S      = document.getElementById('cpp2-max-pp');
     const eiS        = document.getElementById('ei-max-pp');
     let opts = `<option value="9999">Not Met Yet</option>`;
     for (let i = 0; i < 300; i++) {
         const ppE = new Date(basePPStartUTC + (i * 14 + 13) * MS_DAY);
         if (ppE.getUTCFullYear() === year) opts += `<option value="${i}">Ending ${ppE.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</option>`;
     }
-    if (cppS) cppS.innerHTML = opts;
-    if (eiS)  eiS.innerHTML  = opts;
+    if (cppS)  cppS.innerHTML  = opts;
+    if (cpp2S) cpp2S.innerHTML = opts;
+    if (eiS)   eiS.innerHTML   = opts;
 
     const fields = {
         'setting-theme':        { el: null, key: 'theme' },
@@ -57,9 +59,11 @@ function openSettingsSheet() {
         if (b.id === 'btn-rot-' + selectedRotOffset) b.classList.add('active');
     });
 
-    if (cppS) cppS.value = sysSettings.cppMaxPP;
-    if (eiS)  eiS.value  = sysSettings.eiMaxPP;
+    if (cppS)  cppS.value  = sysSettings.cppMaxPP;
+    if (cpp2S) cpp2S.value = sysSettings.cpp2MaxPP;
+    if (eiS)   eiS.value   = sysSettings.eiMaxPP;
 
+    updateTaxFetchedLabel();
     openSheet('sheet-settings');
 }
 
@@ -75,8 +79,9 @@ function saveSettings() {
         vacationLimit:     g('setting-vacation-limit') ? (parseFloat(g('setting-vacation-limit').value) || 150) : 150,
         vacationStartDate: g('setting-vac-start') && g('setting-vac-start').value ? g('setting-vac-start').value : '2026-01-01',
         vacationEndDate:   g('setting-vac-end')   && g('setting-vac-end').value   ? g('setting-vac-end').value   : '2027-01-15',
-        cppMaxPP:          g('cpp-max-pp') ? parseInt(g('cpp-max-pp').value) : 9999,
-        eiMaxPP:           g('ei-max-pp')  ? parseInt(g('ei-max-pp').value)  : 9999,
+        cppMaxPP:          g('cpp-max-pp')  ? parseInt(g('cpp-max-pp').value)  : 9999,
+        cpp2MaxPP:         g('cpp2-max-pp') ? parseInt(g('cpp2-max-pp').value) : 9999,
+        eiMaxPP:           g('ei-max-pp')   ? parseInt(g('ei-max-pp').value)   : 9999,
         defaultCrew:       g('setting-default-crew')   ? g('setting-default-crew').value : 'D',
         startYear:         g('setting-start-year') ? (parseInt(g('setting-start-year').value) || 2024) : 2024,
         endYear:           g('setting-end-year')   ? (parseInt(g('setting-end-year').value)   || 2036) : 2036,
@@ -109,4 +114,28 @@ function selectRotOffset(o) {
     document.querySelectorAll('#sheet-settings .crew-type').forEach(b => b.classList.remove('active'));
     const btn = document.getElementById('btn-rot-' + o);
     if (btn) btn.classList.add('active');
+}
+
+// ─── Tax rate auto-fetch ───────────────────────────────────────────────────────
+
+async function fetchTaxRates(silent = false) {
+    if (!silent) haptic();
+    try {
+        const res  = await fetch(TAX_TABLES_URL + '?t=' + Date.now());
+        if (!res.ok) throw new Error(res.status);
+        const data = await res.json();
+        taxTables  = data.years || data;
+        localStorage.setItem(STORAGE_KEYS.TAX_TABLES,  JSON.stringify(taxTables));
+        localStorage.setItem(STORAGE_KEYS.TAX_FETCHED, data.lastUpdated || new Date().toISOString().slice(0, 10));
+        updateTaxFetchedLabel();
+        if (!silent) showToast('Tax rates updated');
+    } catch (e) {
+        if (!silent) showToast('Update failed — using cached rates', 'error');
+    }
+}
+
+function updateTaxFetchedLabel() {
+    const el = document.getElementById('tax-fetched-date');
+    const d  = localStorage.getItem(STORAGE_KEYS.TAX_FETCHED);
+    if (el) el.textContent = d ? `Last updated: ${d}` : 'Not yet synced';
 }

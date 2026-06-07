@@ -52,32 +52,35 @@ function getPayPeriodsInYear(year) {
 
 /**
  * Calculate all payroll deductions for a bi-weekly gross amount.
- * Uses 2024–2026 federal/Ontario tax brackets, CPP, EI, and Ontario Health Premium.
+ * Uses fetched/built-in tax tables for CPP1, CPP2, EI and federal/Ontario credits.
  * @param {number} biGross      gross pay for this pay period
  * @param {number} ppI          pay period index (used to apply CPP/EI caps)
  * @param {number} [targetYear=2026]
- * @returns {{ cpp:number, ei:number, fedTax:number, onTax:number, total:number }}
+ * @returns {{ cpp:number, cpp2:number, ei:number, fedTax:number, onTax:number, total:number }}
  */
 function calculateTaxes(biGross, ppI, targetYear = 2026) {
     const ppCount = getPayPeriodsInYear(targetYear);
     const annG    = biGross * ppCount;
 
-    let fedBPA = 16452, onBPA = 12989;
-    let annCPPMax = 4230.45, cppRate = 0.0595;
-    let annEIMax  = 1123.07, eiRate  = 0.0163;
+    const tbl = getTaxYear(targetYear);
+    let fedBPA = tbl.fedBPA;
+    const { onBPA, cea, cppRate, annCPPMax, ympe, cpp2Rate, annCPP2Max, yampe, eiRate, annEIMax } = tbl;
 
-    if (targetYear === 2024) {
-        fedBPA = 15705; onBPA = 12399; annCPPMax = 3867.50; annEIMax = 1049.12; eiRate = 0.0166;
-    } else if (targetYear === 2025) {
-        fedBPA = 16200; onBPA = 12700; annCPPMax = 4000.00; annEIMax = 1100.00; eiRate = 0.0164;
-    }
+    // CPP1: 5.95% on earnings above $3,500 basic exemption up to YMPE
+    const cpp  = (ppI < sysSettings.cppMaxPP)
+        ? Math.max(0, Math.min(biGross, ympe / ppCount) - (3500 / ppCount)) * cppRate
+        : 0;
 
-    const cpp = (ppI < sysSettings.cppMaxPP) ? Math.max(0, biGross - (3500 / ppCount)) * cppRate : 0;
-    const ei  = (ppI < sysSettings.eiMaxPP)  ? biGross * eiRate : 0;
+    // CPP2: 4% on earnings between YMPE and YAMPE (mandatory since 2024)
+    const cpp2 = (ppI < sysSettings.cpp2MaxPP && annG > ympe)
+        ? Math.max(0, Math.min(biGross, yampe / ppCount) - (ympe / ppCount)) * cpp2Rate
+        : 0;
 
-    const annCPP = Math.min(cpp * ppCount, annCPPMax);
-    const annEI  = Math.min(ei  * ppCount, annEIMax);
-    const cea    = 1433; // Canada Employment Amount
+    const ei = (ppI < sysSettings.eiMaxPP) ? biGross * eiRate : 0;
+
+    const annCPP  = Math.min(cpp  * ppCount, annCPPMax);
+    const annCPP2 = Math.min(cpp2 * ppCount, annCPP2Max);
+    const annEI   = Math.min(ei   * ppCount, annEIMax);
 
     // BPA phase-out above $181 440 (2026 threshold)
     if (annG > 181440) {
@@ -93,7 +96,7 @@ function calculateTaxes(biGross, ppI, targetYear = 2026) {
     else if (annG <= 258482) fedGross = 36932.93 + (annG - 181440) * 0.29;
     else                     fedGross = 59275.11 + (annG - 258482) * 0.33;
 
-    const fedCredits = (fedBPA + annCPP + annEI + cea) * 0.14;
+    const fedCredits = (fedBPA + annCPP + annCPP2 + annEI + cea) * 0.14;
     const fedT       = Math.max(0, fedGross - fedCredits);
 
     // Ontario tax
@@ -104,7 +107,7 @@ function calculateTaxes(biGross, ppI, targetYear = 2026) {
     else if (annG <= 220000) onGross = 12364.00 + (annG - 150000) * 0.1216;
     else                     onGross = 20876.00 + (annG - 220000) * 0.1316;
 
-    const onCredits = (onBPA + annCPP + annEI) * 0.0505;
+    const onCredits = (onBPA + annCPP + annCPP2 + annEI) * 0.0505;
     let onT = Math.max(0, onGross - onCredits);
 
     // Ontario surtax
@@ -122,7 +125,7 @@ function calculateTaxes(biGross, ppI, targetYear = 2026) {
     }
     onT += ohp;
 
-    return { cpp, ei, fedTax: fedT / ppCount, onTax: onT / ppCount, total: cpp + ei + (fedT / ppCount) + (onT / ppCount) };
+    return { cpp, cpp2, ei, fedTax: fedT / ppCount, onTax: onT / ppCount, total: cpp + cpp2 + ei + (fedT / ppCount) + (onT / ppCount) };
 }
 
 const _holsCache = {};
@@ -527,7 +530,7 @@ function openPayrollSheet(target = null) {
                 <div class="fin-row"><span>Sat/Sun:</span> <span>${(satH + sunH).toFixed(1)} hrs</span></div>
                 <div class="fin-section-title deduct">Deductions</div>
                 <div class="fin-row"><span>Tax (Fed+ON):</span> <span>-$${(t.fedTax + t.onTax).toFixed(2)}</span></div>
-                <div class="fin-row"><span>CPP / EI:</span> <span>-$${(t.cpp + t.ei).toFixed(2)}</span></div>
+                <div class="fin-row"><span>CPP1 / CPP2 / EI:</span> <span>-$${(t.cpp + t.cpp2 + t.ei).toFixed(2)}</span></div>
                 <div class="fin-row" style="margin-top:15px;padding-top:12px;border-top:1px dashed var(--border);font-weight:bold;color:var(--text);"><span>Gross:</span> <span>$${gross.toFixed(2)}</span></div>
                 <div class="fin-row net"><span>Net Pay:</span> <span>$${(gross - t.total).toFixed(2)}</span></div>
             </div>
