@@ -1161,6 +1161,8 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     border-bottom: 3px solid var(--mod);
 }
 .cal-cell.M::before { background: transparent !important; }
+.cal-cell.M.D { border-top: 3px solid #38bdf8; }
+.cal-cell.M.N { border-top: 3px solid #f43f5e; }
 /* Vacation — bold teal so it stands out from Off/Day/Night at a glance */
 .cal-cell.vac {
     background: rgba(0,188,212,0.28) !important;

@@ -788,6 +788,7 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
     const isCurrentPP = (f.ppIndex === currentTargetPPIndex);
 
     let cls = `cal-cell ${sC}`;
+    if (sC === 'M' && (shift === 'D' || shift === 'N')) cls += ` ${shift}`;
     cls += ` pp-${f.ppIndex !== undefined ? f.ppIndex % 4 : 0}`;
     if (isToday)                             cls += ' today';
     else if (isPast)                         cls += isCurrentPP ? ' current-pp past' : ' past';
@@ -1071,6 +1072,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         const isCurrentPP = f.ppIndex === currentTargetPPIndex;
 
         let cardCls = `cal-week-card ${sC}`;
+        if (sC === 'M' && (shift === 'D' || shift === 'N')) cardCls += ` ${shift}`;
         cardCls += ` pp-${f.ppIndex !== undefined ? f.ppIndex % 4 : 0}`;
         if (isToday)          cardCls += ' today';
         else if (isPast)      cardCls += isCurrentPP ? ' current-pp past' : ' past';
