@@ -1281,6 +1281,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
     let regH = 0, ot = 0, dt = 0, gross = 0;
     let aftH = 0, nightH = 0, satH = 0, sunH = 0;
     let ytdGross = 0, ytdCPP = 0, ytdEI = 0, ppsDone = 0;
+    const ppSeries = [];   // per-pay-period series for the trend chart (Viz 1)
 
     for (let pi = firstPP; pi <= currentPP; pi++) {
         const s = basePPStartUTC + pi * MS_PP;
@@ -1349,6 +1350,13 @@ function renderAnalyticsDashboard(crew, logicalT) {
 
         const piTax = calculateTaxes(piGross, pi, targetYear);
         ytdGross += piGross; ytdCPP += piTax.cpp + piTax.cpp2; ytdEI += piTax.ei; ppsDone++;
+
+        ppSeries.push({
+            gross: piGross,
+            hours: piRegH + piOT + piDT,
+            ot:    piOT + piDT,
+            label: new Date(s).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })
+        });
 
         if (pi === currentPP) {
             gross = piGross; regH = piRegH; ot = piOT; dt = piDT;
@@ -1504,6 +1512,16 @@ function renderAnalyticsDashboard(crew, logicalT) {
     const ppEndLabel   = new Date(ppE).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const f$  = n => '$' + n.toFixed(2);
     const fH  = n => n.toFixed(1) + ' hrs';
+    const k$  = n => '$' + (n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'k' : Math.round(n));
+
+    // Last 8 pay periods for the trend chart (label every other PP to avoid clutter)
+    const trendSlice  = ppSeries.slice(-8);
+    const trendSeries = {
+        labels: trendSlice.map((p, i) => (i % 2 === 0 || i === trendSlice.length - 1) ? p.label : ''),
+        gross:  trendSlice.map(p => p.gross),
+        hours:  trendSlice.map(p => p.hours),
+        ot:     trendSlice.map(p => p.ot)
+    };
 
     const monthExRows = [
         vacDays    > 0 ? `<div class="an-row"><span>Vacation</span><strong style="color:#00bcd4">${vacDays}d</strong></div>` : '',
@@ -1526,9 +1544,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
   <div class="an-flat-card" style="margin-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom:none;">
     <div class="an-flat-card-title">Current Pay Period <span class="an-section-sub" style="text-transform:none;letter-spacing:0;font-size:10px">${ppStartLabel}–${ppEndLabel}</span></div>
     <div class="an-pp-bar-labels"><span>Day ${ppDayDisplay} of 14</span><span>${ppDaysLeft} day${ppDaysLeft !== 1 ? 's' : ''} left</span></div>
-    <div class="an-progress" style="margin:5px 0 8px"><div class="an-progress-fill" style="width:${ppPct}%;background:var(--accent)"></div></div>
-    <div class="an-pp-bar-labels"><span style="color:${fatigueAtMax ? 'var(--night)' : 'var(--text-muted)'}">120h Fatigue — ${fatigueAtMax ? '⛔ MAX REACHED' : fatigueUsed.toFixed(1) + 'h used'}</span>${fatigueRightLabel}</div>
-    <div class="an-progress" style="margin:4px 0 0"><div class="an-progress-fill" style="width:${fatiguePct}%;background:${fatigueColor}"></div></div>
+    <div class="an-progress" style="margin:5px 0 0"><div class="an-progress-fill" style="width:${ppPct}%;background:var(--accent)"></div></div>
   </div>
   <div class="an-grid-3" style="margin:0;border-top-left-radius:0;border-top-right-radius:0;">
     <div class="an-hero-card" style="--hero-color:#7c3aed;border-top-left-radius:0;border-top-right-radius:0;">
@@ -1545,10 +1561,40 @@ function renderAnalyticsDashboard(crew, logicalT) {
       ${ppHoursMicro}
     </div>
   </div>
+</div>
+<div class="ch-row2">
+  <div class="an-flat-card ch-card">
+    <div class="an-flat-card-title" style="color:${fatigueAtMax ? 'var(--night)' : 'var(--text-muted)'}">120h Fatigue${fatigueAtMax ? ' · ⛔ MAX' : ''}</div>
+    <div id="chart-gauge" class="ch-host-gauge"></div>
+    <div class="ch-caption">${fatigueAtMax ? 'Limit reached' : '<strong style="color:' + fatigueColor + '">' + fatigueRem.toFixed(1) + 'h</strong> left this period'}</div>
+  </div>
+  <div class="an-flat-card ch-card">
+    <div class="an-flat-card-title">Where Your Pay Goes <span class="an-section-sub" style="text-transform:none;letter-spacing:0">Net ${f$(gross - t.total)}</span></div>
+    <div id="chart-paybar" class="ch-host-bar"></div>
+    <div class="ch-legend" id="chart-paybar-legend"></div>
+  </div>
 </div>`;
 
     const _sideHTML = `
 <div class="analytics-wrap">
+
+  <div class="an-month-block">
+    <div class="an-section-title" style="margin-top:0">${months[displayMonth]} <span class="an-section-sub">${displayYear}</span></div>
+    <div class="an-flat-card">
+      <div class="ch-donut-grid">
+        <div class="ch-donut-col">
+          <div class="ch-donut-title">Shift Mix</div>
+          <div id="chart-donut-shift"></div>
+          <div class="ch-legend" id="chart-donut-shift-legend"></div>
+        </div>
+        <div class="ch-donut-col">
+          <div class="ch-donut-title">Hours Mix</div>
+          <div id="chart-donut-hours"></div>
+          <div class="ch-legend" id="chart-donut-hours-legend"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div class="an-flat-card">
     <div class="an-row"><span>Regular</span><strong>${fH(regH)}</strong></div>
@@ -1560,57 +1606,12 @@ function renderAnalyticsDashboard(crew, logicalT) {
     <div class="an-sep"></div>
     <div class="an-row"><span>Tax (Fed + ON)</span><strong style="color:var(--night)">-${f$(t.fedTax + t.onTax)}</strong></div>
     <div class="an-row"><span>CPP + EI</span><strong style="color:var(--night)">-${f$(t.cpp + t.cpp2 + t.ei)}</strong></div>
-  </div>
-
-  <div class="an-month-block">
-    <div class="an-section-title" style="margin-top:0">${months[displayMonth]} <span class="an-section-sub">${displayYear}</span></div>
-    <div class="an-grid-3" style="margin-bottom:0">
-      <div class="an-shift-card D"><div class="an-shift-label">Days</div><div class="an-shift-num">${dCount}</div></div>
-      <div class="an-shift-card N"><div class="an-shift-label">Nights</div><div class="an-shift-num">${nCount}</div></div>
-      <div class="an-shift-card O"><div class="an-shift-label">Off</div><div class="an-shift-num">${oCount}</div></div>
-    </div>
-  </div>
-
-  <div class="an-flat-card">
-    <div class="an-row"><span>Total Hours</span><strong>${fH(totalMonthHours)}</strong></div>
-    ${monthOT > 0 ? `<div class="an-row"><span>OT</span><strong style="color:#34a853">${fH(monthOT)}</strong></div>` : ''}
-    ${monthDT > 0 ? `<div class="an-row"><span>DT</span><strong style="color:#4285f4">${fH(monthDT)}</strong></div>` : ''}
     ${monthExRows ? `<div class="an-sep"></div>${monthExRows}` : ''}
   </div>
 
   <div class="an-flat-card">
     <div class="an-flat-card-title">${thisMonthName} vs ${prevMonthName}${prevYear !== displayYear ? ` <span class="an-section-sub" style="text-transform:none;letter-spacing:0">${prevYear}</span>` : ''}</div>
-    <div class="an-compare-row an-compare-head">
-      <span></span><span>${thisMonthName}</span><span>${prevMonthName}</span><span>Δ</span>
-    </div>
-    <div class="an-sep" style="margin:4px 0"></div>
-    <div class="an-compare-row">
-      <span>Days worked</span>
-      <strong>${thisWorked}</strong>
-      <strong style="color:var(--text-muted)">${prevWorked}</strong>
-      <span class="an-delta ${thisWorked > prevWorked ? 'pos' : thisWorked < prevWorked ? 'neg' : ''}">${fDelta(thisWorked - prevWorked)}</span>
-    </div>
-    <div class="an-compare-row">
-      <span>Hours</span>
-      <strong>${totalMonthHours.toFixed(0)}</strong>
-      <strong style="color:var(--text-muted)">${prevTotalHours.toFixed(0)}</strong>
-      <span class="an-delta ${totalMonthHours > prevTotalHours ? 'pos' : totalMonthHours < prevTotalHours ? 'neg' : ''}">${fDelta(totalMonthHours - prevTotalHours)}</span>
-    </div>
-    ${(monthOT + monthDT > 0 || prevMonthOT + prevMonthDT > 0) ? `
-    <div class="an-compare-row">
-      <span>OT / DT hrs</span>
-      <strong style="color:#34a853">${(monthOT + monthDT).toFixed(1)}</strong>
-      <strong style="color:var(--text-muted)">${(prevMonthOT + prevMonthDT).toFixed(1)}</strong>
-      <span class="an-delta ${(monthOT + monthDT) > (prevMonthOT + prevMonthDT) ? 'pos' : (monthOT + monthDT) < (prevMonthOT + prevMonthDT) ? 'neg' : ''}">${fDelta((monthOT + monthDT) - (prevMonthOT + prevMonthDT))}</span>
-    </div>` : ''}
-    ${(vacDays + absenceDays > 0 || prevVacDays + prevAbsDays > 0) ? `
-    <div class="an-sep" style="margin:4px 0"></div>
-    <div class="an-compare-row">
-      <span>Days off taken</span>
-      <strong style="color:#00bcd4">${vacDays + absenceDays}</strong>
-      <strong style="color:var(--text-muted)">${prevVacDays + prevAbsDays}</strong>
-      <span class="an-delta">${fDelta((vacDays + absenceDays) - (prevVacDays + prevAbsDays))}</span>
-    </div>` : ''}
+    <div id="chart-paired"></div>
   </div>
 
 </div>`;
@@ -1618,21 +1619,19 @@ function renderAnalyticsDashboard(crew, logicalT) {
     const _belowHTML = `
 <div class="analytics-wrap">
 
-  <div class="an-section-title">Vacation Balance</div>
+  <div class="an-section-title">${targetYear} Annual Caps</div>
   <div class="an-flat-card">
-    <div class="an-row"><span>Used</span><strong style="color:#00bcd4">${fH(vacUsed)}</strong></div>
-    <div class="an-row"><span>Remaining</span><strong>${fH(vacRem)}</strong></div>
-    <div class="an-progress"><div class="an-progress-fill" style="width:${vacPct}%;background:${vacPct > 85 ? 'var(--night)' : '#00bcd4'}"></div></div>
-    <div class="an-progress-meta">${vacPct}% used · ${vacStart} → ${vacEnd}</div>
+    <div id="chart-rings" class="ch-rings"></div>
   </div>
 
-  <div class="an-section-title">Lieu &amp; Drop Day Balance</div>
+  <div class="an-section-title">Pay / Hours Trend <span class="an-section-sub" style="text-transform:none;letter-spacing:0">last ${trendSlice.length} pay period${trendSlice.length !== 1 ? 's' : ''}</span></div>
   <div class="an-flat-card">
-    <div class="an-row"><span>Banked Lieu Days</span><strong style="color:#fbbc04">${lieuBanked} day${lieuBanked !== 1 ? 's' : ''}</strong></div>
-    ${lieuTaken > 0 ? `<div class="an-row"><span>Lieu Taken (${targetYear})</span><strong style="color:var(--text-muted)">${lieuTaken}d</strong></div>` : ''}
-    <div class="an-sep"></div>
-    <div class="an-row"><span>Drop Off Taken (${targetYear})</span><strong style="color:var(--day)">${dropOffTaken}d</strong></div>
-    <div class="an-row"><span>Drop Paid Taken (${targetYear})</span><strong style="color:var(--off)">${dropPaidTaken}d</strong></div>
+    <div class="ch-seg" id="trend-seg">
+      <button class="active" onclick="chartTrendSwitch(this,'gross')">Gross</button>
+      <button onclick="chartTrendSwitch(this,'hours')">Hours</button>
+      <button onclick="chartTrendSwitch(this,'ot')">OT/DT</button>
+    </div>
+    <div id="chart-trend" class="ch-host"></div>
   </div>
 
   <div class="an-section-title">${targetYear} Year to Date</div>
@@ -1646,12 +1645,17 @@ function renderAnalyticsDashboard(crew, logicalT) {
       <div class="an-hero-value">$${Math.round(projectedAnnual).toLocaleString()}</div>
     </div>
   </div>
+
+  <div class="an-section-title">Vacation · Lieu &amp; Drop</div>
   <div class="an-flat-card">
-    <div class="an-flat-card-title">CPP / EI Progress</div>
-    <div class="an-row"><span>CPP Paid</span><strong>${f$(ytdCPP)} / ${f$(annCPPMax)}</strong></div>
-    <div class="an-progress" style="margin:4px 0 10px"><div class="an-progress-fill" style="width:${cppPct}%;background:#7c3aed"></div></div>
-    <div class="an-row"><span>EI Paid</span><strong>${f$(ytdEI)} / ${f$(annEIMax)}</strong></div>
-    <div class="an-progress" style="margin-top:4px"><div class="an-progress-fill" style="width:${eiPct}%;background:#4285f4"></div></div>
+    <div class="an-row"><span>Vacation Used</span><strong style="color:#00bcd4">${fH(vacUsed)}</strong></div>
+    <div class="an-row"><span>Vacation Remaining</span><strong>${fH(vacRem)}</strong></div>
+    <div class="an-progress-meta">${vacPct}% used · ${vacStart} → ${vacEnd}</div>
+    <div class="an-sep"></div>
+    <div class="an-row"><span>Banked Lieu Days</span><strong style="color:#fbbc04">${lieuBanked} day${lieuBanked !== 1 ? 's' : ''}</strong></div>
+    ${lieuTaken > 0 ? `<div class="an-row"><span>Lieu Taken (${targetYear})</span><strong style="color:var(--text-muted)">${lieuTaken}d</strong></div>` : ''}
+    <div class="an-row"><span>Drop Off Taken (${targetYear})</span><strong style="color:var(--day)">${dropOffTaken}d</strong></div>
+    <div class="an-row"><span>Drop Paid Taken (${targetYear})</span><strong style="color:var(--off)">${dropPaidTaken}d</strong></div>
   </div>
 
 </div>`;
@@ -1659,6 +1663,35 @@ function renderAnalyticsDashboard(crew, logicalT) {
     if (elSide)  elSide.innerHTML  = _sideHTML;
     if (elBelow) elBelow.innerHTML = _belowHTML;
     animateHeroCountUps();
+
+    // ── Inline-SVG analytics charts (charts.js) ──────────────
+    if (typeof chartGauge === 'function') {
+        chartGauge('chart-gauge', fatigueUsed, 120);
+        chartStacked('chart-paybar', 'chart-paybar-legend', [
+            ['Net',     gross - t.total, '--c-net'],
+            ['Fed Tax', t.fedTax,        '--c-tax'],
+            ['ON Tax',  t.onTax,         '--c-cpp'],
+            ['CPP',     t.cpp + t.cpp2,  '--c-ot'],
+            ['EI',      t.ei,            '--c-ei']
+        ]);
+        chartDonut('chart-donut-shift', 'chart-donut-shift-legend', [
+            ['Days', dCount, '--day'], ['Nights', nCount, '--night'], ['Off', oCount, '--off']
+        ], String(dCount + nCount), 'worked');
+        chartDonut('chart-donut-hours', 'chart-donut-hours-legend', [
+            ['Reg', Math.round(regH), '--c-reg'], ['OT', Math.round(ot), '--c-ot'], ['DT', Math.round(dt), '--c-dt']
+        ], fatigueUsed.toFixed(0), 'hrs');
+        chartPaired('chart-paired', [
+            ['Days worked', thisWorked, prevWorked],
+            ['Hours', Math.round(totalMonthHours), Math.round(prevTotalHours)],
+            ['OT/DT hrs', Math.round((monthOT + monthDT) * 10) / 10, Math.round((prevMonthOT + prevMonthDT) * 10) / 10]
+        ], thisMonthName, prevMonthName);
+        chartRings('chart-rings', [
+            ['CPP', `${k$(ytdCPP)} / ${k$(annCPPMax)}`, annCPPMax ? ytdCPP / annCPPMax : 0, '--c-cpp'],
+            ['EI',  `${k$(ytdEI)} / ${k$(annEIMax)}`,   annEIMax  ? ytdEI / annEIMax   : 0, '--c-ei'],
+            ['Vacation', `${vacUsed.toFixed(0)}h / ${vacLimit}h`, vacLimit ? vacUsed / vacLimit : 0, '--off']
+        ]);
+        chartTrend(trendSeries);
+    }
 }
 
 // ── Count-up animation for hero pay figures ───────────────────────────────────

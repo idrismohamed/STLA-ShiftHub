@@ -20,6 +20,10 @@
     --night: #ff7a8a;
     --off: #5fd6a6;
     --mod: #c0a3ff;
+    /* Semantic data-viz colours (charts.js) */
+    --c-net: #5fd6a6; --c-reg: #5cb8ff; --c-ot: #ffcf6b; --c-dt: #ff8a5c;
+    --c-tax: #ff7a8a; --c-cpp: #c0a3ff; --c-ei: #7fd4e8; --c-prem: #ffb27a;
+    --good: #5fd6a6; --warn: #ffcf6b; --bad: #ff7a8a;
     --drop-badge-bg: #ffcf8a;
     --drop-badge-text: #2a2030;
     --drop-glow: #ffcf8a;
@@ -83,6 +87,10 @@
     --night: #ef5366;
     --off: #2bb079;
     --mod: #9a5fd6;
+    /* Semantic data-viz colours (charts.js) */
+    --c-net: #2bb079; --c-reg: #2f8fe0; --c-ot: #d99a1e; --c-dt: #ff7a45;
+    --c-tax: #ef5366; --c-cpp: #9a5fd6; --c-ei: #2a9fc0; --c-prem: #e08a3c;
+    --good: #2bb079; --warn: #d99a1e; --bad: #ef5366;
     --drop-badge-bg: #ffcf8a;
     --drop-badge-text: #3a2e1a;
     --drop-glow: #ffcf8a;
@@ -1712,6 +1720,57 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
 .an-delta { font-size: 12px; font-weight: 700; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .an-delta.pos { color: #34d399; }
 .an-delta.neg { color: #f43f5e; }
+
+/* ═══════════════════════════════════════════════════════════
+   INLINE-SVG ANALYTICS CHARTS (charts.js)
+   ═══════════════════════════════════════════════════════════ */
+.num, svg text.num { font-variant-numeric: tabular-nums; }
+
+/* Two-card row under the top hero strip (gauge + pay breakdown) */
+.ch-row2 { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
+.ch-card { margin-bottom: 0; }
+.ch-host-gauge { display: flex; justify-content: center; padding: 4px 0 0; }
+.ch-host-gauge svg { max-width: 240px; }
+.ch-host-bar { margin: 6px 0 2px; }
+.ch-caption { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 2px; }
+
+/* Chart host + empty state */
+.ch-host { margin-top: 4px; }
+.ch-empty { font-size: 12px; color: var(--text-muted); text-align: center; padding: 24px 0; }
+
+/* Legends */
+.ch-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 10px; justify-content: center; }
+.ch-lg { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: var(--text-muted); }
+.ch-lg b { color: var(--text); margin-left: 1px; font-weight: 800; }
+.ch-sw { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+
+/* Donuts */
+.ch-donut-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ch-donut-col { display: flex; flex-direction: column; align-items: center; }
+.ch-donut-col > div[id] { display: flex; justify-content: center; width: 100%; }
+.ch-donut-col svg { max-width: 130px; }
+.ch-donut-title { font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+
+/* Rings */
+.ch-rings { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-items: start; }
+.ch-ring-cap { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.ch-ring-cap svg { max-width: 110px; }
+.ch-ring-k { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-top: 2px; }
+.ch-ring-v { font-size: 12px; font-weight: 800; color: var(--text); margin-top: 1px; }
+
+/* Trend segmented toggle */
+.ch-seg { display: inline-flex; background: var(--border); border-radius: 999px; padding: 3px; gap: 2px; margin-bottom: 6px; }
+.ch-seg button { border: none; background: transparent; color: var(--text-muted); font-family: inherit; font-weight: 800; font-size: 12px; padding: 6px 14px; border-radius: 999px; cursor: pointer; transition: color 0.2s, background 0.2s; }
+.ch-seg button.active { background: var(--accent-grad); color: #fff; box-shadow: 0 3px 10px rgba(255,138,92,0.35); }
+
+/* Gauge + pay-breakdown side by side once there's room */
+@media (min-width: 560px) {
+    .ch-row2 { grid-template-columns: 1fr 1fr; align-items: stretch; }
+}
+/* On the tablet sidebar the donuts stack to stay legible in 300px */
+@media (min-width: 768px) {
+    #analytics-side .ch-donut-grid { grid-template-columns: 1fr; gap: 16px; }
+}
 
 /* Tabular numbers on dynamic inline values */
 #sim-gross, #sim-tax, #sim-net,

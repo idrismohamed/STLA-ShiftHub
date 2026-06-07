@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>charts.js — live render test</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* Pull the real theme tokens + chart styles so this matches the app exactly. */
+@import url("../www/styles.css");
+body { font-family:'Nunito',sans-serif; background:var(--bg); color:var(--text); padding:20px; max-width:760px; margin:0 auto; }
+h2 { font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); margin:22px 0 8px; }
+.an-flat-card { background:var(--card); border:1px solid var(--glass-border); border-radius:24px; padding:16px 18px; margin-bottom:10px; }
+.an-flat-card-title { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.1em; color:var(--text-muted); margin-bottom:10px; }
+.row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+@media(max-width:560px){ .row2{grid-template-columns:1fr;} }
+.an-section-sub { font-weight:500; letter-spacing:0; text-transform:none; font-size:11px; color:var(--text-muted); opacity:.7; }
+</style>
+</head>
+<body>
+<p style="font-size:13px;color:var(--text-muted)">Live render of the production <b>www/charts.js</b> with mock data. If every chart below draws and animates, the implementation works. Toggle theme: <button onclick="document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme')==='light'?'':'light')">flip</button></p>
+
+<h2>Viz 3 · Gauge &nbsp;·&nbsp; Viz 2 · Pay breakdown</h2>
+<div class="row2">
+  <div class="an-flat-card"><div class="an-flat-card-title">120h Fatigue</div><div id="chart-gauge" class="ch-host-gauge"></div><div class="ch-caption"><strong style="color:var(--warn)">23.5h</strong> left</div></div>
+  <div class="an-flat-card"><div class="an-flat-card-title">Where Your Pay Goes</div><div id="chart-paybar" class="ch-host-bar"></div><div class="ch-legend" id="chart-paybar-legend"></div></div>
+</div>
+
+<h2>Viz 5 · Donuts</h2>
+<div class="an-flat-card"><div class="ch-donut-grid">
+  <div class="ch-donut-col"><div class="ch-donut-title">Shift Mix</div><div id="chart-donut-shift"></div><div class="ch-legend" id="chart-donut-shift-legend"></div></div>
+  <div class="ch-donut-col"><div class="ch-donut-title">Hours Mix</div><div id="chart-donut-hours"></div><div class="ch-legend" id="chart-donut-hours-legend"></div></div>
+</div></div>
+
+<h2>Viz 6 · Month vs Month</h2>
+<div class="an-flat-card"><div class="an-flat-card-title">Jun vs May</div><div id="chart-paired"></div></div>
+
+<h2>Viz 4 · Annual cap rings</h2>
+<div class="an-flat-card"><div id="chart-rings" class="ch-rings"></div></div>
+
+<h2>Viz 1 · Trend</h2>
+<div class="an-flat-card">
+  <div class="ch-seg" id="trend-seg">
+    <button class="active" onclick="chartTrendSwitch(this,'gross')">Gross</button>
+    <button onclick="chartTrendSwitch(this,'hours')">Hours</button>
+    <button onclick="chartTrendSwitch(this,'ot')">OT/DT</button>
+  </div>
+  <div id="chart-trend" class="ch-host"></div>
+</div>
+
+<script src="../www/charts.js"></script>
+<script>
+function draw() {
+  chartGauge('chart-gauge', 96.5, 120);
+  chartStacked('chart-paybar','chart-paybar-legend',[
+    ['Net',3247.86,'--c-net'],['Fed Tax',402.10,'--c-tax'],['ON Tax',210.30,'--c-cpp'],['CPP',248.00,'--c-ot'],['EI',74.24,'--c-ei']
+  ]);
+  chartDonut('chart-donut-shift','chart-donut-shift-legend',[['Days',13,'--day'],['Nights',8,'--night'],['Off',9,'--off']],'21','worked');
+  chartDonut('chart-donut-hours','chart-donut-hours-legend',[['Reg',144,'--c-reg'],['OT',8,'--c-ot'],['DT',4,'--c-dt']],'156','hrs');
+  chartPaired('chart-paired',[['Days worked',13,11],['Hours',168,142],['OT/DT hrs',12,18]],'Jun','May');
+  chartRings('chart-rings',[['CPP','$2.1k / $4k',0.53,'--c-cpp'],['EI','$612 / $1.1k',0.57,'--c-ei'],['Vacation','64h / 150h',0.43,'--off']]);
+  chartTrend({labels:['5/4','','5/18','','6/1','','6/15',''],gross:[3120,3340,2980,3610,3247,3890,3450,3247],hours:[156,168,150,180,162,184,170,168],ot:[6,12,4,20,9,24,14,12]});
+}
+window.addEventListener('load',()=>{ draw(); if(document.fonts&&document.fonts.ready)document.fonts.ready.then(draw); });
+</script>
+</body>
+</html>
