@@ -12,25 +12,22 @@ async function exportData() {
     };
     const jsonString = JSON.stringify(data);
     const fileName   = `ShiftHub_Backup_${toDateKey(Date.now())}.json`;
-    const file       = new File([jsonString], fileName, { type: 'application/json' });
 
-    // Web Share API with a proper File object — shares via FileProvider, no Intent size limits
-    if (navigator.share) {
-        try {
-            await navigator.share({ files: [file], title: 'Shift Hub Backup' });
-            return;
-        } catch (e) {
-            if (e.name === 'AbortError') return; // user cancelled
-            // share failed — fall through to socialsharing
-        }
+    // Cordova: write a real file to cache dir then share its path (no size limits)
+    if (window.cordova && window.cordova.file && window.plugins && window.plugins.socialsharing) {
+        _cordovaWriteAndShare(jsonString, fileName);
+        return;
     }
 
-    // Socialsharing plugin fallback (base64 data URI — can fail on large backups)
-    if (window.plugins && window.plugins.socialsharing) {
-        const base64Data = btoa(unescape(encodeURIComponent(jsonString)));
-        window.plugins.socialsharing.share('Here is your Shift Hub backup data.', fileName, 'data:application/json;base64,' + base64Data, null);
-        showToast('Native Share Menu Opened');
-        return;
+    // Browser: Web Share API with proper canShare guard
+    const shareFile = new File([jsonString], fileName, { type: 'application/json' });
+    if (navigator.canShare && navigator.canShare({ files: [shareFile] })) {
+        try {
+            await navigator.share({ files: [shareFile], title: 'Shift Hub Backup' });
+            return;
+        } catch (e) {
+            if (e.name === 'AbortError') return;
+        }
     }
 
     // Clipboard last resort
@@ -40,6 +37,26 @@ async function exportData() {
     } catch (e) {
         showToast('Export failed. Try again.', 'error');
     }
+}
+
+function _cordovaWriteAndShare(jsonString, fileName) {
+    window.resolveLocalFileSystemURL(window.cordova.file.cacheDirectory, function(dirEntry) {
+        dirEntry.getFile(fileName, { create: true, exclusive: false }, function(fileEntry) {
+            fileEntry.createWriter(function(fileWriter) {
+                fileWriter.onwriteend = function() {
+                    window.plugins.socialsharing.shareWithOptions({
+                        message: 'Here is your Shift Hub backup.',
+                        subject: fileName,
+                        files: [fileEntry.nativeURL]
+                    }, null, function() {
+                        showToast('Share failed. Try again.', 'error');
+                    });
+                };
+                fileWriter.onerror = function() { showToast('Failed to write backup file.', 'error'); };
+                fileWriter.write(new Blob([jsonString], { type: 'application/json' }));
+            }, function() { showToast('Failed to create backup file.', 'error'); });
+        }, function() { showToast('Failed to access storage.', 'error'); });
+    }, function() { showToast('Storage not available.', 'error'); });
 }
 
 function importData(e) {
