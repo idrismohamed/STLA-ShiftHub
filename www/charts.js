@@ -152,7 +152,14 @@ function chartRings(hostId, rings) {
     rings.forEach((rg, idx) => {
         const [label, valTxt, pct, color] = rg;
         const W = 110, H = 110, cx = 55, cy = 55, R = 44, sw = 10;
-        const s = _cSvg(W, H + 2);
+        // Pad the viewBox by 8px on each side so the stroke has clearance; clip any bleed.
+        const pad = 8;
+        const s = _cEl('svg', {
+            viewBox: `${-pad} ${-pad} ${W + pad * 2} ${H + pad * 2}`,
+            width: '100%', height: H,
+            preserveAspectRatio: 'xMidYMid meet',
+            style: 'display:block;overflow:hidden'
+        });
         const Circ = 2 * Math.PI * R;
         s.appendChild(_cEl('circle', { cx, cy, r: R, fill: 'none', stroke: _cCol('--border'), 'stroke-width': sw }));
         const arc = _cEl('circle', {
@@ -182,7 +189,14 @@ function chartDonut(hostId, legendId, segs, centerTop, centerBot) {
     host.innerHTML = '';
     segs = segs.filter(s => s[1] > 0);
     const W = 130, H = 130, cx = 65, cy = 65, R = 50, sw = 18;
-    const s = _cSvg(W, H);
+    // Pad the viewBox by 10px on each side so the stroke has clearance; clip any bleed.
+    const pad = 10;
+    const s = _cEl('svg', {
+        viewBox: `${-pad} ${-pad} ${W + pad * 2} ${H + pad * 2}`,
+        width: '100%', height: H,
+        preserveAspectRatio: 'xMidYMid meet',
+        style: 'display:block;overflow:hidden;max-width:' + W + 'px;margin:0 auto'
+    });
     const total = segs.reduce((a, x) => a + x[1], 0) || 1;
     const Circ = 2 * Math.PI * R;
     s.appendChild(_cEl('circle', { cx, cy, r: R, fill: 'none', stroke: _cCol('--border'), 'stroke-width': sw, opacity: 0.5 }));
