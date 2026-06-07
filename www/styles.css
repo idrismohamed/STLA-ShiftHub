@@ -1,108 +1,142 @@
-/* DEFAULT DARK MODE & REFINED PALETTE */
+/* ── Bundled variable font (offline-safe, no CDN) ───────────────────────── */
+@font-face {
+    font-family: 'Nunito';
+    font-style: normal;
+    font-weight: 400 900;
+    font-display: swap;
+    src: url('fonts/nunito-variable.woff2') format('woff2');
+}
+
+/* DEFAULT DARK MODE — "Soft & Calm" palette */
 :root {
-    --bg: #141218;
-    --card: #1E1C24;
-    --text: #E6E1E8;
-    --text-muted: #938F99;
-    --accent: #ff6b35;
-    --accent-light: #ff9a6c;
-    --day: #38bdf8;
-    --night: #f43f5e;
-    --off: #34d399;
-    --mod: #a78bfa;
-    --drop-badge-bg: #fbbf24;
-    --drop-badge-text: #000000;
-    --drop-glow: #fbbf24;
-    --pp-glow: #ff6b35;
-    --border: #2B2830;
-    --glass-bg: rgba(18, 16, 24, 0.84);
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --card: rgba(28, 26, 36, 0.70);
-    --day-bg: #1E1C24;
-    --day-text: #E6E1E8;
-    --input-bg: #141218;
+    --bg: #1A1820;
+    --text: #E9E4EF;
+    --text-muted: #A89FB2;
+    --accent: #ff8a5c;
+    --accent-light: #ffb27a;
+    /* Signature brand gradient — used sparingly on hero accents */
+    --accent-grad: linear-gradient(135deg, #ff8a5c, #ffb27a);
+    --day: #5cb8ff;
+    --night: #ff7a8a;
+    --off: #5fd6a6;
+    --mod: #c0a3ff;
+    --drop-badge-bg: #ffcf8a;
+    --drop-badge-text: #2a2030;
+    --drop-glow: #ffcf8a;
+    --pp-glow: #ff8a5c;
+    --border: #352F40;
+    --glass-bg: rgba(31, 27, 39, 0.82);
+    --glass-border: rgba(255, 255, 255, 0.07);
+    --card: rgba(42, 38, 52, 0.72);
+    --card-solid: #272231;
+    --day-bg: #241F2E;
+    --day-text: #E9E4EF;
+    --input-bg: #1F1B27;
     --calendar-filter: invert(1);
+    /* Motion — bouncy M3-Expressive springs */
+    --spring: cubic-bezier(0.34, 1.8, 0.5, 1);
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --sheet-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --press: 0.93;
     /* Calendar redesign */
-    --cal-cell-bg: #1A1820;
-    --cal-cell-bg-today: #201E30;
-    --cal-cell-border: #2B2830;
-    --cal-today-accent: #7c3aed;
-    --cal-today-border: rgba(124,58,237,0.7);
-    --cal-header-bg: #1E1C24;
-    --cal-tab-active-bg: #E6E1E8;
-    --cal-tab-active-text: #141218;
-    --cal-tab-inactive-text: #938F99;
-    --cal-cell-text: #E6E1E8;
-    --cal-cell-text-muted: rgba(230,225,232,0.50);
+    --cal-cell-bg: #241F2E;
+    --cal-cell-bg-today: #2E2740;
+    --cal-cell-border: #352F40;
+    --cal-today-accent: #ff8a5c;
+    --cal-today-border: rgba(255,138,92,0.7);
+    --cal-header-bg: #272231;
+    --cal-tab-active-bg: #E9E4EF;
+    --cal-tab-active-text: #1A1820;
+    --cal-tab-inactive-text: #A89FB2;
+    --cal-cell-text: #E9E4EF;
+    --cal-cell-text-muted: rgba(233,228,239,0.55);
+    /* Pay-period accent stripe colours (A-style) */
+    --pp0: #ffcf8a;
+    --pp1: #7fe3c6;
+    --pp2: #c0a3ff;
+    --pp3: #ff9ec6;
     /* M3 surface hierarchy */
-    --m3-surface-container-low: #1E1C24;
-    --m3-surface-container: #221F27;
-    --m3-surface-container-high: #2B2930;
-    --m3-surface-container-highest: #36343B;
-    --m3-outline-variant: #49454F;
-    --pill-day-bg: rgba(56,189,248,0.22);
-    --pill-day-text: #38bdf8;
-    --pill-night-bg: rgba(244,63,94,0.22);
-    --pill-night-text: #f43f5e;
-    --pill-off-bg: rgba(52,211,153,0.15);
-    --pill-off-text: #34d399;
-    --pill-mod-bg: rgba(167,139,250,0.22);
-    --pill-mod-text: #a78bfa;
+    --m3-surface-container-low: #272231;
+    --m3-surface-container: #2C2636;
+    --m3-surface-container-high: #352F40;
+    --m3-surface-container-highest: #403849;
+    --m3-outline-variant: #554D61;
+    --pill-day-bg: rgba(92,184,255,0.20);
+    --pill-day-text: #5cb8ff;
+    --pill-night-bg: rgba(255,122,138,0.20);
+    --pill-night-text: #ff7a8a;
+    --pill-off-bg: rgba(95,214,166,0.15);
+    --pill-off-text: #5fd6a6;
+    --pill-mod-bg: rgba(192,163,255,0.20);
+    --pill-mod-text: #c0a3ff;
 }
 
-/* NEW LIGHT MODE PALETTE */
+/* LIGHT MODE — soft warm palette */
 [data-theme="light"] {
-    --bg: #E8E4EE;
-    --card: #F5F2FA;
-    --text: #1C1B1F;
-    --text-muted: #6B6570;
-    --accent: #ff6d00;
-    --accent-light: #ffac33;
-    --day: #007aff;
-    --night: #ff3b30;
-    --off: #1a9e50;
-    --mod: #af52de;
-    --drop-badge-bg: #ffcc00;
-    --drop-badge-text: #000000;
-    --drop-glow: #ffcc00;
-    --pp-glow: #ff6d00;
-    --border: #D5D0DC;
-    --glass-bg: rgba(248, 244, 255, 0.84);
-    --glass-border: rgba(0, 0, 0, 0.07);
-    --card: rgba(255, 255, 255, 0.72);
-    --day-bg: #F5F2FA;
-    --day-text: #1C1B1F;
-    --input-bg: #E8E4EE;
+    --bg: #F3EFF7;
+    --text: #2A2632;
+    --text-muted: #7A7283;
+    --accent: #ff7a45;
+    --accent-light: #ffab5e;
+    --accent-grad: linear-gradient(135deg, #ff7a45, #ffab5e);
+    --day: #2f8fe0;
+    --night: #ef5366;
+    --off: #2bb079;
+    --mod: #9a5fd6;
+    --drop-badge-bg: #ffcf8a;
+    --drop-badge-text: #3a2e1a;
+    --drop-glow: #ffcf8a;
+    --pp-glow: #ff7a45;
+    --border: #E2DCEA;
+    --glass-bg: rgba(252, 250, 255, 0.84);
+    --glass-border: rgba(0, 0, 0, 0.06);
+    --card: rgba(255, 255, 255, 0.78);
+    --card-solid: #FBF9FF;
+    --day-bg: #FAF7FE;
+    --day-text: #2A2632;
+    --input-bg: #F3EFF7;
     --calendar-filter: invert(0);
+    --spring: cubic-bezier(0.34, 1.8, 0.5, 1);
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --sheet-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --press: 0.93;
     /* Calendar redesign */
-    --cal-cell-bg: #EEEBf4;
-    --cal-cell-bg-today: #E6E1F5;
-    --cal-cell-border: #D5D0DC;
-    --cal-today-accent: #7c3aed;
-    --cal-today-border: rgba(124,58,237,0.7);
-    --cal-header-bg: #F5F2FA;
-    --cal-tab-active-bg: #1C1B1F;
-    --cal-tab-active-text: #F5F2FA;
-    --cal-tab-inactive-text: #6B6570;
-    --cal-cell-text: #1C1B1F;
-    --cal-cell-text-muted: #6B6570;
+    --cal-cell-bg: #FAF7FE;
+    --cal-cell-bg-today: #F3ECFB;
+    --cal-cell-border: #E2DCEA;
+    --cal-today-accent: #ff7a45;
+    --cal-today-border: rgba(255,122,69,0.7);
+    --cal-header-bg: #FBF9FF;
+    --cal-tab-active-bg: #2A2632;
+    --cal-tab-active-text: #FBF9FF;
+    --cal-tab-inactive-text: #7A7283;
+    --cal-cell-text: #2A2632;
+    --cal-cell-text-muted: #7A7283;
+    /* Pay-period accent stripe colours */
+    --pp0: #f0a94e;
+    --pp1: #3bc49a;
+    --pp2: #9a5fd6;
+    --pp3: #e86ba6;
     /* M3 surface hierarchy */
-    --m3-surface-container-low: #F0ECF9;
-    --m3-surface-container: #EBE7F4;
-    --m3-surface-container-high: #E5E1EF;
-    --m3-surface-container-highest: #DFDCEa;
-    --m3-outline-variant: #CAC4D0;
-    --pill-day-bg: rgba(0,122,255,0.15);
-    --pill-day-text: #0060cc;
-    --pill-night-bg: rgba(255,59,48,0.15);
-    --pill-night-text: #cc2e24;
-    --pill-off-bg: rgba(26,158,80,0.15);
-    --pill-off-text: #1a9e50;
-    --pill-mod-bg: rgba(175,82,222,0.15);
-    --pill-mod-text: #8a2dbe;
+    --m3-surface-container-low: #F6F2FB;
+    --m3-surface-container: #F0EBF7;
+    --m3-surface-container-high: #EAE4F2;
+    --m3-surface-container-highest: #E3DCEC;
+    --m3-outline-variant: #CFC8D8;
+    --pill-day-bg: rgba(47,143,224,0.15);
+    --pill-day-text: #1f73c0;
+    --pill-night-bg: rgba(239,83,102,0.15);
+    --pill-night-text: #d23a4d;
+    --pill-off-bg: rgba(43,176,121,0.15);
+    --pill-off-text: #1f8e5f;
+    --pill-mod-bg: rgba(154,95,214,0.15);
+    --pill-mod-text: #7e3fc0;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-tap-highlight-color: transparent; -webkit-font-smoothing: antialiased; }
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Nunito', -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-tap-highlight-color: transparent; -webkit-font-smoothing: antialiased; }
+/* Tabular numerals so money/hours figures don't wiggle as they change */
+.cal-date-num, .crew-float-value, .an-figure, .an-value, .an-hero-value, .an-hero-card .an-big,
+.pp-figure, .stat-value, .dash-amount, .shift-times, .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
 body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; overflow-x: hidden; transition: background-color 0.3s, color 0.3s; }
 #pp-top-summary { padding: 12px 14px 16px; }
 .pp-top-wrap { border-radius: 14px; overflow: hidden; border: 1px solid var(--border); }
@@ -139,7 +173,7 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; ov
 .app-subtitle { font-size: 12px; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
 .app-greeting-label { font-size: 11px; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin: 0 0 2px 0; }
 .app-title { font-size: 18px; font-weight: 900; letter-spacing: -0.5px; color: var(--text); margin: 0; text-wrap: balance; }
-.app-title span { color: var(--accent); }
+.app-title span { background: var(--accent-grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 .app-header-settings-btn {
     display: flex;
     align-items: center;
@@ -172,9 +206,9 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; ov
     box-shadow: 0 8px 32px rgba(0,0,0,0.22), 0 1px 0 var(--glass-border) inset;
     border: 1px solid var(--glass-border);
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.32s var(--spring), box-shadow 0.2s;
 }
-.dashboard-card:active { transform: scale(0.96); }
+.dashboard-card:active { transform: scale(var(--press)); }
 .dash-left { display: flex; align-items: center; }
 .dash-icon { background: rgba(255, 109, 0, 0.15); color: var(--accent); width: 44px; height: 44px; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 20px; margin-right: 15px; }
 .dash-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px; text-wrap: balance; }
@@ -492,18 +526,18 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; ov
     display: flex;
     align-items: center;
     gap: 5px;
-    background: var(--accent);
+    background: var(--accent-grad);
     color: #fff;
     border-radius: 50px;
     padding: 7px 14px;
     font-size: 13px;
     font-weight: 800;
     cursor: pointer;
-    box-shadow: 0 3px 10px rgba(255,107,53,0.35);
+    box-shadow: 0 3px 10px rgba(255,138,92,0.38);
     -webkit-tap-highlight-color: transparent;
-    transition: transform 0.15s, box-shadow 0.15s;
+    transition: transform 0.32s var(--spring), box-shadow 0.15s;
 }
-.cal-crew-btn:active { transform: scale(0.96); box-shadow: 0 1px 4px rgba(255,107,53,0.2); }
+.cal-crew-btn:active { transform: scale(var(--press)); box-shadow: 0 1px 4px rgba(255,138,92,0.22); }
 .cal-crew-chevron {
     font-size: 11px;
     opacity: 0.85;
@@ -585,7 +619,7 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; ov
 }
 .pill-btn-secondary:active { background: var(--m3-surface-container-highest); }
 .pill-btn-primary {
-    background: var(--accent);
+    background: var(--accent-grad);
     color: #fff;
     border: none;
     border-radius: 50px;
@@ -593,15 +627,15 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; ov
     font-size: 12px;
     font-weight: 800;
     cursor: pointer;
-    box-shadow: 0 3px 12px rgba(255, 107, 53, 0.35);
+    box-shadow: 0 4px 14px rgba(255, 138, 92, 0.40);
     -webkit-tap-highlight-color: transparent;
-    transition: transform 0.15s, box-shadow 0.15s;
+    transition: transform 0.32s var(--spring), box-shadow 0.15s;
     font-family: inherit;
     white-space: nowrap;
 }
 .pill-btn-primary:active {
-    transform: scale(0.96);
-    box-shadow: 0 2px 6px rgba(255, 107, 53, 0.20);
+    transform: scale(var(--press));
+    box-shadow: 0 2px 6px rgba(255, 138, 92, 0.22);
 }
 
 /* Keep fab-btn/fab-row for any legacy references */
@@ -618,10 +652,10 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; ov
     background: var(--glass-bg);
     backdrop-filter: blur(28px) saturate(180%);
     -webkit-backdrop-filter: blur(28px) saturate(180%);
-    border-radius: 24px 24px 0 0;
+    border-radius: 28px 28px 0 0;
     padding: 28px 20px 80px 20px;
     z-index: 100;
-    transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+    transition: bottom 0.46s cubic-bezier(0.34, 1.4, 0.5, 1);
     box-shadow: 0 -8px 40px rgba(0,0,0,0.32), 0 -1px 0 var(--glass-border);
     max-height: 90vh;
     overflow-y: auto;
@@ -1048,7 +1082,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
 .cal-cell {
     position: relative;
     background-color: var(--cal-cell-bg);
-    border-radius: 16px;
+    border-radius: 20px;
     border: 1px solid var(--cal-cell-border);
     min-height: 82px;
     padding: 7px 4px 7px 4px;
@@ -1057,13 +1091,15 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     align-items: center;
     gap: 1px;
     cursor: pointer;
-    transition: opacity 0.15s;
+    transition: transform 0.28s var(--spring), opacity 0.15s, border-color 0.18s, background-color 0.18s;
     overflow: hidden;
     -webkit-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
 }
-.cal-cell:active { opacity: 0.7; }
+.cal-cell:active { transform: scale(var(--press)); }
+/* Pay-period accent stripe (A-style) — always visible regardless of shift fill */
+.cal-cell::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: transparent; z-index: 0; }
 .cal-cell.empty {
     background: transparent;
     border-color: transparent;
@@ -1071,11 +1107,12 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     pointer-events: none;
 }
 
-/* Pay-period colour blocks — 4-colour cycle so each PP is a solid uniform tint */
-.cal-cell.pp-0 { background-color: rgba(251,191,36,0.18); }   /* amber   */
-.cal-cell.pp-1 { background-color: rgba(20,184,166,0.16); }    /* teal    */
-.cal-cell.pp-2 { background-color: rgba(139,92,246,0.18); }    /* violet  */
-.cal-cell.pp-3 { background-color: rgba(244,114,182,0.15); }   /* rose    */
+/* Pay-period accent — A-style left stripe (demoted from full background tint
+   so shift colours stay dominant). Rendered via .cal-cell::before. */
+.cal-cell.pp-0::before { background: var(--pp0); }
+.cal-cell.pp-1::before { background: var(--pp1); }
+.cal-cell.pp-2::before { background: var(--pp2); }
+.cal-cell.pp-3::before { background: var(--pp3); }
 
 /* Shift type — distinct background tint + coloured top accent bar */
 .cal-cell.D {
