@@ -111,7 +111,8 @@ function chartGauge(hostId, used, max) {
 
 /* ── Viz 2 · 100% stacked pay-breakdown bar ──────────────────────────────── */
 /* segs: [[label, value, colorToken], ...] */
-function chartStacked(hostId, legendId, segs) {
+/* segs: [[label, value, colorToken], ...]; fmtVal: optional fn(value)->string for legend */
+function chartStacked(hostId, legendId, segs, fmtVal) {
     const host = document.getElementById(hostId);
     if (!host) return;
     host.innerHTML = '';
@@ -148,7 +149,8 @@ function chartStacked(hostId, legendId, segs) {
         segs.forEach(seg => {
             const d = document.createElement('div');
             d.className = 'ch-lg';
-            d.innerHTML = `<span class="ch-sw" style="background:${_cCol(seg[2])}"></span>${seg[0]} <b class="num">$${Math.round(seg[1]).toLocaleString()}</b>`;
+            const valStr = fmtVal ? fmtVal(seg[1]) : '$' + Math.round(seg[1]).toLocaleString();
+            d.innerHTML = `<span class="ch-sw" style="background:${_cCol(seg[2])}"></span>${seg[0]} <b class="num">${valStr}</b>`;
             lg.appendChild(d);
         });
     }

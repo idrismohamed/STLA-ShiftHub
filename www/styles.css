@@ -1762,6 +1762,10 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
 .ch-seg button { border: none; background: transparent; color: var(--text-muted); font-family: inherit; font-weight: 800; font-size: 12px; padding: 6px 14px; border-radius: 999px; cursor: pointer; transition: color 0.2s, background 0.2s; }
 .ch-seg button.active { background: var(--accent-grad); color: #fff; box-shadow: 0 3px 10px rgba(255,138,92,0.35); }
 
+/* Sub-section labels within combined breakdown card */
+.ch-sub-label { font-size: 9px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+.ch-sub-val { font-size: 10px; font-weight: 700; color: var(--text); text-transform: none; letter-spacing: 0; }
+
 /* Gauge + pay-breakdown side by side once there's room */
 @media (min-width: 560px) {
     .ch-row2 { grid-template-columns: 1fr 1fr; align-items: stretch; }

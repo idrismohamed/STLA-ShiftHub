@@ -1569,32 +1569,23 @@ function renderAnalyticsDashboard(crew, logicalT) {
     <div class="ch-caption">${fatigueAtMax ? 'Limit reached' : '<strong style="color:' + fatigueColor + '">' + fatigueRem.toFixed(1) + 'h</strong> left this period'}</div>
   </div>
   <div class="an-flat-card ch-card">
-    <div class="an-flat-card-title">Where Your Pay Goes <span class="an-section-sub" style="text-transform:none;letter-spacing:0">Net ${f$(gross - t.total)}</span></div>
+    <div class="an-flat-card-title">Pay &amp; Shift Breakdown</div>
+    <div class="ch-sub-label">Where Your Pay Goes <span class="ch-sub-val">Net ${f$(gross - t.total)}</span></div>
     <div id="chart-paybar" class="ch-host-bar"></div>
     <div class="ch-legend" id="chart-paybar-legend"></div>
+    <div class="an-sep" style="margin:12px 0 10px"></div>
+    <div class="ch-sub-label">${months[displayMonth]} Shifts <span class="ch-sub-val">${dCount + nCount} worked</span></div>
+    <div id="chart-shift-bar" class="ch-host-bar"></div>
+    <div class="ch-legend" id="chart-shift-legend"></div>
+    <div class="an-sep" style="margin:10px 0 10px"></div>
+    <div class="ch-sub-label">PP Hours <span class="ch-sub-val">${fatigueUsed.toFixed(1)}h total</span></div>
+    <div id="chart-hours-bar" class="ch-host-bar"></div>
+    <div class="ch-legend" id="chart-hours-legend"></div>
   </div>
 </div>`;
 
     const _sideHTML = `
 <div class="analytics-wrap">
-
-  <div class="an-month-block">
-    <div class="an-section-title" style="margin-top:0">${months[displayMonth]} <span class="an-section-sub">${displayYear}</span></div>
-    <div class="an-flat-card">
-      <div class="ch-donut-grid">
-        <div class="ch-donut-col">
-          <div class="ch-donut-title">Shift Mix</div>
-          <div id="chart-donut-shift"></div>
-          <div class="ch-legend" id="chart-donut-shift-legend"></div>
-        </div>
-        <div class="ch-donut-col">
-          <div class="ch-donut-title">Hours Mix</div>
-          <div id="chart-donut-hours"></div>
-          <div class="ch-legend" id="chart-donut-hours-legend"></div>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <div class="an-flat-card">
     <div class="an-row"><span>Regular</span><strong>${fH(regH)}</strong></div>
@@ -1674,12 +1665,12 @@ function renderAnalyticsDashboard(crew, logicalT) {
             ['CPP',     t.cpp + t.cpp2,  '--c-ot'],
             ['EI',      t.ei,            '--c-ei']
         ]);
-        chartDonut('chart-donut-shift', 'chart-donut-shift-legend', [
+        chartStacked('chart-shift-bar', 'chart-shift-legend', [
             ['Days', dCount, '--day'], ['Nights', nCount, '--night'], ['Off', oCount, '--off']
-        ], String(dCount + nCount), 'worked');
-        chartDonut('chart-donut-hours', 'chart-donut-hours-legend', [
-            ['Reg', Math.round(regH), '--c-reg'], ['OT', Math.round(ot), '--c-ot'], ['DT', Math.round(dt), '--c-dt']
-        ], fatigueUsed.toFixed(0), 'hrs');
+        ], v => String(Math.round(v)));
+        chartStacked('chart-hours-bar', 'chart-hours-legend', [
+            ['Reg', regH, '--c-reg'], ['OT', ot, '--c-ot'], ['DT', dt, '--c-dt']
+        ], v => v.toFixed(1) + 'h');
         chartPaired('chart-paired', [
             ['Days worked', thisWorked, prevWorked],
             ['Hours', Math.round(totalMonthHours), Math.round(prevTotalHours)],
