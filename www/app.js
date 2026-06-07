@@ -57,6 +57,7 @@ window.addEventListener('orientationchange', () => {
 const gText = document.getElementById('greeting-text');
 if (gText) gText.innerHTML = `<span>${sysSettings.displayName}</span>`;
 populateYearSelect();
+fetchTaxRates(true);
 
 const cSel = document.getElementById('crew-select');
 if (cSel) cSel.value = sysSettings.defaultCrew;

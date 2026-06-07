@@ -1,0 +1,44 @@
+{
+  "lastUpdated": "2026-01-01",
+  "years": {
+    "2024": {
+      "fedBPA": 15705,
+      "onBPA": 12399,
+      "cea": 1433,
+      "cppRate": 0.0595,
+      "annCPPMax": 3867.50,
+      "ympe": 68500,
+      "cpp2Rate": 0.04,
+      "annCPP2Max": 188.00,
+      "yampe": 73200,
+      "eiRate": 0.0166,
+      "annEIMax": 1049.12
+    },
+    "2025": {
+      "fedBPA": 16129,
+      "onBPA": 12747,
+      "cea": 1471,
+      "cppRate": 0.0595,
+      "annCPPMax": 4034.10,
+      "ympe": 71300,
+      "cpp2Rate": 0.04,
+      "annCPP2Max": 396.00,
+      "yampe": 81200,
+      "eiRate": 0.0164,
+      "annEIMax": 1077.48
+    },
+    "2026": {
+      "fedBPA": 16452,
+      "onBPA": 12989,
+      "cea": 1501,
+      "cppRate": 0.0595,
+      "annCPPMax": 4230.45,
+      "ympe": 74600,
+      "cpp2Rate": 0.04,
+      "annCPP2Max": 416.00,
+      "yampe": 85000,
+      "eiRate": 0.0163,
+      "annEIMax": 1123.07
+    }
+  }
+}
