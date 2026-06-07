@@ -798,7 +798,6 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
 /* VISUAL ANALYTICS CHART CONTAINER */
 .chart-container {
     position: relative;
-    height: 200px;
     width: 100%;
     margin-top: 15px;
     padding-top: 15px;

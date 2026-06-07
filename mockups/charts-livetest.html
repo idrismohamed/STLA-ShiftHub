@@ -38,6 +38,9 @@ h2 { font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(-
 <h2>Viz 4 · Annual cap rings</h2>
 <div class="an-flat-card"><div id="chart-rings" class="ch-rings"></div></div>
 
+<h2>Pay-sheet hours breakdown (replaces Chart.js)</h2>
+<div class="an-flat-card"><div id="payChart"></div></div>
+
 <h2>Viz 1 · Trend</h2>
 <div class="an-flat-card">
   <div class="ch-seg" id="trend-seg">
@@ -59,6 +62,7 @@ function draw() {
   chartDonut('chart-donut-hours','chart-donut-hours-legend',[['Reg',144,'--c-reg'],['OT',8,'--c-ot'],['DT',4,'--c-dt']],'156','hrs');
   chartPaired('chart-paired',[['Days worked',13,11],['Hours',168,142],['OT/DT hrs',12,18]],'Jun','May');
   chartRings('chart-rings',[['CPP','$2.1k / $4k',0.53,'--c-cpp'],['EI','$612 / $1.1k',0.57,'--c-ei'],['Vacation','64h / 150h',0.43,'--off']]);
+  chartBars('payChart',[['Reg',144,'--c-reg'],['OT',8,'--c-ot'],['DT',4,'--c-dt'],['Vac',12,'--c-ei'],['Lieu',0,'--warn'],['Hol',8,'--c-tax']],'h');
   chartTrend({labels:['5/4','','5/18','','6/1','','6/15',''],gross:[3120,3340,2980,3610,3247,3890,3450,3247],hours:[156,168,150,180,162,184,170,168],ot:[6,12,4,20,9,24,14,12]});
 }
 window.addEventListener('load',()=>{ draw(); if(document.fonts&&document.fonts.ready)document.fonts.ready.then(draw); });

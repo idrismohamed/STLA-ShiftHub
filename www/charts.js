@@ -247,6 +247,37 @@ function chartPaired(hostId, rows, thisLabel, prevLabel) {
         `<div class="ch-legend"><div class="ch-lg"><span class="ch-sw" style="background:${_cCol('--accent')}"></span>${thisLabel}</div><div class="ch-lg"><span class="ch-sw" style="background:${_cCol('--border')}"></span>${prevLabel}</div></div>`);
 }
 
+/* ── Horizontal labelled bar chart (pay-period hours breakdown) ──────────── */
+/* bars: [[label, value, colorToken], ...]; unit appended to the value label */
+function chartBars(hostId, bars, unit) {
+    const host = document.getElementById(hostId);
+    if (!host) return;
+    host.innerHTML = '';
+    unit = unit || '';
+    const all = bars.filter(b => b[1] > 0);
+    if (!all.length) { host.innerHTML = '<div class="ch-empty">No hours this period</div>'; return; }
+    const labelW = 44, valW = 52, padR = 6;
+    const rowH = 28, gap = 8, W = 440;
+    const H = all.length * (rowH + gap);
+    const s = _cSvg(W, H);
+    const barX = labelW, barMax = W - labelW - valW - padR;
+    const max = Math.max(...all.map(b => b[1])) * 1.05 || 1;
+    all.forEach((b, i) => {
+        const y = i * (rowH + gap);
+        const cy = y + rowH / 2;
+        s.appendChild(_cText(0, cy + 4, b[0], 12, 800, '--text-muted', 'start'));
+        s.appendChild(_cEl('rect', { x: barX, y: y + 4, width: barMax, height: rowH - 8, rx: 6, fill: _cCol('--border'), opacity: 0.5 }));
+        const w = barMax * (b[1] / max);
+        const bar = _cEl('rect', { x: barX, y: y + 4, width: 0, height: rowH - 8, rx: 6, fill: _cCol(b[2]) });
+        s.appendChild(bar);
+        _cAnimate(t => bar.setAttribute('width', Math.max(0, w * t)), 600, i * 70);
+        const vt = _cText(W - padR, cy + 4, null, 12, 800, '--text', 'end');
+        vt.style.opacity = 0; s.appendChild(vt);
+        _cAnimate(t => { vt.textContent = (Math.round(b[1] * 10 * t) / 10) + unit; vt.style.opacity = t; }, 600, i * 70);
+    });
+    host.appendChild(s);
+}
+
 /* ── Viz 1 · pay / hours trend (bar + line, toggle) ──────────────────────── */
 let _trendData = null, _trendKey = 'gross';
 const _TREND_META = {

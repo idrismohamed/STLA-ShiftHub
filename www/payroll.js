@@ -257,31 +257,21 @@ function getVacationCycle(targetDateStr) {
 
 // ─── Payroll rendering and simulation ──────────────────────────────────────────
 
-let chartInstance = null;
 let simBaseGross = 0, simTargetYear = 2026, simTargetPP = 0;
 
 function renderChart(reg, ot, dt, vac, lieu, hol) {
-    const ctx     = document.getElementById('payChart');
+    const host    = document.getElementById('payChart');
     const wrapper = document.getElementById('chart-wrapper');
-    if (!ctx || !window.Chart) { if (wrapper) wrapper.style.display = 'none'; return; }
+    if (!host || typeof chartBars !== 'function') { if (wrapper) wrapper.style.display = 'none'; return; }
     wrapper.style.display = 'block';
-    if (chartInstance) chartInstance.destroy();
-    chartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Reg', 'OT', 'DT', 'Vac', 'Lieu', 'Hol'],
-            datasets: [{ label: 'Hours', data: [reg, ot, dt, vac, lieu, hol],
-                backgroundColor: ['#4ba3e3', '#34a853', '#ff6d00', '#00bcd4', '#fbbc04', '#ea4335'], borderRadius: 6 }]
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { beginAtZero: true, grid: { color: 'rgba(128,128,128,0.2)' }, ticks: { color: 'rgba(128,128,128,0.8)' } },
-                x: { grid: { display: false }, ticks: { color: 'rgba(128,128,128,0.8)' } }
-            }
-        }
-    });
+    chartBars('payChart', [
+        ['Reg',  reg,  '--c-reg'],
+        ['OT',   ot,   '--c-ot'],
+        ['DT',   dt,   '--c-dt'],
+        ['Vac',  vac,  '--c-ei'],
+        ['Lieu', lieu, '--warn'],
+        ['Hol',  hol,  '--c-tax']
+    ], 'h');
 }
 
 function runSimulator() {
