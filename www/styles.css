@@ -1119,6 +1119,17 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     user-select: none;
     -webkit-touch-callout: none;
 }
+@keyframes cal-cell-in {
+    from { opacity: 0; transform: translateY(7px) scale(0.96); }
+    to   { opacity: 1; transform: none; }
+}
+.cal-cell:not(.empty) {
+    animation: cal-cell-in 0.38s var(--spring) both;
+    animation-delay: calc(var(--cell-i, 0) * 15ms);
+}
+@media (prefers-reduced-motion: reduce) {
+    .cal-cell, .cal-week-card { animation: none !important; }
+}
 .cal-cell:active { transform: scale(var(--press)); }
 /* Pay-period accent stripe (A-style) — always visible regardless of shift fill */
 .cal-cell::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: transparent; z-index: 0; }
@@ -1435,6 +1446,8 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     flex-direction: column;
     gap: 3px;
     cursor: pointer;
+    animation: cal-cell-in 0.42s var(--spring) both;
+    animation-delay: calc(var(--cell-i, 0) * 38ms);
     transition: opacity 0.15s;
     -webkit-user-select: none;
     user-select: none;

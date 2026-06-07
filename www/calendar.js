@@ -169,35 +169,10 @@ function setCalendarViewMode(mode) {
         calendarViewMode = mode;
         localStorage.setItem('calendarViewMode', mode);
         renderCalendar();
-        const newEl = cal?.firstElementChild;
-        if (newEl) {
-            if (window.Motion) {
-                Motion.animate(newEl,
-                    { opacity: [0, 1], transform: ['translateY(10px) scale(0.98)', 'translateY(0) scale(1)'] },
-                    { duration: 0.28, easing: [0.25, 1, 0.5, 1] }
-                );
-            } else {
-                newEl.style.transition = 'none';
-                newEl.style.opacity    = '0';
-                newEl.style.transform  = 'translateY(10px) scale(0.98)';
-                requestAnimationFrame(() => {
-                    newEl.style.transition = 'opacity 0.28s ease, transform 0.32s cubic-bezier(0.25,1,0.5,1)';
-                    newEl.style.opacity    = '1';
-                    newEl.style.transform  = 'translateY(0) scale(1)';
-                });
-            }
-        }
+        // CSS @keyframes cal-cell-in handles per-cell stagger entry
         if (sideEl) {
-            if (window.Motion) {
-                Motion.animate(sideEl, { opacity: [0, 1] }, { duration: 0.32, easing: 'ease' });
-            } else {
-                sideEl.style.transition = 'none';
-                sideEl.style.opacity    = '0';
-                requestAnimationFrame(() => {
-                    sideEl.style.transition = 'opacity 0.32s ease';
-                    sideEl.style.opacity    = '1';
-                });
-            }
+            sideEl.style.transition = 'opacity 0.28s ease';
+            sideEl.style.opacity    = '1';
         }
     };
 
@@ -759,7 +734,7 @@ function buildCellPills(dStr, shift, ex, f, baseH, yearHols) {
  * Build a single .cal-cell div — M3 simplified design.
  * Date circle + shift type label + abbreviated time + corner OT chip + flag icons.
  */
-function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex) {
+function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex, cellIdx = 0) {
     const target = Date.UTC(year, m, d);
     const dStr   = toDateKey(target);
     const pI     = getPIndex(target);
@@ -856,7 +831,7 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
     const dispDate  = `${months[m]} ${d}, ${year}`;
     const baseShift = getShiftForCrew(pI, crew);
 
-    return `<div class="${cls}" id="day-${dStr}" onclick="calDayClick('${dStr}','${dispDate}','${baseShift}','${next}')" ontouchstart="calLpStart(event,'${dStr}','${dispDate}','${baseShift}','${next}','month')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd(event)" oncontextmenu="return false">
+    return `<div class="${cls}" id="day-${dStr}" style="--cell-i:${cellIdx}" onclick="calDayClick('${dStr}','${dispDate}','${baseShift}','${next}')" ontouchstart="calLpStart(event,'${dStr}','${dispDate}','${baseShift}','${next}','month')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd(event)" oncontextmenu="return false">
         ${dropBadge}
         <span class="cal-date-num">${d}</span>
         <span class="cal-cell-type">${typeLabel}</span>
@@ -938,9 +913,9 @@ function buildNewMonthView(m, year, crew, todayStr, yearHols, currentTargetPPInd
     const last     = new Date(year, m + 1, 0);
     const startDay = first.getDay();
 
-    let cells = '';
-    for (let i = 0; i < startDay; i++) cells += '<div class="cal-cell empty"></div>';
-    for (let d = 1; d <= last.getDate(); d++) cells += buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex);
+    let cells = '', ci = 0;
+    for (let i = 0; i < startDay; i++) { cells += '<div class="cal-cell empty"></div>'; ci++; }
+    for (let d = 1; d <= last.getDate(); d++) cells += buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex, ci++);
 
     return `<div class="cal-redesign" ontouchstart="calDragStart(event)" ontouchmove="calDragMove(event)" ontouchend="calDragEnd(event)">
         ${header}
@@ -979,27 +954,16 @@ function navigateMonth(dir) {
     }
 
     localStorage.setItem('currentCalMonth', currentCalMonth);
-    renderCalendar();
-    requestAnimationFrame(() => {
-        const panel = document.getElementById('cal-month-panel');
-        if (!panel) return;
-        const fromPx = dir > 0 ? window.innerWidth * 0.6 : -window.innerWidth * 0.6;
-        if (window.Motion) {
-            Motion.animate(panel,
-                { transform: [`translateX(${fromPx}px)`, 'translateX(0px)'], opacity: [0.5, 1] },
-                { type: 'spring', stiffness: 260, damping: 22 }
-            );
-        } else {
-            panel.style.transition = 'none';
-            panel.style.transform  = `translateX(${fromPx}px)`;
-            panel.style.opacity    = '0.5';
-            requestAnimationFrame(() => {
-                panel.style.transition = 'transform 0.35s cubic-bezier(0.25,1,0.5,1), opacity 0.28s ease';
-                panel.style.transform  = 'translateX(0)';
-                panel.style.opacity    = '1';
-            });
-        }
-    });
+    const _exitPanel = document.getElementById('cal-month-panel');
+    if (_exitPanel) {
+        const nudge = dir > 0 ? '-24px' : '24px';
+        _exitPanel.style.transition = 'opacity 0.1s ease, transform 0.1s ease';
+        _exitPanel.style.opacity    = '0';
+        _exitPanel.style.transform  = `translateX(${nudge})`;
+        setTimeout(renderCalendar, 110);
+    } else {
+        renderCalendar();
+    }
 }
 
 /** Build the new week view with prev/next navigation. */
@@ -1098,7 +1062,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         // Insert row divider before the 8th card (split into two rows of 7)
         if (i === 7) cards += '</div><div class="cal-pp-row-gap"></div><div class="cal-week-grid">';
 
-        cards += `<div class="${cardCls}" onclick="calDayClick('${dStr}','${friendly}','${shift}','${next}')" ontouchstart="calLpStart(event,'${dStr}','${friendly}','${shift}','${next}')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd(event)" oncontextmenu="return false">
+        cards += `<div class="${cardCls}" style="--cell-i:${i}" onclick="calDayClick('${dStr}','${friendly}','${shift}','${next}')" ontouchstart="calLpStart(event,'${dStr}','${friendly}','${shift}','${next}')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd(event)" oncontextmenu="return false">
             <div class="cal-week-date">${dateLabel}</div>
             ${pillsHtml}
         </div>`;
@@ -1129,31 +1093,22 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
     </div>`;
 }
 
-/** Navigate the PP view by dir pay periods, with a slide-in animation. */
+/** Navigate the PP view by dir pay periods, with a stagger-in animation. */
 function navigatePP(dir) {
     currentWeekOffset += dir;
     localStorage.setItem('currentWeekOffset', currentWeekOffset);
-    renderCalendar();
-    requestAnimationFrame(() => {
-        const wrap   = document.getElementById('cal-pp-wrap');
-        const dowRow = document.querySelector('.cal-dow-row.week-mode');
-        if (!wrap) return;
-        const fromPx = dir > 0 ? window.innerWidth * 0.55 : -window.innerWidth * 0.55;
-        if (window.Motion) {
-            for (const el of [wrap, dowRow]) {
-                if (!el) continue;
-                Motion.animate(el,
-                    { transform: [`translateX(${fromPx}px)`, 'translateX(0px)'], opacity: [0.5, 1] },
-                    { type: 'spring', stiffness: 260, damping: 22 }
-                );
-            }
-        } else {
-            for (const el of [wrap, dowRow]) { if (!el) continue; el.style.transition = 'none'; el.style.transform = `translateX(${fromPx}px)`; el.style.opacity = '0.5'; }
-            requestAnimationFrame(() => {
-                for (const el of [wrap, dowRow]) { if (!el) continue; el.style.transition = 'transform 0.35s cubic-bezier(0.25,1,0.5,1), opacity 0.28s ease'; el.style.transform = 'translateX(0)'; el.style.opacity = '1'; }
-            });
+    const nudge = dir > 0 ? '-24px' : '24px';
+    const _exitEls = [document.getElementById('cal-pp-wrap'), document.querySelector('.cal-dow-row.week-mode')].filter(Boolean);
+    if (_exitEls.length) {
+        for (const el of _exitEls) {
+            el.style.transition = 'opacity 0.1s ease, transform 0.1s ease';
+            el.style.opacity    = '0';
+            el.style.transform  = `translateX(${nudge})`;
         }
-    });
+        setTimeout(renderCalendar, 110);
+    } else {
+        renderCalendar();
+    }
 }
 
 /** Alias kept for any existing references. */
