@@ -474,7 +474,7 @@ function buildMonthHtml(m, year, crew, todayStr, yearHols, currentTargetPPIndex)
         const isCurrentPP = (f.ppIndex === currentTargetPPIndex);
         const timeC       = isToday ? 'today' : (isPast ? (isCurrentPP ? 'current-pp' : 'past') : (isCurrentPP ? 'current-pp' : ''));
 
-        html += `<div class="day ${sC} ${timeC}" id="day-${dStr}" onclick="calDayClick('${dStr}','${months[m]} ${d}, ${year}','${getShiftForCrew(pI, crew)}','${next}')" ontouchstart="calLpStart(event,'${dStr}','${months[m]} ${d}, ${year}','${getShiftForCrew(pI, crew)}','${next}','month')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd(event)" ontouchcancel="calLpEnd()" oncontextmenu="return false">${d}${alt}${oH}<div class="label">${lbl}</div>${tH}${eH}${ppB}</div>`;
+        html += `<div class="day ${sC} ${timeC}" id="day-${dStr}" onclick="calDayClick('${dStr}','${months[m]} ${d}, ${year}','${getShiftForCrew(pI, crew)}','${next}')" oncontextmenu="calCtxMenu(event,'${dStr}','${months[m]} ${d}, ${year}','${getShiftForCrew(pI, crew)}','${next}','month')">${d}${alt}${oH}<div class="label">${lbl}</div>${tH}${eH}${ppB}</div>`;
     }
     return html + `</div></div>`;
 }
@@ -1180,7 +1180,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         // Insert row divider before the 8th card (split into two rows of 7)
         if (i === 7) cards += '</div><div class="cal-pp-row-gap"></div><div class="cal-week-grid">';
 
-        cards += `<div class="${cardCls}" onclick="calDayClick('${dStr}','${friendly}','${shift}','${next}')" ontouchstart="calLpStart(event,'${dStr}','${friendly}','${shift}','${next}')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd(event)" ontouchcancel="calLpEnd()" oncontextmenu="return false">
+        cards += `<div class="${cardCls}" onclick="calDayClick('${dStr}','${friendly}','${shift}','${next}')" ontouchstart="calLpStart(event,'${dStr}','${friendly}','${shift}','${next}')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd(event)" oncontextmenu="return false">
             <div class="cal-week-date">${dateLabel}</div>
             ${pillsHtml}
         </div>`;
@@ -1771,9 +1771,19 @@ function calLpEnd(e) {
 }
 
 function calDayClick(dStr, friendly, shift, next) {
-    if (_ctxLpFired) { _ctxLpFired = false; return; } // long press just fired — eat this click
+    if (_ctxLpFired) { _ctxLpFired = false; return; }
     haptic();
     openPickupSheet(dStr, friendly, shift, next);
+}
+
+// Month view uses the native contextmenu event (fired by Android on long press)
+// instead of a JS timer — this fires at the system timing, prevents the Android
+// copy/paste popup via e.preventDefault(), and avoids the touchcancel race.
+function calCtxMenu(e, dStr, friendly, shift, next, view) {
+    e.preventDefault();
+    e.stopPropagation();
+    _ctxLpFired = true;
+    showCtxMenu(dStr, friendly, shift, next, e.clientX, e.clientY, view);
 }
 
 function goToWeekPP(dStr) {
