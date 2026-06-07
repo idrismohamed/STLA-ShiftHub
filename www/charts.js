@@ -26,10 +26,14 @@ function _cEl(tag, attrs) {
 }
 
 function _cSvg(w, h) {
-    return _cEl('svg', {
-        viewBox: `0 0 ${w} ${h}`, width: '100%', height: h,
-        preserveAspectRatio: 'xMidYMid meet', style: 'display:block;overflow:visible'
+    const s = _cEl('svg', {
+        viewBox: `0 0 ${w} ${h}`,
+        preserveAspectRatio: 'xMidYMid meet'
     });
+    // Set height via CSS (not SVG attribute) so WebKit/Chrome don't recompute it
+    // from the viewBox aspect ratio when width is percentage-based.
+    s.style.cssText = `display:block;overflow:visible;width:100%;height:${h}px`;
+    return s;
 }
 
 /** rAF tween; jumps straight to the end state when reduced-motion is on. */
@@ -62,8 +66,15 @@ function chartGauge(hostId, used, max) {
     if (!host) return;
     host.innerHTML = '';
     const pct = Math.max(0, Math.min(1, used / max));
-    const W = 220, H = 132, cx = W / 2, cy = 116, R = 90, sw = 16;
-    const s = _cSvg(W, H);
+    // cy=112 so the arc endpoints sit at y=112 and the "0/max" labels at y=128 fit inside H=140.
+    const W = 220, H = 140, cx = W / 2, cy = 112, R = 88, sw = 16;
+    const s = _cEl('svg', {
+        viewBox: `0 0 ${W} ${H}`,
+        preserveAspectRatio: 'xMidYMid meet'
+    });
+    // height:auto lets it scale proportionally with its container;
+    // max-width is set inline so it doesn't rely on an external CSS rule.
+    s.style.cssText = `display:block;overflow:hidden;width:100%;height:auto;max-width:${W}px;margin:0 auto`;
     const a0 = Math.PI, a1 = 0;
     const ang = t => a0 + (a1 - a0) * t;
     const pt = (t, r) => [cx + Math.cos(ang(t)) * r, cy + Math.sin(ang(t)) * r];
@@ -89,12 +100,12 @@ function chartGauge(hostId, used, max) {
         const large = cur > 0.5 ? 1 : 0;
         val.setAttribute('d', `M ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1}`);
     }, 900, 80);
-    const big = _cText(cx, cy - 20, null, 30, 900, '--text');
+    const big = _cText(cx, cy - 18, null, 30, 900, '--text');
     s.appendChild(big);
-    s.appendChild(_cText(cx, cy - 2, 'of ' + max + 'h used', 12, 700, '--text-muted'));
+    s.appendChild(_cText(cx, cy, 'of ' + max + 'h used', 12, 700, '--text-muted'));
     _cAnimate(t => { big.textContent = (used * t).toFixed(1) + 'h'; }, 900, 80);
-    s.appendChild(_cText(cx - R, cy + 17, '0', 10, 700, '--text-muted'));
-    s.appendChild(_cText(cx + R, cy + 17, String(max), 10, 700, '--text-muted'));
+    s.appendChild(_cText(cx - R, cy + 18, '0', 10, 700, '--text-muted'));
+    s.appendChild(_cText(cx + R, cy + 18, String(max), 10, 700, '--text-muted'));
     host.appendChild(s);
 }
 
@@ -156,10 +167,9 @@ function chartRings(hostId, rings) {
         const pad = 8;
         const s = _cEl('svg', {
             viewBox: `${-pad} ${-pad} ${W + pad * 2} ${H + pad * 2}`,
-            width: '100%', height: H,
-            preserveAspectRatio: 'xMidYMid meet',
-            style: 'display:block;overflow:hidden'
+            preserveAspectRatio: 'xMidYMid meet'
         });
+        s.style.cssText = `display:block;overflow:hidden;width:100%;height:${H}px`;
         const Circ = 2 * Math.PI * R;
         s.appendChild(_cEl('circle', { cx, cy, r: R, fill: 'none', stroke: _cCol('--border'), 'stroke-width': sw }));
         const arc = _cEl('circle', {
@@ -193,10 +203,9 @@ function chartDonut(hostId, legendId, segs, centerTop, centerBot) {
     const pad = 10;
     const s = _cEl('svg', {
         viewBox: `${-pad} ${-pad} ${W + pad * 2} ${H + pad * 2}`,
-        width: '100%', height: H,
-        preserveAspectRatio: 'xMidYMid meet',
-        style: 'display:block;overflow:hidden;max-width:' + W + 'px;margin:0 auto'
+        preserveAspectRatio: 'xMidYMid meet'
     });
+    s.style.cssText = `display:block;overflow:hidden;width:100%;height:${H}px;max-width:${W}px;margin:0 auto`;
     const total = segs.reduce((a, x) => a + x[1], 0) || 1;
     const Circ = 2 * Math.PI * R;
     s.appendChild(_cEl('circle', { cx, cy, r: R, fill: 'none', stroke: _cCol('--border'), 'stroke-width': sw, opacity: 0.5 }));
