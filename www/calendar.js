@@ -1703,7 +1703,7 @@ function showCtxMenu(dStr, friendly, shift, next, x, y, view) {
     items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();openPickupSheet('${dStr}','${friendly}','${shift}','${next}');requestAnimationFrame(()=>requestAnimationFrame(()=>selectType('Vacation')))">🏖️ Vacation</div>`;
     items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();triggerBiometricsAndOpenPay(Math.floor((Date.UTC(...'${dStr}'.split('-').map(Number).map((v,i)=>i===1?v-1:v))-basePPStartUTC)/MS_PP))">💰 View Pay Period</div>`;
     if (view === 'month') {
-        items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();goToWeekPP('${dStr}')">📅 Go to Pay Period</div>`;
+        items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();goToWeekPP('${dStr}')">📅 Go to Week View</div>`;
     }
     if (extraShifts[dStr]) {
         items += `<div style="height:1px;background:var(--border);margin:4px 8px"></div>`;
