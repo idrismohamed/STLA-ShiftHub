@@ -1164,6 +1164,7 @@ function navigateToMonth(m, year) {
 }
 
 /** Render the four-section analytics dashboard below the calendar. */
+let _anKey = '';
 function renderAnalyticsDashboard(crew, logicalT) {
     const elSide  = document.getElementById('analytics-side');
     const elBelow = document.getElementById('analytics-below');
@@ -1455,6 +1456,12 @@ function renderAnalyticsDashboard(crew, logicalT) {
     const fatigueAtMax = fatigueUsed >= 120;
     const fatigueRightLabel = fatigueAtMax ? '' : `<span style="color:${fatigueColor};font-weight:700">${fatigueRem.toFixed(1)}h left</span>`;
     const ppHoursMicro = (ot + dt > 0) ? `<div class="an-hero-micro">+${(ot + dt).toFixed(1)}h OT/DT</div>` : '';
+
+    // Skip DOM rebuild and chart animations if nothing has changed.
+    // This prevents re-animation on every calendar view switch or scroll-triggered re-render.
+    const _newKey = `${crew}|${currentPP}|${ppDayIndex}|${displayMonth}|${displayYear}|${Math.round(gross)}|${Math.round(ytdGross)}|${dCount}|${nCount}|${Math.round(fatigueUsed)}|${Math.round(vacUsed)}|${lieuBanked}`;
+    if (_newKey === _anKey) return;
+    _anKey = _newKey;
 
     const elTop = document.getElementById('pp-top-summary');
     if (elTop) elTop.innerHTML = `
