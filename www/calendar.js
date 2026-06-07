@@ -1562,26 +1562,14 @@ function renderAnalyticsDashboard(crew, logicalT) {
     </div>
   </div>
 </div>
-<div class="ch-row2">
-  <div class="an-flat-card ch-card">
-    <div class="an-flat-card-title" style="color:${fatigueAtMax ? 'var(--night)' : 'var(--text-muted)'}">120h Fatigue${fatigueAtMax ? ' · ⛔ MAX' : ''}</div>
-    <div id="chart-gauge" class="ch-host-gauge"></div>
-    <div class="ch-caption">${fatigueAtMax ? 'Limit reached' : '<strong style="color:' + fatigueColor + '">' + fatigueRem.toFixed(1) + 'h</strong> left this period'}</div>
-  </div>
-  <div class="an-flat-card ch-card">
-    <div class="an-flat-card-title">Pay &amp; Shift Breakdown</div>
-    <div class="ch-sub-label">Where Your Pay Goes <span class="ch-sub-val">Net ${f$(gross - t.total)}</span></div>
-    <div id="chart-paybar" class="ch-host-bar"></div>
-    <div class="ch-legend" id="chart-paybar-legend"></div>
-    <div class="an-sep" style="margin:12px 0 10px"></div>
-    <div class="ch-sub-label">${months[displayMonth]} Shifts <span class="ch-sub-val">${dCount + nCount} worked</span></div>
-    <div id="chart-shift-bar" class="ch-host-bar"></div>
-    <div class="ch-legend" id="chart-shift-legend"></div>
-    <div class="an-sep" style="margin:10px 0 10px"></div>
-    <div class="ch-sub-label">PP Hours <span class="ch-sub-val">${fatigueUsed.toFixed(1)}h total</span></div>
-    <div id="chart-hours-bar" class="ch-host-bar"></div>
-    <div class="ch-legend" id="chart-hours-legend"></div>
-  </div>
+<div class="an-flat-card">
+  <div class="ch-sub-label">Where Your Pay Goes <span class="ch-sub-val">Net ${f$(gross - t.total)}</span></div>
+  <div id="chart-paybar" class="ch-host-bar"></div>
+  <div class="ch-legend" id="chart-paybar-legend"></div>
+  <div class="an-sep" style="margin:12px 0 10px"></div>
+  <div class="ch-sub-label">120h Fatigue${fatigueAtMax ? ' · ⛔ MAX' : ''} <span class="ch-sub-val" style="color:${fatigueColor}">${fatigueAtMax ? 'Limit reached' : fatigueRem.toFixed(1) + 'h left'}</span></div>
+  <div id="chart-fatigue-bar" class="ch-host-bar"></div>
+  <div class="ch-legend" id="chart-fatigue-legend"></div>
 </div>`;
 
     const _sideHTML = `
@@ -1656,8 +1644,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
     animateHeroCountUps();
 
     // ── Inline-SVG analytics charts (charts.js) ──────────────
-    if (typeof chartGauge === 'function') {
-        chartGauge('chart-gauge', fatigueUsed, 120);
+    if (typeof chartStacked === 'function') {
         chartStacked('chart-paybar', 'chart-paybar-legend', [
             ['Net',     gross - t.total, '--c-net'],
             ['Fed Tax', t.fedTax,        '--c-tax'],
@@ -1665,11 +1652,10 @@ function renderAnalyticsDashboard(crew, logicalT) {
             ['CPP',     t.cpp + t.cpp2,  '--c-ot'],
             ['EI',      t.ei,            '--c-ei']
         ]);
-        chartStacked('chart-shift-bar', 'chart-shift-legend', [
-            ['Days', dCount, '--day'], ['Nights', nCount, '--night'], ['Off', oCount, '--off']
-        ], v => String(Math.round(v)));
-        chartStacked('chart-hours-bar', 'chart-hours-legend', [
-            ['Reg', regH, '--c-reg'], ['OT', ot, '--c-ot'], ['DT', dt, '--c-dt']
+        const fatigueTrackColor = fatigueUsed >= 108 ? '--c-dt' : fatigueUsed >= 90 ? '--warn' : '--c-reg';
+        chartStacked('chart-fatigue-bar', 'chart-fatigue-legend', [
+            ['Used', fatigueUsed, fatigueTrackColor],
+            ['Left', Math.max(0, 120 - fatigueUsed), '--glass-border']
         ], v => v.toFixed(1) + 'h');
         chartPaired('chart-paired', [
             ['Days worked', thisWorked, prevWorked],
