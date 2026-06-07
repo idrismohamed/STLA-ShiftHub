@@ -17,8 +17,12 @@ const STORAGE_KEYS = {
     SHIFTS:        'kingDrewShiftsV20',
     SETTINGS:      'kingDrewSettingsV20',
     ROTATION:      'kingDrewRotationV20',
-    SYNCED_EVENTS: 'kingDrewSyncedEventsV20'
+    SYNCED_EVENTS: 'kingDrewSyncedEventsV20',
+    TAX_TABLES:    'kingDrewTaxTablesV20',
+    TAX_FETCHED:   'kingDrewTaxFetchedV20'
 };
+
+const TAX_TABLES_URL = 'https://raw.githubusercontent.com/idrismohamed/STLA-ShiftHub/main/tax-tables.json';
 
 // Glow shadows for each time-off type used on form buttons
 const TIMEOFF_GLOWS = {

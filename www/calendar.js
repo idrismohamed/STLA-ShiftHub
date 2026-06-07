@@ -1432,7 +1432,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
         }
 
         const piTax = calculateTaxes(piGross, pi, targetYear);
-        ytdGross += piGross; ytdCPP += piTax.cpp; ytdEI += piTax.ei; ppsDone++;
+        ytdGross += piGross; ytdCPP += piTax.cpp + piTax.cpp2; ytdEI += piTax.ei; ppsDone++;
 
         if (pi === currentPP) {
             gross = piGross; regH = piRegH; ot = piOT; dt = piDT;
@@ -1577,9 +1577,9 @@ function renderAnalyticsDashboard(crew, logicalT) {
     const ppRemaining     = Math.max(0, ppCount - ppsDone);
     const projectedAnnual = ppsDone > 0 ? ytdGross + (ytdGross / ppsDone) * ppRemaining : 0;
 
-    let annCPPMax = 4230.45, annEIMax = 1123.07;
-    if (targetYear === 2024) { annCPPMax = 3867.50; annEIMax = 1049.12; }
-    else if (targetYear === 2025) { annCPPMax = 4000.00; annEIMax = 1100.00; }
+    const _tbl = getTaxYear(targetYear);
+    const annCPPMax = _tbl.annCPPMax + _tbl.annCPP2Max;
+    const annEIMax  = _tbl.annEIMax;
 
     const cppPct = Math.min(100, Math.round((ytdCPP / annCPPMax) * 100));
     const eiPct  = Math.min(100, Math.round((ytdEI  / annEIMax)  * 100));
@@ -1643,7 +1643,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
     <div class="an-row"><span>Sat / Sun hrs</span><strong>${fH(satH + sunH)}</strong></div>
     <div class="an-sep"></div>
     <div class="an-row"><span>Tax (Fed + ON)</span><strong style="color:var(--night)">-${f$(t.fedTax + t.onTax)}</strong></div>
-    <div class="an-row"><span>CPP + EI</span><strong style="color:var(--night)">-${f$(t.cpp + t.ei)}</strong></div>
+    <div class="an-row"><span>CPP + EI</span><strong style="color:var(--night)">-${f$(t.cpp + t.cpp2 + t.ei)}</strong></div>
   </div>
 
   <div class="an-month-block">
