@@ -1450,35 +1450,35 @@ function renderAnalyticsDashboard(crew, logicalT) {
     const elTop = document.getElementById('pp-top-summary');
     if (elTop) elTop.innerHTML = `
 <div class="pp-top-wrap">
-  <div class="an-flat-card" style="margin-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom:none;">
+  <div class="an-flat-card">
     <div class="an-flat-card-title">Current Pay Period <span class="an-section-sub" style="text-transform:none;letter-spacing:0;font-size:10px">${ppStartLabel}–${ppEndLabel}</span></div>
     <div class="an-pp-bar-labels"><span>Day ${ppDayDisplay} of 14</span><span>${ppDaysLeft} day${ppDaysLeft !== 1 ? 's' : ''} left</span></div>
     <div class="an-progress" style="margin:5px 0 0"><div class="an-progress-fill" style="width:${ppPct}%;background:var(--accent)"></div></div>
   </div>
-  <div class="an-grid-3" style="margin:0;border-top-left-radius:0;border-top-right-radius:0;">
-    <div class="an-hero-card" style="--hero-color:#7c3aed;border-top-left-radius:0;border-top-right-radius:0;">
+  <div class="an-grid-3">
+    <div class="an-hero-card" style="--hero-color:#7c3aed">
       <div class="an-hero-label">Gross</div>
       <div class="an-hero-value">${f$(gross)}</div>
     </div>
-    <div class="an-hero-card" style="--hero-color:#34d399;border-top-left-radius:0;border-top-right-radius:0;">
+    <div class="an-hero-card" style="--hero-color:#34d399">
       <div class="an-hero-label">Net Pay</div>
       <div class="an-hero-value">${f$(gross - t.total)}</div>
     </div>
-    <div class="an-hero-card" style="--hero-color:var(--day);border-top-left-radius:0;border-top-right-radius:0;">
+    <div class="an-hero-card" style="--hero-color:var(--day)">
       <div class="an-hero-label">PP Hours</div>
       <div class="an-hero-value">${fatigueUsed.toFixed(1)}h</div>
       ${ppHoursMicro}
     </div>
   </div>
-</div>
-<div class="an-flat-card">
-  <div class="ch-sub-label">Where Your Pay Goes <span class="ch-sub-val">Net ${f$(gross - t.total)}</span></div>
-  <div id="chart-paybar" class="ch-host-bar"></div>
-  <div class="ch-legend" id="chart-paybar-legend"></div>
-  <div class="an-sep" style="margin:12px 0 10px"></div>
-  <div class="ch-sub-label">120h Fatigue${fatigueAtMax ? ' · ⛔ MAX' : ''} <span class="ch-sub-val" style="color:${fatigueColor}">${fatigueAtMax ? 'Limit reached' : fatigueRem.toFixed(1) + 'h left'}</span></div>
-  <div id="chart-fatigue-bar" class="ch-host-bar"></div>
-  <div class="ch-legend" id="chart-fatigue-legend"></div>
+  <div class="pp-bars-section">
+    <div class="ch-sub-label">Where Your Pay Goes <span class="ch-sub-val">Net ${f$(gross - t.total)}</span></div>
+    <div id="chart-paybar" class="ch-host-bar"></div>
+    <div class="ch-legend" id="chart-paybar-legend"></div>
+    <div class="an-sep" style="margin:12px 0 10px"></div>
+    <div class="ch-sub-label">120h Fatigue${fatigueAtMax ? ' · ⛔ MAX' : ''} <span class="ch-sub-val" style="color:${fatigueColor}">${fatigueAtMax ? 'Limit reached' : fatigueRem.toFixed(1) + 'h left'}</span></div>
+    <div id="chart-fatigue-bar" class="ch-host-bar"></div>
+    <div class="ch-legend" id="chart-fatigue-legend"></div>
+  </div>
 </div>`;
 
     const _sideHTML = `
