@@ -606,12 +606,15 @@ function updatePickupToggles(skipSliderReset = false) {
         }
     }
 
-    // ── 2nd shift section visibility and OT slider ───────────────────────────
+    // ── Additional-time section visibility and OT slider ────────────────────
+    const _stIn      = document.getElementById('input-start-time');
+    const _etIn      = document.getElementById('input-end-time');
+    const _hasTimes  = !!(_stIn && _stIn.value && _etIn && _etIn.value);
     const _isWorking = selectedType && !['Vacation', 'Off', 'DropOff', 'Lieu', 'DropPaid'].includes(selectedType);
     const _addBtn    = document.getElementById('btn-add-shift2');
     const _shift2Sec = document.getElementById('section-shift2');
     const _shift2Vis = _shift2Sec && _shift2Sec.style.display !== 'none';
-    if (_addBtn) _addBtn.style.display = (_isWorking && !_shift2Vis) ? 'block' : 'none';
+    if (_addBtn) _addBtn.style.display = (_isWorking && _hasTimes && !_shift2Vis) ? 'block' : 'none';
 
     const _s2St = document.getElementById('input-start-time-2');
     const _s2Et = document.getElementById('input-end-time-2');

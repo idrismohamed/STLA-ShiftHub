@@ -822,7 +822,7 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
     const baseShift = getShiftForCrew(pI, crew);
 
     const shift2Chip = (ex && ex.shift2 && ex.shift2.startTime)
-        ? `<span class="cal-ot-chip" style="background:rgba(192,163,255,0.18);color:var(--mod);border-color:rgba(192,163,255,0.35);">+2nd</span>`
+        ? `<span class="cal-ot-chip" style="background:rgba(192,163,255,0.18);color:var(--mod);border-color:rgba(192,163,255,0.35);">+more</span>`
         : '';
 
     return `<div class="${cls}" id="day-${dStr}" style="--cell-i:${cellIdx}" onclick="calDayClick('${dStr}','${dispDate}','${baseShift}','${next}')" ontouchstart="calLpStart(event,'${dStr}','${dispDate}','${baseShift}','${next}','month')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd(event)" oncontextmenu="return false">
