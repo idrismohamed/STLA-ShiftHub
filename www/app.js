@@ -62,3 +62,6 @@ fetchTaxRates(true);
 const cSel = document.getElementById('crew-select');
 if (cSel) cSel.value = sysSettings.defaultCrew;
 renderCalendar();
+
+// First-run setup wizard (no-op for returning users).
+if (typeof maybeStartOnboarding === 'function') maybeStartOnboarding();
