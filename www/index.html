@@ -258,10 +258,41 @@
             </div>
         </div>
 
-        <div class="btn-row" style="position: sticky; bottom: 0; padding: 14px 20px 28px; margin: 0; border-radius: 0; border: none; border-top: 1px solid var(--border); box-shadow: none; width: 100%; z-index: 10; justify-content: center;">
+        <div class="btn-row" style="position: sticky; bottom: 0; padding: 14px 20px 28px; margin: 0; border-radius: 0; border: none; border-top: 1px solid var(--border); box-shadow: none; width: 100%; z-index: 10; justify-content: center; flex-wrap: wrap;">
+            <button class="btn-action btn-cancel" onclick="haptic(); openCapTracker()">📊 Caps</button>
+            <button class="btn-action btn-cancel" onclick="haptic(); openVerifySheet()">🔍 Verify</button>
             <button class="btn-action btn-cancel" style="background: var(--day); border: none; color: #fff;" onclick="exportPDF()">📄 PDF</button>
             <button class="btn-action btn-cancel" onclick="sharePayPeriod()">📤 Text</button>
             <button class="btn-action btn-save" onclick="closeAllSheets()">Close</button>
+        </div>
+    </div>
+
+    <div class="bottom-sheet" id="sheet-captrack">
+        <h3 class="sheet-header">📊 Contribution Caps</h3>
+        <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: -15px; margin-bottom: 15px;">Year-to-date progress toward annual CPP / EI maximums.</p>
+        <div id="captrack-content" style="padding: 0 4px;"></div>
+        <div class="btn-row">
+            <button class="btn-action btn-save" onclick="closeAllSheets()">Close</button>
+        </div>
+    </div>
+
+    <div class="bottom-sheet" id="sheet-verify">
+        <h3 class="sheet-header">🔍 Paystub Verifier</h3>
+        <p id="vf-pp-label" style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: -15px; margin-bottom: 15px;">Pay period</p>
+        <div class="sheet-card">
+            <div class="sheet-card-title">Enter your real paystub</div>
+            <div class="vf-input-grid">
+                <label>Gross<input type="number" id="vf-gross" class="number-input" step="0.01" inputmode="decimal" placeholder="$"></label>
+                <label>Tax (Fed+ON)<input type="number" id="vf-tax" class="number-input" step="0.01" inputmode="decimal" placeholder="$"></label>
+                <label>CPP (1+2)<input type="number" id="vf-cpp" class="number-input" step="0.01" inputmode="decimal" placeholder="$"></label>
+                <label>EI<input type="number" id="vf-ei" class="number-input" step="0.01" inputmode="decimal" placeholder="$"></label>
+                <label>Net pay<input type="number" id="vf-net" class="number-input" step="0.01" inputmode="decimal" placeholder="$"></label>
+            </div>
+        </div>
+        <div id="vf-results" class="sheet-card"></div>
+        <div class="btn-row">
+            <button class="btn-action btn-cancel" onclick="closeAllSheets()">Close</button>
+            <button class="btn-action btn-save" onclick="runPaystubCompare()">Compare</button>
         </div>
     </div>
 
@@ -443,6 +474,7 @@
     <script src="state.js"></script>
     <script src="rotation.js"></script>
     <script src="payroll.js"></script>
+    <script src="payrollTools.js"></script>
     <script src="charts.js"></script>
     <script src="calendar.js"></script>
     <script src="notifications.js"></script>
