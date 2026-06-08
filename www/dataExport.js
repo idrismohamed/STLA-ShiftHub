@@ -1,7 +1,7 @@
 // ─── Data export / import ─────────────────────────────────────────────────────
 
 async function exportData() {
-    haptic();
+    haptic('heavy');
     const data = {
         shifts:      localStorage.getItem(STORAGE_KEYS.SHIFTS),
         settings:    localStorage.getItem(STORAGE_KEYS.SETTINGS),

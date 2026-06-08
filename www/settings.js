@@ -68,7 +68,7 @@ function openSettingsSheet() {
 }
 
 function saveSettings() {
-    haptic();
+    haptic('heavy');
     const g = id => document.getElementById(id);
     sysSettings = {
         theme:             g('setting-theme')         ? g('setting-theme').value           : 'system',

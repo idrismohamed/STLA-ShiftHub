@@ -485,7 +485,7 @@ function updatePickupToggles(skipSliderReset = false) {
 // ─── Save / Remove shift ──────────────────────────────────────────────────────
 
 function saveShift() {
-    haptic();
+    haptic('heavy');
     const payload = { role: selectedRole };
 
     if (selectedRole === 'Manual') {
@@ -557,7 +557,7 @@ function saveShift() {
 }
 
 function removeShift() {
-    haptic();
+    haptic('heavy');
     if (syncedEvents[activeDate]) {
         delete syncedEvents[activeDate];
         try { localStorage.setItem(STORAGE_KEYS.SYNCED_EVENTS, JSON.stringify(syncedEvents)); } catch(e) {}

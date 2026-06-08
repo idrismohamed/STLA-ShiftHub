@@ -1,6 +1,7 @@
 /** Trigger a short vibration for tactile feedback. */
-function haptic() {
-    if (navigator.vibrate) navigator.vibrate(10);
+function haptic(type) {
+    if (!navigator.vibrate) return;
+    navigator.vibrate(type === 'heavy' ? 30 : 20);
 }
 
 /**
