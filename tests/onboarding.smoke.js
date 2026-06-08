@@ -44,8 +44,24 @@ function check(name, cond, detail) {
   const page = await browser.newPage();
   await page.setViewport({ width: 390, height: 844 });
 
+  // Stub the remote tax-tables endpoint so the offline test environment doesn't
+  // produce a (legitimate, production-only) network failure. The app falls back
+  // to built-in rates anyway; this just keeps the console clean for assertion.
+  await page.setRequestInterception(true);
+  page.on('request', req => {
+    if (req.url().includes('raw.githubusercontent.com')) {
+      return req.respond({
+        status: 200,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        contentType: 'application/json',
+        body: JSON.stringify({ years: {} })
+      });
+    }
+    req.continue();
+  });
+
   const errors = [];
-  page.on('pageerror', e => errors.push(String(e)));
+  page.on('pageerror', e => errors.push('pageerror: ' + e));
   page.on('console', m => { if (m.type() === 'error') errors.push('console.error: ' + m.text()); });
 
   const clickByText = (sel, text) => page.evaluate((sel, text) => {
@@ -118,9 +134,7 @@ function check(name, cond, detail) {
   await page.reload({ waitUntil: 'networkidle0' }); await wait(400);
   check('Resume: reopens at saved step', await cardMatches(/Find your crew/));
 
-  const IGNORE = [/ERR_CERT_AUTHORITY_INVALID/, /Failed to load resource/, /<rect> attribute (width|height)/, /negative value is not valid/];
-  const relevant = errors.filter(e => !IGNORE.some(re => re.test(e)));
-  check('No onboarding-related page errors', relevant.length === 0, relevant.slice(0, 3).join(' | '));
+  check('Zero console/page errors during full flow', errors.length === 0, errors.slice(0, 4).join(' | '));
 
   await browser.close();
   server.close();

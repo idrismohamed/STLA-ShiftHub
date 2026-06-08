@@ -57,7 +57,9 @@ window.addEventListener('orientationchange', () => {
 const gText = document.getElementById('greeting-text');
 if (gText) gText.innerHTML = `<span>${sysSettings.displayName}</span>`;
 populateYearSelect();
-fetchTaxRates(true);
+// Only attempt the remote tax-table refresh when online; offline launches fall
+// back to cached/built-in rates without a failed network request.
+if (navigator.onLine !== false) fetchTaxRates(true);
 
 const cSel = document.getElementById('crew-select');
 if (cSel) cSel.value = sysSettings.defaultCrew;

@@ -1,0 +1,25 @@
+name: Onboarding smoke test
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Install only Puppeteer (plus its bundled Chromium) — the smoke test needs
+      # nothing else, and this avoids the heavier Cordova devDependencies whose
+      # native postinstall steps add no value to a headless DOM test.
+      - name: Install Puppeteer
+        run: npm install --no-save --no-audit --no-fund puppeteer@^25.1.0
+
+      - name: Run onboarding smoke test
+        run: npm run test:onboarding
