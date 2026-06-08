@@ -3,6 +3,7 @@
 let activeDate = null, activeCurrentShift = null, activeNextShift = null;
 let selectedType = null, selectedCrew = null, selectedRole = sysSettings.defaultRole;
 let selectedRegPay = false;
+let _pendingOverridePayload = {};
 
 const _sheetHolCache = {};
 
@@ -211,6 +212,7 @@ function addMorningMeeting() {
 
 function updatePickupToggles(skipSliderReset = false) {
     document.querySelectorAll('#sheet-pickup .toggle-btn').forEach(b => b.classList.remove('active'));
+    _pendingOverridePayload = {};
 
     const f            = dayFatigue[activeDate];
     const isDropPeriod = f && f.isDropPeriod;
@@ -294,6 +296,60 @@ function updatePickupToggles(skipSliderReset = false) {
     if (ovL) ovL.style.display   = 'none';
     let hasW = false, canS = true;
 
+    const cbOv = document.getElementById('cb-override');
+
+    // ── Rule 1: 16h/24h window — Rule 2: 8h rest only when Rule 1 fires ───────
+    if (selectedType && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(selectedType)) {
+        const crewSel2  = document.getElementById('crew-select');
+        const viewCrew2 = crewSel2 ? crewSel2.value : sysSettings.defaultCrew;
+        const stIn2 = document.getElementById('input-start-time');
+        const etIn2 = document.getElementById('input-end-time');
+        const st2   = stIn2 ? stIn2.value : '';
+        const et2   = etIn2 ? etIn2.value : '';
+        const exCur = extraShifts[activeDate];
+
+        let propStart, propEnd;
+        if (st2 && et2) {
+            propStart = getFloatTime(st2);
+            propEnd   = getFloatTime(et2); if (propEnd < propStart) propEnd += 24;
+        } else if (selectedType === 'Day')   { propStart = 6.5;  propEnd = 18.5; }
+        else if (selectedType === 'Night')   { propStart = 18.5; propEnd = 30.5; }
+
+        if (propStart !== undefined) {
+            const prevUTC   = Date.UTC(+activeDate.substring(0,4), +activeDate.substring(5,7)-1, +activeDate.substring(8,10)) - MS_DAY;
+            const prevStr   = toDateKey(prevUTC);
+            const prevStart = getShiftStartFloat(prevStr, viewCrew2);
+            const prevEnd   = getShiftEndFloat(prevStr, viewCrew2);
+
+            if (prevStart !== null && prevEnd !== null) {
+                const propStartAbs  = propStart + 24;
+                const propEndAbs    = propEnd   + 24;
+                const windowEnd     = prevStart  + 24;
+                const overlap       = Math.max(0, Math.min(propEndAbs, windowEnd) - Math.max(propStartAbs, prevStart));
+                const totalInWindow = (prevEnd - prevStart) + overlap;
+                const windowUsed    = prevEnd - prevStart;
+
+                if (totalInWindow > 16.01) {
+                    if (!(exCur && exCur.overrideRule16h)) {
+                        const hoursLeft = Math.max(0, 16 - windowUsed).toFixed(1);
+                        if (wT) wT.innerHTML += `🚨 16H LIMIT: ${totalInWindow.toFixed(1)}h in 24h window (max 16h — ${hoursLeft}h remaining).<br>`;
+                        if (ovL) ovL.style.display = 'flex';
+                        _pendingOverridePayload.overrideRule16h = true;
+                        if (!cbOv || !cbOv.checked) canS = false;
+                    }
+                    // Rule 2 — only when Rule 1 fires
+                    const rest = propStartAbs - prevEnd;
+                    if (rest < 8 && !(exCur && exCur.overrideRest)) {
+                        if (wT) wT.innerHTML += `🚨 INSUFFICIENT REST: Only ${Math.max(0, rest).toFixed(1)}h rest (min 8h when at 16h cap).<br>`;
+                        if (ovL) ovL.style.display = 'flex';
+                        _pendingOverridePayload.overrideRest = true;
+                        if (!cbOv || !cbOv.checked) canS = false;
+                    }
+                }
+            }
+        }
+    }
+
     const stInput = document.getElementById('input-start-time');
     const etInput = document.getElementById('input-end-time');
     const st      = stInput ? stInput.value : '';
@@ -334,14 +390,13 @@ function updatePickupToggles(skipSliderReset = false) {
         if (hasAbsenceInCycle)  { if (wT) wT.innerHTML += `⚠️ DROP PAID BLOCKED: You have an Unpaid Absence logged in this eligibility cycle.<br>`; hasW = true; canS = false; }
     }
 
-    // Rest-time checks
+    // Rest-time checks (custom times — general adjacency check independent of Rule 1)
     if (st && et && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(selectedType)) {
         let currentStart = getFloatTime(st);
         let currentEnd   = getFloatTime(et); if (currentEnd < currentStart) currentEnd += 24;
         const dateObj    = new Date(activeDate + 'T00:00:00Z');
         const crewSelect = document.getElementById('crew-select');
         const crew       = crewSelect ? crewSelect.value : sysSettings.defaultCrew;
-        const cbOv       = document.getElementById('cb-override');
 
         const yUTC = Date.UTC(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate() - 1);
         const yStr = toDateKey(yUTC);
@@ -351,6 +406,7 @@ function updatePickupToggles(skipSliderReset = false) {
             if (restBack < 7.95) {
                 if (wT)  wT.innerHTML    += `🚨 INSUFFICIENT REST: Only ${restBack.toFixed(1)}h rest since yesterday's shift.<br>`;
                 if (ovL) ovL.style.display = 'flex';
+                _pendingOverridePayload.overrideRest = true;
                 if (!cbOv || !cbOv.checked) canS = false;
             }
         }
@@ -363,6 +419,7 @@ function updatePickupToggles(skipSliderReset = false) {
             if (restFwd < 7.95) {
                 if (wT)  wT.innerHTML    += `🚨 INSUFFICIENT REST: Only ${restFwd.toFixed(1)}h rest before tomorrow's shift.<br>`;
                 if (ovL) ovL.style.display = 'flex';
+                _pendingOverridePayload.overrideRest = true;
                 if (!cbOv || !cbOv.checked) canS = false;
             }
         }
@@ -375,7 +432,6 @@ function updatePickupToggles(skipSliderReset = false) {
     }
 
     let base  = f ? f.baseWorkHours : 0;
-    const cbOv = document.getElementById('cb-override');
     if (f && f.isLockout && cbOv && cbOv.checked) base = (activeCurrentShift === 'D' || activeCurrentShift === 'N') ? 12 : 0;
     if (['DropPaid', 'DropOff', 'Lieu'].includes(selectedType)) base = 0;
 
@@ -490,6 +546,7 @@ function updatePickupToggles(skipSliderReset = false) {
         if (proj > 120.05) {
             if (wT)  wT.innerHTML    += `🚨 120H LIMIT: Projected ${proj.toFixed(1)}h.<br>`;
             if (ovL) ovL.style.display = 'flex';
+            _pendingOverridePayload.overrideLockout = true;
             if (!cbOv || !cbOv.checked) canS = false;
         }
     }
@@ -562,7 +619,14 @@ function saveShift() {
             if (selectedCrew) payload.crew = selectedCrew;
         }
     }
-    if (cbOv && cbOv.checked) payload.overrideLockout = true;
+    if (cbOv && cbOv.checked) {
+        if (_pendingOverridePayload.overrideLockout) payload.overrideLockout = true;
+        if (_pendingOverridePayload.overrideRule16h) payload.overrideRule16h  = true;
+        if (_pendingOverridePayload.overrideRest)    payload.overrideRest     = true;
+        if (!_pendingOverridePayload.overrideLockout && !_pendingOverridePayload.overrideRule16h && !_pendingOverridePayload.overrideRest) {
+            payload.overrideLockout = true; // safety fallback (override shown for non-specific reason)
+        }
+    }
 
     extraShifts[activeDate] = payload;
     try { localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts)); }

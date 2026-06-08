@@ -341,7 +341,7 @@ function renderWeekView(year, crew, logicalT, todayStr, yearHols) {
         const friendly = target.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
         const f = dayFatigue[dStr] || {};
-        if (f.isLockout) { shift = 'O'; sC = 'O'; lbl = 'Off'; }
+        if (f.isLockout || f.is16hLockout) { shift = 'O'; sC = 'O'; lbl = 'Off'; }
 
         const ex = extraShifts[dStr];
         if (ex) {
@@ -360,7 +360,8 @@ function renderWeekView(year, crew, logicalT, todayStr, yearHols) {
         const holInfo = yearHols[dStr];
         if (holInfo) badgeHtml += `<span class="agenda-badge">Holiday</span>`;
         if (f.isDropPeriod) badgeHtml += `<span class="agenda-badge">Drop Cycle</span>`;
-        if (f.isLockout) badgeHtml += `<span class="agenda-badge">120H Max</span>`;
+        if (f.isLockout)    badgeHtml += `<span class="agenda-badge">120H Max</span>`;
+        if (f.is16hLockout) badgeHtml += `<span class="agenda-badge">16H Limit</span>`;
 
         html += `<div class="week-card ${sC} ${dStr === todayStr ? 'today' : ''} " onclick="haptic(); openPickupSheet('${dStr}', '${friendly}', '${getShiftForCrew(pI, crew)}', '${getShiftForCrew((pI + 1) % 28, crew)}')">
             <div class="week-day">${friendly}</div>
@@ -405,7 +406,7 @@ function renderAgendaView(year, crew, logicalT, todayStr, yearHols, currentTarge
         let badgeHtml = '';
 
         const f = dayFatigue[dStr] || {};
-        if (f.isLockout) { shift = 'O'; sC = 'O'; lbl = 'Off'; }
+        if (f.isLockout || f.is16hLockout) { shift = 'O'; sC = 'O'; lbl = 'Off'; }
 
         const ex = extraShifts[dStr];
         if (ex) {
@@ -438,7 +439,8 @@ function renderAgendaView(year, crew, logicalT, todayStr, yearHols, currentTarge
         const holInfo = yearHols[dStr];
         if (holInfo) badgeHtml += `<span class="agenda-badge">Holiday</span>`;
         if (f.isDropPeriod) badgeHtml += `<span class="agenda-badge">Drop Cycle</span>`;
-        if (f.isLockout) badgeHtml += `<span class="agenda-badge">120H Max</span>`;
+        if (f.isLockout)    badgeHtml += `<span class="agenda-badge">120H Max</span>`;
+        if (f.is16hLockout) badgeHtml += `<span class="agenda-badge">16H Limit</span>`;
 
         const isToday = dStr === todayStr;
         const isPast = targetUTC < Date.UTC(logicalT.getFullYear(), logicalT.getMonth(), logicalT.getDate());
@@ -663,6 +665,8 @@ function buildCellPills(dStr, shift, ex, f, baseH, yearHols) {
         }
     } else if (f.isLockout) {
         pCls = 'pill-lock'; pTxt = '❌ Max Hours';
+    } else if (f.is16hLockout) {
+        pCls = 'pill-lock'; pTxt = '❌ Rest Limit';
     } else if (shift === 'D') {
         pCls = 'pill-day two-line';
         pTxt = '<span class="pill-top">☀️ Day</span><span class="pill-sub">6:30–18:30</span>';
@@ -703,6 +707,9 @@ function buildCellPills(dStr, shift, ex, f, baseH, yearHols) {
     if (f.isLockout && ex && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(ex.type)) {
         pills.push({ cls: 'pill-lock', text: '❌ Max' });
     }
+    if (f.is16hLockout && ex && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(ex.type)) {
+        pills.push({ cls: 'pill-lock', text: '❌ Rest' });
+    }
 
     // Holiday
     const hol = yearHols[dStr];
@@ -725,7 +732,7 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
     const ex     = extraShifts[dStr];
     const baseH  = f.baseWorkHours !== undefined ? f.baseWorkHours : ((shift === 'D' || shift === 'N') ? 12 : 0);
 
-    if (f.isLockout) shift = 'O';
+    if (f.isLockout || f.is16hLockout) shift = 'O';
 
     let sC = shift;
     if (ex) {
@@ -750,7 +757,7 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
     else if (isPast)                         cls += isCurrentPP ? ' current-pp past' : ' past';
     else if (isCurrentPP)                    cls += ' current-pp';
     if (f.isDropPeriod && f.ppDayIndex === 0) cls += ' drop-start';
-    if (f.isLockout && !['Vacation','Off','DropOff','Lieu'].includes(ex?.type)) cls += ' lockout';
+    if ((f.isLockout || f.is16hLockout) && !['Vacation','Off','DropOff','Lieu'].includes(ex?.type)) cls += ' lockout';
     if (f.isPPBoundary)                      cls += ' pp-end';
 
     // ── Shift type label + optional time ────────────────────────────────────
@@ -770,6 +777,8 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
         if (ht && !timeLabel) timeLabel = formatTime24(ex.startTime);
     } else if (f.isLockout) {
         typeLabel = '❌ Max';
+    } else if (f.is16hLockout) {
+        typeLabel = '❌ Rest';
     } else if (shift === 'D') {
         typeLabel = '☀️ Day';   timeLabel = '6:30';
     } else if (shift === 'N') {
@@ -842,7 +851,7 @@ function buildM3WeekRow(crew, todayStr) {
         const f    = dayFatigue[dStr] || {};
         const ex   = extraShifts[dStr];
 
-        if (f.isLockout) shift = 'O';
+        if (f.isLockout || f.is16hLockout) shift = 'O';
         let dotCls = shift; // D, N, O, M
         if (ex) {
             if (['Vacation','Off','DropOff','Lieu'].includes(ex.type)) dotCls = 'O';
@@ -989,7 +998,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         const ex    = extraShifts[dStr];
         const baseH = f.baseWorkHours !== undefined ? f.baseWorkHours : ((shift === 'D' || shift === 'N') ? 12 : 0);
 
-        if (f.isLockout) shift = 'O';
+        if (f.isLockout || f.is16hLockout) shift = 'O';
 
         let sC = shift;
         if (ex) {
@@ -1013,7 +1022,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         if (isToday)          cardCls += ' today';
         else if (isPast)      cardCls += isCurrentPP ? ' current-pp past' : ' past';
         else if (isCurrentPP) cardCls += ' current-pp';
-        if (f.isLockout && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(ex?.type)) cardCls += ' lockout';
+        if ((f.isLockout || f.is16hLockout) && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(ex?.type)) cardCls += ' lockout';
 
         const [dy, dm, dd] = dStr.split('-').map(Number);
         const localDate = new Date(dy, dm - 1, dd);
@@ -1125,7 +1134,7 @@ function buildMiniMonth(m, year, crew, todayStr) {
         const ex    = extraShifts[dStr];
         const f     = dayFatigue[dStr] || {};
 
-        if (f.isLockout) shift = 'O';
+        if (f.isLockout || f.is16hLockout) shift = 'O';
         if (ex) {
             if (['Vacation','Off','DropOff','Lieu'].includes(ex.type)) shift = 'O';
             else if (ex.type === 'Day')    shift = 'D';
