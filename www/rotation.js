@@ -69,7 +69,9 @@ function getLogicalToday() {
  * @returns {number|null}
  */
 function getShiftEndFloat(dateStr, crew) {
-    if (dayFatigue[dateStr] && dayFatigue[dateStr].isLockout) return null;
+    const _dfe = dayFatigue[dateStr];
+    if (_dfe && _dfe.isLockout) return null;
+    if (_dfe && _dfe.is16hLockout && !(extraShifts[dateStr] && extraShifts[dateStr].overrideRule16h)) return null;
     const s   = getShiftForCrew(getPIndex(Date.UTC(+dateStr.substring(0, 4), +dateStr.substring(5, 7) - 1, +dateStr.substring(8, 10))), crew);
     const ex  = extraShifts[dateStr];
     if (ex) {
@@ -93,7 +95,9 @@ function getShiftEndFloat(dateStr, crew) {
  * @returns {number|null}
  */
 function getShiftStartFloat(dateStr, crew) {
-    if (dayFatigue[dateStr] && dayFatigue[dateStr].isLockout) return null;
+    const _dfs = dayFatigue[dateStr];
+    if (_dfs && _dfs.isLockout) return null;
+    if (_dfs && _dfs.is16hLockout && !(extraShifts[dateStr] && extraShifts[dateStr].overrideRule16h)) return null;
     const s  = getShiftForCrew(getPIndex(Date.UTC(+dateStr.substring(0, 4), +dateStr.substring(5, 7) - 1, +dateStr.substring(8, 10))), crew);
     const ex = extraShifts[dateStr];
     if (ex) {
@@ -128,10 +132,13 @@ function precalcFatigue(year, viewCrew) {
     const ePP = Math.floor((yearEnd   - basePPStartUTC) / MS_PP);
 
     for (let i = sPP; i <= ePP; i++) {
-        const ppStart  = basePPStartUTC + i * MS_PP;
-        let running    = 0;
-        let limit      = false;
-        const isD      = (((i % 3) + 3) % 3) === 1; // drop-period flag
+        const ppStart = basePPStartUTC + i * MS_PP;
+        const isD     = (((i % 3) + 3) % 3) === 1;
+
+        // Pass 1: compute per-day hours for all 14 days and total PP hours
+        const rawBaseH    = new Array(14);
+        const rawExpected = new Array(14);
+        let ppTotal = 0;
 
         for (let d = 0; d <= 13; d++) {
             const utc  = ppStart + d * MS_DAY;
@@ -155,16 +162,44 @@ function precalcFatigue(year, viewCrew) {
                 }
             }
 
-            let lock = false;
-            if (limit) {
-                lock = true;
-            } else if (running + expectedToday > 120.01) {
-                lock = true;
-                limit = true;
+            // Add 2nd shift hours if present
+            if (ex && ex.shift2 && ex.shift2.startTime && ex.shift2.endTime) {
+                expectedToday += getDuration(ex.shift2.startTime, ex.shift2.endTime);
             }
 
-            if (ex && ex.overrideLockout) { lock = false; limit = false; }
+            rawBaseH[d]    = baseH;
+            rawExpected[d] = expectedToday;
+            ppTotal       += expectedToday;
+        }
 
+        // Find the first day that can no longer be worked (sequential boundary)
+        let running     = 0;
+        let lockoutFrom = 14; // 14 = no lockout this PP
+        for (let d = 0; d <= 13; d++) {
+            if (running + rawExpected[d] > 120.01) { lockoutFrom = d; break; }
+            running += rawExpected[d];
+            if (running >= 120) { lockoutFrom = d + 1; break; }
+        }
+
+        // Pass 2: assign dayFatigue — lock post-boundary days AND off days in a full PP
+        for (let d = 0; d <= 13; d++) {
+            const utc  = ppStart + d * MS_DAY;
+            const dStr = toDateKey(utc);
+            const ex   = extraShifts[dStr];
+
+            let lock = false;
+            if (d >= lockoutFrom) {
+                lock = true;                          // past the sequential 120h boundary
+                // Preserve shifts that were booked before the PP became full (strictly beyond boundary)
+                if (d > lockoutFrom && ex && rawExpected[d] > 0) lock = false;
+            } else if (ppTotal >= 120 && rawExpected[d] === 0) {
+                lock = true;                          // off day in a PP already at full capacity
+            }
+
+            if (ex && ex.overrideLockout) lock = false;
+
+            let baseH         = rawBaseH[d];
+            let expectedToday = rawExpected[d];
             if (lock) { baseH = 0; expectedToday = 0; }
 
             dayFatigue[dStr] = {
@@ -176,9 +211,42 @@ function precalcFatigue(year, viewCrew) {
                 isDropPeriod:       isD,
                 isPPBoundary:       (d === 13)
             };
+        }
+    }
 
-            if (!lock) running += expectedToday;
-            if (running >= 120) limit = true;
+    // Pass 3: 16h/24h rest lockouts — process chronologically so each day sees prev's flag
+    const _p3dates = Object.keys(dayFatigue).sort();
+    for (const dStr of _p3dates) {
+        const _f  = dayFatigue[dStr];
+        const _ex = extraShifts[dStr];
+        if (_f.isLockout) continue;
+
+        const curStart = getShiftStartFloat(dStr, viewCrew);
+        const curEnd   = getShiftEndFloat(dStr, viewCrew);
+        if (curStart === null || curEnd === null) continue;
+
+        const prevUTC  = Date.UTC(+dStr.substring(0,4), +dStr.substring(5,7)-1, +dStr.substring(8,10)) - MS_DAY;
+        const prevStr  = toDateKey(prevUTC);
+        if (!dayFatigue[prevStr]) continue;
+
+        const prevStart = getShiftStartFloat(prevStr, viewCrew);
+        const prevEnd   = getShiftEndFloat(prevStr, viewCrew);
+        if (prevStart === null || prevEnd === null) continue;
+
+        const curStartAbs   = curStart + 24;
+        const curEndAbs     = curEnd   + 24;
+        const windowEnd     = prevStart + 24;
+        const overlap       = Math.max(0, Math.min(curEndAbs, windowEnd) - Math.max(curStartAbs, prevStart));
+        const totalInWindow = (prevEnd - prevStart) + overlap;
+
+        if (totalInWindow > 16.01) {
+            if (!(_ex && _ex.overrideRule16h)) {
+                _f.is16hLockout = true;
+                const rest = curStartAbs - prevEnd;
+                if (rest < 8 && !(_ex && _ex.overrideRest)) {
+                    _f.isRestLockout = true;
+                }
+            }
         }
     }
 }

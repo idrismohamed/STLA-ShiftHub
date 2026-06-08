@@ -20,6 +20,10 @@
     --night: #ff7a8a;
     --off: #5fd6a6;
     --mod: #c0a3ff;
+    /* Semantic data-viz colours (charts.js) */
+    --c-net: #5fd6a6; --c-reg: #5cb8ff; --c-ot: #ffcf6b; --c-dt: #ff8a5c;
+    --c-tax: #ff7a8a; --c-cpp: #c0a3ff; --c-ei: #7fd4e8; --c-prem: #ffb27a;
+    --good: #5fd6a6; --warn: #ffcf6b; --bad: #ff7a8a;
     --drop-badge-bg: #ffcf8a;
     --drop-badge-text: #2a2030;
     --drop-glow: #ffcf8a;
@@ -83,6 +87,10 @@
     --night: #ef5366;
     --off: #2bb079;
     --mod: #9a5fd6;
+    /* Semantic data-viz colours (charts.js) */
+    --c-net: #2bb079; --c-reg: #2f8fe0; --c-ot: #d99a1e; --c-dt: #ff7a45;
+    --c-tax: #ef5366; --c-cpp: #9a5fd6; --c-ei: #2a9fc0; --c-prem: #e08a3c;
+    --good: #2bb079; --warn: #d99a1e; --bad: #ef5366;
     --drop-badge-bg: #ffcf8a;
     --drop-badge-text: #3a2e1a;
     --drop-glow: #ffcf8a;
@@ -139,11 +147,29 @@
 .pp-figure, .stat-value, .dash-amount, .shift-times, .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
 body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; overflow-x: hidden; transition: background-color 0.3s, color 0.3s; }
 #pp-top-summary { padding: 12px 14px 16px; }
-.pp-top-wrap { border-radius: 14px; overflow: hidden; border: 1px solid var(--border); }
+.pp-top-wrap { border-radius: 24px; overflow: hidden; border: 1px solid var(--glass-border); background: var(--card); margin-bottom: 10px; }
 .pp-top-wrap .an-flat-card { border-radius: 0; border: none; margin: 0; }
 .pp-top-wrap .an-grid-2 { border-radius: 0; gap: 1px; background: var(--border); border-top: 1px solid var(--border); }
-.pp-top-wrap .an-grid-3 { border-radius: 0; gap: 1px; background: var(--border); border-top: 1px solid var(--border); }
+.pp-top-wrap .an-grid-3 { border-radius: 0; gap: 1px; background: var(--border); border-top: 1px solid var(--border); margin: 0; }
 .pp-top-wrap .an-hero-card { border-radius: 0; flex: 1; }
+.pp-bars-section { padding: 14px 18px; border-top: 1px solid var(--glass-border); }
+.pp-breakdown-section { padding: 14px 18px; border-top: 1px solid var(--glass-border); }
+.pp-past-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(251, 191, 36, 0.12);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.28);
+    vertical-align: middle;
+    margin: 0 5px 1px 4px;
+    text-transform: uppercase;
+}
+.ytd-hero-grid { margin: 8px 0 0; }
 .an-hero-micro { font-size: 9px; font-weight: 700; color: #34a853; margin-top: 3px; letter-spacing: 0.03em; }
 
 /* Enhanced Modern Header (Glassmorphism) */
@@ -161,6 +187,7 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; ov
     width: 54px;
     height: 54px;
     min-width: 54px;
+    border-radius: 50%;
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     outline: 1px solid rgba(255,255,255,0.10);
     outline-offset: 0;
@@ -712,6 +739,10 @@ input:checked + .switch-slider:before { transform: translateX(20px); }
 .toggle-btn { flex: 1; text-align: center; padding: 10px 0; background: var(--input-bg); border: 1px solid var(--border); border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s; min-width: 30%; }
 .toggle-btn:active { transform: scale(0.96); }
 .toggle-btn.active { background: rgba(255, 109, 0, 0.15) !important; border-color: var(--accent) !important; color: var(--accent) !important; box-shadow: 0 4px 10px rgba(255, 109, 0, 0.1); }
+.toggle-btn.day-type { border-color: #38bdf8; color: #38bdf8; }
+.toggle-btn.day-type.active { background: rgba(56, 189, 248, 0.15) !important; border-color: #38bdf8 !important; color: #38bdf8 !important; box-shadow: 0 4px 10px rgba(56, 189, 248, 0.2); }
+.toggle-btn.night-type { border-color: #f43f5e; color: #f43f5e; }
+.toggle-btn.night-type.active { background: rgba(244, 63, 94, 0.15) !important; border-color: #f43f5e !important; color: #f43f5e !important; box-shadow: 0 4px 10px rgba(244, 63, 94, 0.2); }
 .time-row { display: flex; gap: 15px; margin-bottom: 5px; }
 .time-row > div { flex: 1; }
 .time-input, .number-input, .date-picker, .text-input { width: 100%; background: var(--input-bg); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 10px; font-size: 16px; outline: none; font-weight: bold; font-family: inherit; transition: background-color 0.3s, border-color 0.3s, color 0.3s; box-sizing: border-box; }
@@ -780,8 +811,8 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
 .fin-section-title { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; margin-top: 15px; letter-spacing: 0.5px; }
 
 /* NATIVE TOAST NOTIFICATIONS */
-#toast-container { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 1000; pointer-events: none; }
-.native-toast { background: var(--glass-bg); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); color: var(--text); padding: 12px 20px; border-radius: 20px; font-size: 13px; font-weight: 600; box-shadow: 0 8px 32px rgba(0,0,0,0.36), 0 1px 0 var(--glass-border) inset; border: 1px solid var(--glass-border); opacity: 0; transform: translateY(20px); transition: opacity 0.3s, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; }
+#toast-container { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 1000; pointer-events: none; }
+.native-toast { background: var(--glass-bg); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); color: var(--text); padding: 12px 20px; border-radius: 20px; font-size: 13px; font-weight: 600; box-shadow: 0 8px 32px rgba(0,0,0,0.36), 0 1px 0 var(--glass-border) inset; border: 1px solid var(--glass-border); opacity: 0; transform: translateY(-16px); transition: opacity 0.3s, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; }
 .native-toast.show { opacity: 1; transform: translateY(0); }
 .native-toast.error { border-left: 4px solid var(--night); }
 .native-toast.success { border-left: 4px solid var(--off); }
@@ -790,7 +821,6 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
 /* VISUAL ANALYTICS CHART CONTAINER */
 .chart-container {
     position: relative;
-    height: 200px;
     width: 100%;
     margin-top: 15px;
     padding-top: 15px;
@@ -1112,6 +1142,25 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     user-select: none;
     -webkit-touch-callout: none;
 }
+@keyframes cal-cell-in {
+    from { transform: translateY(8px) scale(0.95); }
+    to   { transform: none; }
+}
+/* Animation only fires once, immediately after render — scoped to .cal-animating
+   which is removed by JS after the longest animation completes. This prevents
+   Android WebView from replaying the animation on every scroll repaint. */
+.cal-animating .cal-cell:not(.empty) {
+    animation: cal-cell-in 0.36s var(--spring) backwards;
+    animation-delay: calc(var(--cell-i, 0) * 8ms);
+}
+.cal-animating .cal-week-card {
+    animation: cal-cell-in 0.38s var(--spring) backwards;
+    animation-delay: calc(var(--cell-i, 0) * 22ms);
+}
+@media (prefers-reduced-motion: reduce) {
+    .cal-animating .cal-cell,
+    .cal-animating .cal-week-card { animation: none !important; }
+}
 .cal-cell:active { transform: scale(var(--press)); }
 /* Pay-period accent stripe (A-style) — always visible regardless of shift fill */
 .cal-cell::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: transparent; z-index: 0; }
@@ -1122,12 +1171,16 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     pointer-events: none;
 }
 
-/* Pay-period accent — A-style left stripe (demoted from full background tint
-   so shift colours stay dominant). Rendered via .cal-cell::before. */
+/* Pay-period accent — left stripe on Off days only; hidden on Day/Night (top accent carries shift identity there). */
 .cal-cell.pp-0::before { background: var(--pp0); }
 .cal-cell.pp-1::before { background: var(--pp1); }
 .cal-cell.pp-2::before { background: var(--pp2); }
 .cal-cell.pp-3::before { background: var(--pp3); }
+/* Day/Night use top border-top for shift identity — suppress left stripe */
+.cal-cell.D::before,
+.cal-cell.N::before { background: transparent !important; }
+/* Off days: consistent teal left stripe regardless of which PP they fall in */
+.cal-cell.O::before { background: var(--off) !important; }
 
 /* Shift type — distinct background tint + coloured top accent bar */
 .cal-cell.D {
@@ -1145,10 +1198,13 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     border-color: rgba(255, 255, 255, 0.06);
 }
 .cal-cell.M {
-    background-color: rgba(255, 107, 53, 0.10);
-    border-color: rgba(255, 107, 53, 0.25);
-    border-top: 3px solid var(--accent);
+    background-color: rgba(192, 163, 255, 0.10);
+    border-color: rgba(192, 163, 255, 0.25);
+    border-bottom: 3px solid var(--mod);
 }
+.cal-cell.M::before { background: transparent !important; }
+.cal-cell.M.D { border-top: 3px solid #38bdf8; }
+.cal-cell.M.N { border-top: 3px solid #f43f5e; }
 /* Vacation — bold teal so it stands out from Off/Day/Night at a glance */
 .cal-cell.vac {
     background: rgba(0,188,212,0.28) !important;
@@ -1712,6 +1768,61 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
 .an-delta { font-size: 12px; font-weight: 700; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .an-delta.pos { color: #34d399; }
 .an-delta.neg { color: #f43f5e; }
+
+/* ═══════════════════════════════════════════════════════════
+   INLINE-SVG ANALYTICS CHARTS (charts.js)
+   ═══════════════════════════════════════════════════════════ */
+.num, svg text.num { font-variant-numeric: tabular-nums; }
+
+/* Two-card row under the top hero strip (gauge + pay breakdown) */
+.ch-row2 { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
+.ch-card { margin-bottom: 0; }
+.ch-host-gauge { display: flex; justify-content: center; padding: 4px 0 0; }
+.ch-host-gauge svg { max-width: 240px; }
+.ch-host-bar { margin: 6px 0 2px; }
+.ch-caption { font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 2px; }
+
+/* Chart host + empty state */
+.ch-host { margin-top: 4px; }
+.ch-empty { font-size: 12px; color: var(--text-muted); text-align: center; padding: 24px 0; }
+
+/* Legends */
+.ch-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 10px; justify-content: center; }
+.ch-lg { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: var(--text-muted); }
+.ch-lg b { color: var(--text); margin-left: 1px; font-weight: 800; }
+.ch-sw { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+
+/* Donuts */
+.ch-donut-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ch-donut-col { display: flex; flex-direction: column; align-items: center; }
+.ch-donut-col > div[id] { display: flex; justify-content: center; width: 100%; }
+.ch-donut-col svg { max-width: 130px; }
+.ch-donut-title { font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+
+/* Rings */
+.ch-rings { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-items: start; }
+.ch-ring-cap { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.ch-ring-cap svg { max-width: 110px; }
+.ch-ring-k { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-top: 2px; }
+.ch-ring-v { font-size: 12px; font-weight: 800; color: var(--text); margin-top: 1px; }
+
+/* Trend segmented toggle */
+.ch-seg { display: inline-flex; background: var(--border); border-radius: 999px; padding: 3px; gap: 2px; margin-bottom: 6px; }
+.ch-seg button { border: none; background: transparent; color: var(--text-muted); font-family: inherit; font-weight: 800; font-size: 12px; padding: 6px 14px; border-radius: 999px; cursor: pointer; transition: color 0.2s, background 0.2s; }
+.ch-seg button.active { background: var(--accent-grad); color: #fff; box-shadow: 0 3px 10px rgba(255,138,92,0.35); }
+
+/* Sub-section labels within combined breakdown card */
+.ch-sub-label { font-size: 9px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+.ch-sub-val { font-size: 10px; font-weight: 700; color: var(--text); text-transform: none; letter-spacing: 0; }
+
+/* Gauge + pay-breakdown side by side once there's room */
+@media (min-width: 560px) {
+    .ch-row2 { grid-template-columns: 1fr 1fr; align-items: stretch; }
+}
+/* On the tablet sidebar the donuts stack to stay legible in 300px */
+@media (min-width: 768px) {
+    #analytics-side .ch-donut-grid { grid-template-columns: 1fr; gap: 16px; }
+}
 
 /* Tabular numbers on dynamic inline values */
 #sim-gross, #sim-tax, #sim-net,

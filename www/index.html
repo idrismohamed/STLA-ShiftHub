@@ -9,7 +9,6 @@
     <title>Shift Hub</title>
     <link rel="stylesheet" href="styles.css">
     
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="motion.js"></script>
 </head>
@@ -129,6 +128,44 @@
             </div>
         </div>
 
+        <div id="btn-add-shift2" style="display:none; margin: 0 0 12px;" onclick="addShift2()">
+            <div style="padding:10px 14px; background:var(--input-bg); border:1px dashed var(--border); border-radius:10px; color:var(--text-muted); font-size:13px; font-weight:600; text-align:center; cursor:pointer;">➕ Add More</div>
+        </div>
+
+        <div class="sheet-card" id="section-shift2" style="display:none;">
+            <div class="sheet-card-title" style="display:flex; align-items:center; justify-content:space-between; padding-bottom:10px; border-bottom:1px solid var(--glass-border);">
+                <span>Additional Time</span>
+                <span onclick="clearShift2()" style="font-size:11px; color:var(--night); cursor:pointer; font-weight:700;">✕ Remove</span>
+            </div>
+            <div class="time-row" style="margin-top:12px;">
+                <div>
+                    <div style="font-size:10px; color:var(--text-muted); margin-bottom:6px;">Start Time</div>
+                    <input type="time" id="input-start-time-2" class="time-input" onchange="updatePickupToggles()">
+                </div>
+                <div>
+                    <div style="font-size:10px; color:var(--text-muted); margin-bottom:6px;">End Time</div>
+                    <input type="time" id="input-end-time-2" class="time-input" onchange="updatePickupToggles()">
+                </div>
+            </div>
+            <div id="section-shift2-ot" style="display:none; margin-top:12px;">
+                <div style="font-size:10px; color:var(--text-muted); font-weight:bold; letter-spacing:0.5px; margin-bottom:8px;">CLASSIFY ADDITIONAL TIME (<span id="display-shift2-hours" style="color:#fbbc04;">0</span>h extra)</div>
+                <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); font-weight:bold; letter-spacing:0.5px;">
+                    <span>ALL OT</span><span>SPLIT</span><span>ALL DT</span>
+                </div>
+                <input type="range" id="shift2-ot-slider" min="0" max="1" step="0.5" value="1" oninput="updateShift2SliderLabels(); updatePickupToggles();">
+                <div style="display:flex; justify-content:space-between; text-align:center; margin-top:8px; background:var(--input-bg); padding:10px; border-radius:8px; border:1px solid var(--border);">
+                    <div style="flex:1; border-right:1px solid var(--border);">
+                        <div style="font-size:10px; color:var(--text-muted); margin-bottom:2px;">OT (1.5x)</div>
+                        <div id="lbl-shift2-ot" style="font-size:15px; font-weight:bold; color:var(--off);">0.0h</div>
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-size:10px; color:var(--text-muted); margin-bottom:2px;">DT (2.0x)</div>
+                        <div id="lbl-shift2-dt" style="font-size:15px; font-weight:bold; color:var(--day);">0.0h</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="sheet-card">
             <div class="sheet-card-title">Schedule Overrides</div>
             <div class="toggle-group">
@@ -142,6 +179,9 @@
                     <div class="toggle-btn crew-type" onclick="selectCrew('C')" id="btn-crew-C">C Shift</div>
                     <div class="toggle-btn crew-type" onclick="selectCrew('OT')" id="btn-crew-OT">OT</div>
                 </div>
+            </div>
+            <div id="drop-paid-override-wrap" style="display:none; margin-top:12px;">
+                <div class="toggle-group"></div>
             </div>
         </div>
 
@@ -178,7 +218,7 @@
             <div id="payroll-content"></div>
             
             <div class="chart-container" id="chart-wrapper" style="display: none;">
-                <canvas id="payChart"></canvas>
+                <div id="payChart"></div>
             </div>
 
             <div class="sheet-card" style="margin-top: 25px; border-color: var(--accent); background: rgba(255, 123, 0, 0.05);">
@@ -400,6 +440,7 @@
     <script src="state.js"></script>
     <script src="rotation.js"></script>
     <script src="payroll.js"></script>
+    <script src="charts.js"></script>
     <script src="calendar.js"></script>
     <script src="notifications.js"></script>
     <script src="shiftForm.js"></script>

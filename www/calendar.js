@@ -161,63 +161,10 @@ let _calFirstRender = true;
 
 
 function setCalendarViewMode(mode) {
-    const cal      = document.getElementById('calendar');
-    const sideEl   = document.getElementById('analytics-side');
-    const existing = cal?.firstElementChild;
-
-    const doRender = () => {
-        calendarViewMode = mode;
-        localStorage.setItem('calendarViewMode', mode);
-        renderCalendar();
-        const newEl = cal?.firstElementChild;
-        if (newEl) {
-            if (window.Motion) {
-                Motion.animate(newEl,
-                    { opacity: [0, 1], transform: ['translateY(10px) scale(0.98)', 'translateY(0) scale(1)'] },
-                    { duration: 0.28, easing: [0.25, 1, 0.5, 1] }
-                );
-            } else {
-                newEl.style.transition = 'none';
-                newEl.style.opacity    = '0';
-                newEl.style.transform  = 'translateY(10px) scale(0.98)';
-                requestAnimationFrame(() => {
-                    newEl.style.transition = 'opacity 0.28s ease, transform 0.32s cubic-bezier(0.25,1,0.5,1)';
-                    newEl.style.opacity    = '1';
-                    newEl.style.transform  = 'translateY(0) scale(1)';
-                });
-            }
-        }
-        if (sideEl) {
-            if (window.Motion) {
-                Motion.animate(sideEl, { opacity: [0, 1] }, { duration: 0.32, easing: 'ease' });
-            } else {
-                sideEl.style.transition = 'none';
-                sideEl.style.opacity    = '0';
-                requestAnimationFrame(() => {
-                    sideEl.style.transition = 'opacity 0.32s ease';
-                    sideEl.style.opacity    = '1';
-                });
-            }
-        }
-    };
-
-    if (existing) {
-        if (window.Motion) {
-            Motion.animate(existing,
-                { opacity: 0, transform: 'translateY(-6px) scale(0.98)' },
-                { duration: 0.14, easing: 'ease' }
-            ).then(doRender);
-            if (sideEl) Motion.animate(sideEl, { opacity: 0 }, { duration: 0.14, easing: 'ease' });
-        } else {
-            existing.style.transition = 'opacity 0.14s ease, transform 0.14s ease';
-            existing.style.opacity    = '0';
-            existing.style.transform  = 'translateY(-6px) scale(0.98)';
-            if (sideEl) { sideEl.style.transition = 'opacity 0.14s ease'; sideEl.style.opacity = '0'; }
-            setTimeout(doRender, 150);
-        }
-    } else {
-        doRender();
-    }
+    calendarViewMode = mode;
+    localStorage.setItem('calendarViewMode', mode);
+    renderCalendar();
+    // Per-cell spring stagger via CSS @keyframes cal-cell-in — no container-level exit/entry
 }
 
 function toggleMonthPanel() {
@@ -238,17 +185,19 @@ function updateNavLabels() {
 
 /** Navigate to today's month/PP then scroll the calendar into view and highlight today. */
 function scrollToToday() {
+    const logicalT   = getLogicalToday();
+    const yearSelect = document.getElementById('year-select');
+
     if (calendarViewMode === 'month') {
-        const logicalT = getLogicalToday();
-        const yearSelect = document.getElementById('year-select');
-        const year = yearSelect ? parseInt(yearSelect.value) : logicalT.getFullYear();
-        if (year === logicalT.getFullYear()) {
-            currentCalMonth = logicalT.getMonth();
-            localStorage.setItem('currentCalMonth', currentCalMonth);
-            currentWeekOffset = 0;
-            localStorage.setItem('currentWeekOffset', 0);
-            renderCalendar();
-        }
+        if (yearSelect) yearSelect.value = logicalT.getFullYear();
+        currentCalMonth = logicalT.getMonth();
+        localStorage.setItem('currentCalMonth', currentCalMonth);
+        currentWeekOffset = 0;
+        localStorage.setItem('currentWeekOffset', 0);
+        renderCalendar();
+    } else if (calendarViewMode === 'year') {
+        if (yearSelect) yearSelect.value = logicalT.getFullYear();
+        renderCalendar();
     } else if (calendarViewMode === 'week') {
         const prevOffset = currentWeekOffset;
         currentWeekOffset = 0;
@@ -302,6 +251,13 @@ function scrollToToday() {
 function renderCalendar() {
     const cal = document.getElementById('calendar');
     if (!cal) return;
+
+    // Remove .cal-animating after all cell entry animations finish so WebView
+    // doesn't replay them on subsequent scroll repaints.
+    setTimeout(() => {
+        document.querySelectorAll('.cal-animating')
+            .forEach(el => el.classList.remove('cal-animating'));
+    }, 750);
 
     const savedScrollY  = window.scrollY;
     const savedScrollX  = document.querySelector('.cal-scroll-area')?.scrollLeft ?? 0;
@@ -385,7 +341,7 @@ function renderWeekView(year, crew, logicalT, todayStr, yearHols) {
         const friendly = target.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
         const f = dayFatigue[dStr] || {};
-        if (f.isLockout) { shift = 'O'; sC = 'O'; lbl = 'Off'; }
+        if (f.isLockout || f.is16hLockout) { shift = 'O'; sC = 'O'; lbl = 'Off'; }
 
         const ex = extraShifts[dStr];
         if (ex) {
@@ -404,7 +360,8 @@ function renderWeekView(year, crew, logicalT, todayStr, yearHols) {
         const holInfo = yearHols[dStr];
         if (holInfo) badgeHtml += `<span class="agenda-badge">Holiday</span>`;
         if (f.isDropPeriod) badgeHtml += `<span class="agenda-badge">Drop Cycle</span>`;
-        if (f.isLockout) badgeHtml += `<span class="agenda-badge">120H Max</span>`;
+        if (f.isLockout)    badgeHtml += `<span class="agenda-badge">120H Max</span>`;
+        if (f.is16hLockout) badgeHtml += `<span class="agenda-badge">16H Limit</span>`;
 
         html += `<div class="week-card ${sC} ${dStr === todayStr ? 'today' : ''} " onclick="haptic(); openPickupSheet('${dStr}', '${friendly}', '${getShiftForCrew(pI, crew)}', '${getShiftForCrew((pI + 1) % 28, crew)}')">
             <div class="week-day">${friendly}</div>
@@ -449,7 +406,7 @@ function renderAgendaView(year, crew, logicalT, todayStr, yearHols, currentTarge
         let badgeHtml = '';
 
         const f = dayFatigue[dStr] || {};
-        if (f.isLockout) { shift = 'O'; sC = 'O'; lbl = 'Off'; }
+        if (f.isLockout || f.is16hLockout) { shift = 'O'; sC = 'O'; lbl = 'Off'; }
 
         const ex = extraShifts[dStr];
         if (ex) {
@@ -482,7 +439,8 @@ function renderAgendaView(year, crew, logicalT, todayStr, yearHols, currentTarge
         const holInfo = yearHols[dStr];
         if (holInfo) badgeHtml += `<span class="agenda-badge">Holiday</span>`;
         if (f.isDropPeriod) badgeHtml += `<span class="agenda-badge">Drop Cycle</span>`;
-        if (f.isLockout) badgeHtml += `<span class="agenda-badge">120H Max</span>`;
+        if (f.isLockout)    badgeHtml += `<span class="agenda-badge">120H Max</span>`;
+        if (f.is16hLockout) badgeHtml += `<span class="agenda-badge">16H Limit</span>`;
 
         const isToday = dStr === todayStr;
         const isPast = targetUTC < Date.UTC(logicalT.getFullYear(), logicalT.getMonth(), logicalT.getDate());
@@ -707,6 +665,8 @@ function buildCellPills(dStr, shift, ex, f, baseH, yearHols) {
         }
     } else if (f.isLockout) {
         pCls = 'pill-lock'; pTxt = '❌ Max Hours';
+    } else if (f.is16hLockout) {
+        pCls = 'pill-lock'; pTxt = '❌ Rest Limit';
     } else if (shift === 'D') {
         pCls = 'pill-day two-line';
         pTxt = '<span class="pill-top">☀️ Day</span><span class="pill-sub">6:30–18:30</span>';
@@ -747,6 +707,9 @@ function buildCellPills(dStr, shift, ex, f, baseH, yearHols) {
     if (f.isLockout && ex && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(ex.type)) {
         pills.push({ cls: 'pill-lock', text: '❌ Max' });
     }
+    if (f.is16hLockout && ex && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(ex.type)) {
+        pills.push({ cls: 'pill-lock', text: '❌ Rest' });
+    }
 
     // Holiday
     const hol = yearHols[dStr];
@@ -759,7 +722,7 @@ function buildCellPills(dStr, shift, ex, f, baseH, yearHols) {
  * Build a single .cal-cell div — M3 simplified design.
  * Date circle + shift type label + abbreviated time + corner OT chip + flag icons.
  */
-function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex) {
+function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex, cellIdx = 0) {
     const target = Date.UTC(year, m, d);
     const dStr   = toDateKey(target);
     const pI     = getPIndex(target);
@@ -769,7 +732,7 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
     const ex     = extraShifts[dStr];
     const baseH  = f.baseWorkHours !== undefined ? f.baseWorkHours : ((shift === 'D' || shift === 'N') ? 12 : 0);
 
-    if (f.isLockout) shift = 'O';
+    if (f.isLockout || f.is16hLockout) shift = 'O';
 
     let sC = shift;
     if (ex) {
@@ -788,12 +751,13 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
     const isCurrentPP = (f.ppIndex === currentTargetPPIndex);
 
     let cls = `cal-cell ${sC}`;
+    if (sC === 'M' && (shift === 'D' || shift === 'N')) cls += ` ${shift}`;
     cls += ` pp-${f.ppIndex !== undefined ? f.ppIndex % 4 : 0}`;
     if (isToday)                             cls += ' today';
     else if (isPast)                         cls += isCurrentPP ? ' current-pp past' : ' past';
     else if (isCurrentPP)                    cls += ' current-pp';
     if (f.isDropPeriod && f.ppDayIndex === 0) cls += ' drop-start';
-    if (f.isLockout && !['Vacation','Off','DropOff','Lieu'].includes(ex?.type)) cls += ' lockout';
+    if ((f.isLockout || f.is16hLockout) && !['Vacation','Off','DropOff','Lieu'].includes(ex?.type)) cls += ' lockout';
     if (f.isPPBoundary)                      cls += ' pp-end';
 
     // ── Shift type label + optional time ────────────────────────────────────
@@ -813,6 +777,8 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
         if (ht && !timeLabel) timeLabel = formatTime24(ex.startTime);
     } else if (f.isLockout) {
         typeLabel = '❌ Max';
+    } else if (f.is16hLockout) {
+        typeLabel = '❌ Rest';
     } else if (shift === 'D') {
         typeLabel = '☀️ Day';   timeLabel = '6:30';
     } else if (shift === 'N') {
@@ -855,13 +821,17 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
     const dispDate  = `${months[m]} ${d}, ${year}`;
     const baseShift = getShiftForCrew(pI, crew);
 
-    return `<div class="${cls}" id="day-${dStr}" onclick="calDayClick('${dStr}','${dispDate}','${baseShift}','${next}')" ontouchstart="calLpStart(event,'${dStr}','${dispDate}','${baseShift}','${next}','month')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd(event)" oncontextmenu="return false">
+    const shift2Chip = (ex && ex.shift2 && ex.shift2.startTime)
+        ? `<span class="cal-ot-chip" style="background:rgba(192,163,255,0.18);color:var(--mod);border-color:rgba(192,163,255,0.35);">+more</span>`
+        : '';
+
+    return `<div class="${cls}" id="day-${dStr}" style="--cell-i:${cellIdx}" onclick="calDayClick('${dStr}','${dispDate}','${baseShift}','${next}')" ontouchstart="calLpStart(event,'${dStr}','${dispDate}','${baseShift}','${next}','month')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd(event)" oncontextmenu="return false">
         ${dropBadge}
         <span class="cal-date-num">${d}</span>
         <span class="cal-cell-type">${typeLabel}</span>
         ${timeLabel ? `<span class="cal-cell-time">${timeLabel}</span>` : ''}
         ${holFlag}
-        ${otChip}
+        ${otChip}${shift2Chip}
         ${ppBadge}
     </div>`;
 }
@@ -885,7 +855,7 @@ function buildM3WeekRow(crew, todayStr) {
         const f    = dayFatigue[dStr] || {};
         const ex   = extraShifts[dStr];
 
-        if (f.isLockout) shift = 'O';
+        if (f.isLockout || f.is16hLockout) shift = 'O';
         let dotCls = shift; // D, N, O, M
         if (ex) {
             if (['Vacation','Off','DropOff','Lieu'].includes(ex.type)) dotCls = 'O';
@@ -937,16 +907,16 @@ function buildNewMonthView(m, year, crew, todayStr, yearHols, currentTargetPPInd
     const last     = new Date(year, m + 1, 0);
     const startDay = first.getDay();
 
-    let cells = '';
-    for (let i = 0; i < startDay; i++) cells += '<div class="cal-cell empty"></div>';
-    for (let d = 1; d <= last.getDate(); d++) cells += buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex);
+    let cells = '', ci = 0;
+    for (let i = 0; i < startDay; i++) { cells += '<div class="cal-cell empty"></div>'; ci++; }
+    for (let d = 1; d <= last.getDate(); d++) cells += buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex, ci++);
 
     return `<div class="cal-redesign" ontouchstart="calDragStart(event)" ontouchmove="calDragMove(event)" ontouchend="calDragEnd(event)">
         ${header}
         ${weekRow}
         <div class="cal-month-panel" id="cal-month-panel">
             ${dowRow}
-            <div class="cal-grid">${cells}</div>
+            <div class="cal-grid cal-animating">${cells}</div>
         </div>
         ${buildViewBar(crew)}
     </div>`;
@@ -979,26 +949,6 @@ function navigateMonth(dir) {
 
     localStorage.setItem('currentCalMonth', currentCalMonth);
     renderCalendar();
-    requestAnimationFrame(() => {
-        const panel = document.getElementById('cal-month-panel');
-        if (!panel) return;
-        const fromPx = dir > 0 ? window.innerWidth * 0.6 : -window.innerWidth * 0.6;
-        if (window.Motion) {
-            Motion.animate(panel,
-                { transform: [`translateX(${fromPx}px)`, 'translateX(0px)'], opacity: [0.5, 1] },
-                { type: 'spring', stiffness: 260, damping: 22 }
-            );
-        } else {
-            panel.style.transition = 'none';
-            panel.style.transform  = `translateX(${fromPx}px)`;
-            panel.style.opacity    = '0.5';
-            requestAnimationFrame(() => {
-                panel.style.transition = 'transform 0.35s cubic-bezier(0.25,1,0.5,1), opacity 0.28s ease';
-                panel.style.transform  = 'translateX(0)';
-                panel.style.opacity    = '1';
-            });
-        }
-    });
 }
 
 /** Build the new week view with prev/next navigation. */
@@ -1052,7 +1002,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         const ex    = extraShifts[dStr];
         const baseH = f.baseWorkHours !== undefined ? f.baseWorkHours : ((shift === 'D' || shift === 'N') ? 12 : 0);
 
-        if (f.isLockout) shift = 'O';
+        if (f.isLockout || f.is16hLockout) shift = 'O';
 
         let sC = shift;
         if (ex) {
@@ -1071,11 +1021,12 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         const isCurrentPP = f.ppIndex === currentTargetPPIndex;
 
         let cardCls = `cal-week-card ${sC}`;
+        if (sC === 'M' && (shift === 'D' || shift === 'N')) cardCls += ` ${shift}`;
         cardCls += ` pp-${f.ppIndex !== undefined ? f.ppIndex % 4 : 0}`;
         if (isToday)          cardCls += ' today';
         else if (isPast)      cardCls += isCurrentPP ? ' current-pp past' : ' past';
         else if (isCurrentPP) cardCls += ' current-pp';
-        if (f.isLockout && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(ex?.type)) cardCls += ' lockout';
+        if ((f.isLockout || f.is16hLockout) && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(ex?.type)) cardCls += ' lockout';
 
         const [dy, dm, dd] = dStr.split('-').map(Number);
         const localDate = new Date(dy, dm - 1, dd);
@@ -1096,7 +1047,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         // Insert row divider before the 8th card (split into two rows of 7)
         if (i === 7) cards += '</div><div class="cal-pp-row-gap"></div><div class="cal-week-grid">';
 
-        cards += `<div class="${cardCls}" onclick="calDayClick('${dStr}','${friendly}','${shift}','${next}')" ontouchstart="calLpStart(event,'${dStr}','${friendly}','${shift}','${next}')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd(event)" oncontextmenu="return false">
+        cards += `<div class="${cardCls}" style="--cell-i:${i}" onclick="calDayClick('${dStr}','${friendly}','${shift}','${next}')" ontouchstart="calLpStart(event,'${dStr}','${friendly}','${shift}','${next}')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd(event)" oncontextmenu="return false">
             <div class="cal-week-date">${dateLabel}</div>
             ${pillsHtml}
         </div>`;
@@ -1119,7 +1070,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         ${_dropBanner}
         <div class="cal-scroll-area">
             ${dowRow}
-            <div id="cal-pp-wrap" class="cal-pp-wrap">
+            <div id="cal-pp-wrap" class="cal-pp-wrap cal-animating">
                 <div class="cal-week-grid">${cards}</div>
             </div>
         </div>
@@ -1127,31 +1078,11 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
     </div>`;
 }
 
-/** Navigate the PP view by dir pay periods, with a slide-in animation. */
+/** Navigate the PP view by dir pay periods. */
 function navigatePP(dir) {
     currentWeekOffset += dir;
     localStorage.setItem('currentWeekOffset', currentWeekOffset);
     renderCalendar();
-    requestAnimationFrame(() => {
-        const wrap   = document.getElementById('cal-pp-wrap');
-        const dowRow = document.querySelector('.cal-dow-row.week-mode');
-        if (!wrap) return;
-        const fromPx = dir > 0 ? window.innerWidth * 0.55 : -window.innerWidth * 0.55;
-        if (window.Motion) {
-            for (const el of [wrap, dowRow]) {
-                if (!el) continue;
-                Motion.animate(el,
-                    { transform: [`translateX(${fromPx}px)`, 'translateX(0px)'], opacity: [0.5, 1] },
-                    { type: 'spring', stiffness: 260, damping: 22 }
-                );
-            }
-        } else {
-            for (const el of [wrap, dowRow]) { if (!el) continue; el.style.transition = 'none'; el.style.transform = `translateX(${fromPx}px)`; el.style.opacity = '0.5'; }
-            requestAnimationFrame(() => {
-                for (const el of [wrap, dowRow]) { if (!el) continue; el.style.transition = 'transform 0.35s cubic-bezier(0.25,1,0.5,1), opacity 0.28s ease'; el.style.transform = 'translateX(0)'; el.style.opacity = '1'; }
-            });
-        }
-    });
 }
 
 /** Alias kept for any existing references. */
@@ -1207,7 +1138,7 @@ function buildMiniMonth(m, year, crew, todayStr) {
         const ex    = extraShifts[dStr];
         const f     = dayFatigue[dStr] || {};
 
-        if (f.isLockout) shift = 'O';
+        if (f.isLockout || f.is16hLockout) shift = 'O';
         if (ex) {
             if (['Vacation','Off','DropOff','Lieu'].includes(ex.type)) shift = 'O';
             else if (ex.type === 'Day')    shift = 'D';
@@ -1246,6 +1177,7 @@ function navigateToMonth(m, year) {
 }
 
 /** Render the four-section analytics dashboard below the calendar. */
+let _anKey = '';
 function renderAnalyticsDashboard(crew, logicalT) {
     const elSide  = document.getElementById('analytics-side');
     const elBelow = document.getElementById('analytics-below');
@@ -1253,7 +1185,8 @@ function renderAnalyticsDashboard(crew, logicalT) {
 
     const nowUTC    = Date.UTC(logicalT.getFullYear(), logicalT.getMonth(), logicalT.getDate());
     const todayStr  = toDateKey(nowUTC);
-    const currentPP = Math.floor((nowUTC - basePPStartUTC) / MS_PP);
+    const currentPP    = Math.floor((nowUTC - basePPStartUTC) / MS_PP);
+    const displayPPIdx = calendarViewMode === 'week' ? currentPP + currentWeekOffset : currentPP;
     const ppS       = basePPStartUTC + currentPP * MS_PP;
     const ppE          = ppS + MS_PP_TO_END;
     const targetYear   = new Date(ppE).getUTCFullYear();
@@ -1281,6 +1214,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
     let regH = 0, ot = 0, dt = 0, gross = 0;
     let aftH = 0, nightH = 0, satH = 0, sunH = 0;
     let ytdGross = 0, ytdCPP = 0, ytdEI = 0, ppsDone = 0;
+    const ppSeries = [];   // per-pay-period series for the trend chart (Viz 1)
 
     for (let pi = firstPP; pi <= currentPP; pi++) {
         const s = basePPStartUTC + pi * MS_PP;
@@ -1305,6 +1239,11 @@ function renderAnalyticsDashboard(crew, logicalT) {
                 else if (ex.startTime && ex.endTime)               { act = getDuration(ex.startTime, ex.endTime); }
                 else if (ex.type)                                  { act = 12; }
             }
+            // 2nd shift hours
+            const _s2 = ex?.shift2;
+            const _s2dur = (_s2 && _s2.startTime && _s2.endTime) ? getDuration(_s2.startTime, _s2.endTime) : 0;
+            act += _s2dur;
+
             if (f.isLockout && !isVac && ex?.type !== 'Off' && ex?.type !== 'DropOff' && ex?.type !== 'Lieu') act = 0;
 
             const dayR = Math.min(act, bH);
@@ -1327,10 +1266,17 @@ function renderAnalyticsDashboard(crew, logicalT) {
                 piAft   += pD.aftHrs; piNight += pD.nightHrs; piSat += pD.satHrs; piSun += pD.sunHrs;
 
                 if (dayE > 0) {
-                    let sO = ex?.otHours || 0, sD = ex?.dtHours || 0;
+                    let sO = (ex?.otHours || 0) + (_s2?.otHours || 0);
+                    let sD = (ex?.dtHours || 0) + (_s2?.dtHours || 0);
                     if (sO === 0 && sD === 0) { if (ex?.type === 'DropPaid') sO = dayE; else sD = dayE; }
                     piGross += (sO * rate * 1.5) + (sD * rate * 2.0);
                     piOT += sO; piDT += sD;
+                    // 2nd shift premium differentials
+                    if (_s2dur > 0 && _s2.startTime) {
+                        const pD2 = calcPremiums(dS, _s2.startTime, _s2dur, rate);
+                        piGross += pD2.total;
+                        piAft += pD2.aftHrs; piNight += pD2.nightHrs; piSat += pD2.satHrs; piSun += pD2.sunHrs;
+                    }
                 }
             }
 
@@ -1349,6 +1295,20 @@ function renderAnalyticsDashboard(crew, logicalT) {
 
         const piTax = calculateTaxes(piGross, pi, targetYear);
         ytdGross += piGross; ytdCPP += piTax.cpp + piTax.cpp2; ytdEI += piTax.ei; ppsDone++;
+
+        ppSeries.push({
+            gross:  piGross,
+            hours:  piRegH + piOT + piDT,
+            ot:     piOT + piDT,
+            regH:   piRegH,
+            otH:    piOT,
+            dtH:    piDT,
+            aftH:   piAft,
+            nightH: piNight,
+            satH:   piSat,
+            sunH:   piSun,
+            label:  new Date(s).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })
+        });
 
         if (pi === currentPP) {
             gross = piGross; regH = piRegH; ot = piOT; dt = piDT;
@@ -1504,6 +1464,16 @@ function renderAnalyticsDashboard(crew, logicalT) {
     const ppEndLabel   = new Date(ppE).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const f$  = n => '$' + n.toFixed(2);
     const fH  = n => n.toFixed(1) + ' hrs';
+    const k$  = n => '$' + (n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'k' : Math.round(n));
+
+    // Last 8 pay periods for the trend chart (label every other PP to avoid clutter)
+    const trendSlice  = ppSeries.slice(-8);
+    const trendSeries = {
+        labels: trendSlice.map((p, i) => (i % 2 === 0 || i === trendSlice.length - 1) ? p.label : ''),
+        gross:  trendSlice.map(p => p.gross),
+        hours:  trendSlice.map(p => p.hours),
+        ot:     trendSlice.map(p => p.ot)
+    };
 
     const monthExRows = [
         vacDays    > 0 ? `<div class="an-row"><span>Vacation</span><strong style="color:#00bcd4">${vacDays}d</strong></div>` : '',
@@ -1520,30 +1490,155 @@ function renderAnalyticsDashboard(crew, logicalT) {
     const fatigueRightLabel = fatigueAtMax ? '' : `<span style="color:${fatigueColor};font-weight:700">${fatigueRem.toFixed(1)}h left</span>`;
     const ppHoursMicro = (ot + dt > 0) ? `<div class="an-hero-micro">+${(ot + dt).toFixed(1)}h OT/DT</div>` : '';
 
+    // ── Breakdown data for the viewed PP (dynamic in week view) ─────────────────
+    const brkPPS        = basePPStartUTC + displayPPIdx * MS_PP;
+    const brkPPE        = brkPPS + MS_PP_TO_END;
+    const brkStartLabel = new Date(brkPPS).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const brkEndLabel   = new Date(brkPPE).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const brkIsOtherPP  = calendarViewMode === 'week' && displayPPIdx !== currentPP;
+    let brkRegH, brkOT, brkDT, brkAftH, brkNightH, brkSatH, brkSunH, brkGross;
+    const brkSeriesIdx = displayPPIdx - firstPP;
+    if (brkSeriesIdx >= 0 && brkSeriesIdx < ppSeries.length) {
+        const p = ppSeries[brkSeriesIdx];
+        brkRegH = p.regH; brkOT = p.otH; brkDT = p.dtH;
+        brkAftH = p.aftH; brkNightH = p.nightH; brkSatH = p.satH; brkSunH = p.sunH;
+        brkGross = p.gross;
+    } else {
+        brkRegH = 0; brkOT = 0; brkDT = 0; brkAftH = 0; brkNightH = 0; brkSatH = 0; brkSunH = 0; brkGross = 0;
+        for (let d = 0; d <= 13; d++) {
+            const u   = brkPPS + d * MS_DAY;
+            const dS  = toDateKey(u);
+            const bS  = getShiftForCrew(getPIndex(u), crew);
+            const ex  = extraShifts[dS];
+            const f   = dayFatigue[dS] || {};
+            const bH  = f.baseWorkHours !== undefined ? f.baseWorkHours : ((bS === 'D' || bS === 'N') ? 12 : 0);
+            const st  = ex?.startTime || ((bS === 'D' || ex?.type === 'Day') ? '06:30' : '18:30');
+            let act = bH, isVac = false;
+            if (ex) {
+                if      (ex.type === 'DropOff')                    { act = 0; }
+                else if (ex.type === 'DropPaid')                   { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 12; }
+                else if (ex.type === 'Vacation')                   { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; isVac = true; }
+                else if (ex.type === 'Off' || ex.type === 'Lieu')  { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; }
+                else if (ex.startTime && ex.endTime)               { act = getDuration(ex.startTime, ex.endTime); }
+                else if (ex.type)                                  { act = 12; }
+            }
+            const _bs2 = ex?.shift2;
+            const _bs2dur = (_bs2 && _bs2.startTime && _bs2.endTime) ? getDuration(_bs2.startTime, _bs2.endTime) : 0;
+            act += _bs2dur;
+            if (f.isLockout && !isVac && ex?.type !== 'Off' && ex?.type !== 'DropOff' && ex?.type !== 'Lieu') act = 0;
+            const dayR = Math.min(act, bH);
+            const dayE = Math.max(0, act - bH);
+            let rate = sysSettings.regRate;
+            if (ex?.role === 'TL')                            rate = sysSettings.tlRate;
+            else if (ex?.role === 'Manual' && ex?.manualRate) rate = ex.manualRate;
+            brkRegH += dayR;
+            if (isVac) {
+                const vH = ex.vacHours !== undefined ? ex.vacHours : (ex.startTime && ex.endTime ? Math.max(0, bH - act) : (bH || 12));
+                brkGross += vH * rate;
+            }
+            if (!f.isLockout && act > 0) {
+                const pD = calcPremiums(dS, st, dayR, rate);
+                brkGross += (dayR * rate) + pD.total;
+                brkAftH  += pD.aftHrs; brkNightH += pD.nightHrs; brkSatH += pD.satHrs; brkSunH += pD.sunHrs;
+                if (dayE > 0) {
+                    let sO = (ex?.otHours || 0) + (_bs2?.otHours || 0);
+                    let sD = (ex?.dtHours || 0) + (_bs2?.dtHours || 0);
+                    if (sO === 0 && sD === 0) { if (ex?.type === 'DropPaid') sO = dayE; else sD = dayE; }
+                    brkGross += (sO * rate * 1.5) + (sD * rate * 2.0);
+                    brkOT += sO; brkDT += sD;
+                    if (_bs2dur > 0 && _bs2.startTime) {
+                        const pD2b = calcPremiums(dS, _bs2.startTime, _bs2dur, rate);
+                        brkGross += pD2b.total;
+                        brkAftH += pD2b.aftHrs; brkNightH += pD2b.nightHrs; brkSatH += pD2b.satHrs; brkSunH += pD2b.sunHrs;
+                    }
+                }
+            }
+            const holYear = parseInt(dS.substring(0, 4));
+            const holInfo = getHols(holYear)[dS];
+            if (holInfo) {
+                brkGross += 8 * rate;
+                if (dayR > 0) brkGross += dayR * rate * (holInfo.m === 2.0 ? 1.0 : 0.5);
+            }
+            const nextDStr    = toDateKey(u + MS_DAY);
+            const nextHolInfo = getHols(parseInt(nextDStr.substring(0, 4)))[nextDStr];
+            if (nextHolInfo && dayR > 0 && (bS === 'N' || ex?.type === 'Night')) {
+                brkGross += Math.min(dayR, 10) * rate * (nextHolInfo.m === 2.0 ? 1.0 : 0.5);
+            }
+        }
+    }
+    const brkT = calculateTaxes(brkGross, displayPPIdx, targetYear);
+
+    // ── Display values for the full top card (viewed PP in week view, else current PP) ─
+    const isWeekView     = calendarViewMode === 'week';
+    const isPastPP       = isWeekView && displayPPIdx < currentPP;
+    const isFuturePP     = isWeekView && displayPPIdx > currentPP;
+    const dispGross      = isWeekView ? brkGross : gross;
+    const dispT          = isWeekView ? brkT     : t;
+    const dispOT         = isWeekView ? brkOT    : ot;
+    const dispDT         = isWeekView ? brkDT    : dt;
+    const dispFatigueUsed  = isWeekView ? brkRegH + brkOT + brkDT : fatigueUsed;
+    const dispFatigueRem   = Math.max(0, 120 - dispFatigueUsed);
+    const dispFatigueColor = dispFatigueUsed >= 108 ? 'var(--night)' : dispFatigueUsed >= 90 ? 'var(--accent)' : '#34d399';
+    const dispFatigueAtMax = dispFatigueUsed >= 120;
+    const dispHoursMicro   = (dispOT + dispDT > 0) ? `<div class="an-hero-micro">+${(dispOT + dispDT).toFixed(1)}h OT/DT</div>` : '';
+    let dispPpDayIndex;
+    if (!isWeekView || displayPPIdx === currentPP) { dispPpDayIndex = ppDayIndex; }
+    else if (isPastPP)   { dispPpDayIndex = 13; }
+    else                 { dispPpDayIndex = -1; }
+    const dispPpDayDisplay = dispPpDayIndex + 1;
+    const dispPpDaysLeft   = 14 - dispPpDayDisplay;
+    const dispPpPct        = Math.round((dispPpDayDisplay / 14) * 100);
+    const topCardTitle     = (!isWeekView || displayPPIdx === currentPP) ? 'Current Pay Period'
+                           : isFuturePP ? 'Upcoming Pay Period' : 'Pay Period';
+    const pastBadge        = isPastPP ? '<span class="pp-past-badge">Past</span>' : '';
+
+    const _newKey = `${crew}|${currentPP}|${ppDayIndex}|${displayMonth}|${displayYear}|${Math.round(gross)}|${Math.round(ytdGross)}|${dCount}|${nCount}|${Math.round(fatigueUsed)}|${Math.round(vacUsed)}|${lieuBanked}|${displayPPIdx}|${Math.round(brkGross)}`;
+    if (_newKey === _anKey) return;
+    _anKey = _newKey;
+
     const elTop = document.getElementById('pp-top-summary');
     if (elTop) elTop.innerHTML = `
 <div class="pp-top-wrap">
-  <div class="an-flat-card" style="margin-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0;border-bottom:none;">
-    <div class="an-flat-card-title">Current Pay Period <span class="an-section-sub" style="text-transform:none;letter-spacing:0;font-size:10px">${ppStartLabel}–${ppEndLabel}</span></div>
-    <div class="an-pp-bar-labels"><span>Day ${ppDayDisplay} of 14</span><span>${ppDaysLeft} day${ppDaysLeft !== 1 ? 's' : ''} left</span></div>
-    <div class="an-progress" style="margin:5px 0 8px"><div class="an-progress-fill" style="width:${ppPct}%;background:var(--accent)"></div></div>
-    <div class="an-pp-bar-labels"><span style="color:${fatigueAtMax ? 'var(--night)' : 'var(--text-muted)'}">120h Fatigue — ${fatigueAtMax ? '⛔ MAX REACHED' : fatigueUsed.toFixed(1) + 'h used'}</span>${fatigueRightLabel}</div>
-    <div class="an-progress" style="margin:4px 0 0"><div class="an-progress-fill" style="width:${fatiguePct}%;background:${fatigueColor}"></div></div>
+  <div class="an-flat-card">
+    <div class="an-flat-card-title">${topCardTitle} ${pastBadge}<span class="an-section-sub" style="text-transform:none;letter-spacing:0;font-size:10px">${brkStartLabel}–${brkEndLabel}</span></div>
+    <div class="an-pp-bar-labels"><span>Day ${dispPpDayDisplay} of 14</span><span>${isPastPP ? 'Complete' : isFuturePP ? 'Not started' : `${dispPpDaysLeft} day${dispPpDaysLeft !== 1 ? 's' : ''} left`}</span></div>
+    <div class="an-progress" style="margin:5px 0 0"><div class="an-progress-fill" style="width:${dispPpPct}%;background:var(--accent)"></div></div>
   </div>
-  <div class="an-grid-3" style="margin:0;border-top-left-radius:0;border-top-right-radius:0;">
-    <div class="an-hero-card" style="--hero-color:#7c3aed;border-top-left-radius:0;border-top-right-radius:0;">
+  <div class="an-grid-3">
+    <div class="an-hero-card" style="--hero-color:#7c3aed">
       <div class="an-hero-label">Gross</div>
-      <div class="an-hero-value">${f$(gross)}</div>
+      <div class="an-hero-value">${f$(dispGross)}</div>
     </div>
-    <div class="an-hero-card" style="--hero-color:#34d399;border-top-left-radius:0;border-top-right-radius:0;">
+    <div class="an-hero-card" style="--hero-color:#34d399">
       <div class="an-hero-label">Net Pay</div>
-      <div class="an-hero-value">${f$(gross - t.total)}</div>
+      <div class="an-hero-value">${f$(dispGross - dispT.total)}</div>
     </div>
-    <div class="an-hero-card" style="--hero-color:var(--day);border-top-left-radius:0;border-top-right-radius:0;">
+    <div class="an-hero-card" style="--hero-color:var(--day)">
       <div class="an-hero-label">PP Hours</div>
-      <div class="an-hero-value">${fatigueUsed.toFixed(1)}h</div>
-      ${ppHoursMicro}
+      <div class="an-hero-value">${dispFatigueUsed.toFixed(1)}h</div>
+      ${dispHoursMicro}
     </div>
+  </div>
+  <div class="pp-bars-section">
+    <div class="ch-sub-label">Where Your Pay Goes <span class="ch-sub-val">Net ${f$(dispGross - dispT.total)}</span></div>
+    <div id="chart-paybar" class="ch-host-bar"></div>
+    <div class="ch-legend" id="chart-paybar-legend"></div>
+    <div class="an-sep" style="margin:12px 0 10px"></div>
+    <div class="ch-sub-label">120H Limit${dispFatigueAtMax ? ' · ⛔ MAX' : ''} <span class="ch-sub-val" style="color:${dispFatigueColor}">${dispFatigueAtMax ? 'Limit reached' : dispFatigueRem.toFixed(1) + 'h left'}</span></div>
+    <div id="chart-fatigue-bar" class="ch-host-bar"></div>
+    <div class="ch-legend" id="chart-fatigue-legend"></div>
+  </div>
+  <div class="pp-breakdown-section">
+    <div class="an-flat-card-title">Pay Period Breakdown</div>
+    <div class="an-row"><span>Regular</span><strong>${fH(brkRegH)}</strong></div>
+    <div class="an-row"><span>OT</span><strong style="color:#34a853">${fH(brkOT)}</strong></div>
+    <div class="an-row"><span>DT</span><strong style="color:#4285f4">${fH(brkDT)}</strong></div>
+    <div class="an-sep"></div>
+    <div class="an-row"><span>Aft / Night hrs</span><strong>${fH(brkAftH + brkNightH)}</strong></div>
+    <div class="an-row"><span>Sat / Sun hrs</span><strong>${fH(brkSatH + brkSunH)}</strong></div>
+    <div class="an-sep"></div>
+    <div class="an-row"><span>Tax (Fed + ON)</span><strong style="color:var(--night)">-${f$(brkT.fedTax + brkT.onTax)}</strong></div>
+    <div class="an-row"><span>CPP + EI</span><strong style="color:var(--night)">-${f$(brkT.cpp + brkT.cpp2 + brkT.ei)}</strong></div>
   </div>
 </div>`;
 
@@ -1551,66 +1646,8 @@ function renderAnalyticsDashboard(crew, logicalT) {
 <div class="analytics-wrap">
 
   <div class="an-flat-card">
-    <div class="an-row"><span>Regular</span><strong>${fH(regH)}</strong></div>
-    <div class="an-row"><span>OT</span><strong style="color:#34a853">${fH(ot)}</strong></div>
-    <div class="an-row"><span>DT</span><strong style="color:#4285f4">${fH(dt)}</strong></div>
-    <div class="an-sep"></div>
-    <div class="an-row"><span>Aft / Night hrs</span><strong>${fH(aftH + nightH)}</strong></div>
-    <div class="an-row"><span>Sat / Sun hrs</span><strong>${fH(satH + sunH)}</strong></div>
-    <div class="an-sep"></div>
-    <div class="an-row"><span>Tax (Fed + ON)</span><strong style="color:var(--night)">-${f$(t.fedTax + t.onTax)}</strong></div>
-    <div class="an-row"><span>CPP + EI</span><strong style="color:var(--night)">-${f$(t.cpp + t.cpp2 + t.ei)}</strong></div>
-  </div>
-
-  <div class="an-month-block">
-    <div class="an-section-title" style="margin-top:0">${months[displayMonth]} <span class="an-section-sub">${displayYear}</span></div>
-    <div class="an-grid-3" style="margin-bottom:0">
-      <div class="an-shift-card D"><div class="an-shift-label">Days</div><div class="an-shift-num">${dCount}</div></div>
-      <div class="an-shift-card N"><div class="an-shift-label">Nights</div><div class="an-shift-num">${nCount}</div></div>
-      <div class="an-shift-card O"><div class="an-shift-label">Off</div><div class="an-shift-num">${oCount}</div></div>
-    </div>
-  </div>
-
-  <div class="an-flat-card">
-    <div class="an-row"><span>Total Hours</span><strong>${fH(totalMonthHours)}</strong></div>
-    ${monthOT > 0 ? `<div class="an-row"><span>OT</span><strong style="color:#34a853">${fH(monthOT)}</strong></div>` : ''}
-    ${monthDT > 0 ? `<div class="an-row"><span>DT</span><strong style="color:#4285f4">${fH(monthDT)}</strong></div>` : ''}
-    ${monthExRows ? `<div class="an-sep"></div>${monthExRows}` : ''}
-  </div>
-
-  <div class="an-flat-card">
     <div class="an-flat-card-title">${thisMonthName} vs ${prevMonthName}${prevYear !== displayYear ? ` <span class="an-section-sub" style="text-transform:none;letter-spacing:0">${prevYear}</span>` : ''}</div>
-    <div class="an-compare-row an-compare-head">
-      <span></span><span>${thisMonthName}</span><span>${prevMonthName}</span><span>Δ</span>
-    </div>
-    <div class="an-sep" style="margin:4px 0"></div>
-    <div class="an-compare-row">
-      <span>Days worked</span>
-      <strong>${thisWorked}</strong>
-      <strong style="color:var(--text-muted)">${prevWorked}</strong>
-      <span class="an-delta ${thisWorked > prevWorked ? 'pos' : thisWorked < prevWorked ? 'neg' : ''}">${fDelta(thisWorked - prevWorked)}</span>
-    </div>
-    <div class="an-compare-row">
-      <span>Hours</span>
-      <strong>${totalMonthHours.toFixed(0)}</strong>
-      <strong style="color:var(--text-muted)">${prevTotalHours.toFixed(0)}</strong>
-      <span class="an-delta ${totalMonthHours > prevTotalHours ? 'pos' : totalMonthHours < prevTotalHours ? 'neg' : ''}">${fDelta(totalMonthHours - prevTotalHours)}</span>
-    </div>
-    ${(monthOT + monthDT > 0 || prevMonthOT + prevMonthDT > 0) ? `
-    <div class="an-compare-row">
-      <span>OT / DT hrs</span>
-      <strong style="color:#34a853">${(monthOT + monthDT).toFixed(1)}</strong>
-      <strong style="color:var(--text-muted)">${(prevMonthOT + prevMonthDT).toFixed(1)}</strong>
-      <span class="an-delta ${(monthOT + monthDT) > (prevMonthOT + prevMonthDT) ? 'pos' : (monthOT + monthDT) < (prevMonthOT + prevMonthDT) ? 'neg' : ''}">${fDelta((monthOT + monthDT) - (prevMonthOT + prevMonthDT))}</span>
-    </div>` : ''}
-    ${(vacDays + absenceDays > 0 || prevVacDays + prevAbsDays > 0) ? `
-    <div class="an-sep" style="margin:4px 0"></div>
-    <div class="an-compare-row">
-      <span>Days off taken</span>
-      <strong style="color:#00bcd4">${vacDays + absenceDays}</strong>
-      <strong style="color:var(--text-muted)">${prevVacDays + prevAbsDays}</strong>
-      <span class="an-delta">${fDelta((vacDays + absenceDays) - (prevVacDays + prevAbsDays))}</span>
-    </div>` : ''}
+    <div id="chart-paired"></div>
   </div>
 
 </div>`;
@@ -1618,40 +1655,45 @@ function renderAnalyticsDashboard(crew, logicalT) {
     const _belowHTML = `
 <div class="analytics-wrap">
 
-  <div class="an-section-title">Vacation Balance</div>
   <div class="an-flat-card">
-    <div class="an-row"><span>Used</span><strong style="color:#00bcd4">${fH(vacUsed)}</strong></div>
-    <div class="an-row"><span>Remaining</span><strong>${fH(vacRem)}</strong></div>
-    <div class="an-progress"><div class="an-progress-fill" style="width:${vacPct}%;background:${vacPct > 85 ? 'var(--night)' : '#00bcd4'}"></div></div>
-    <div class="an-progress-meta">${vacPct}% used · ${vacStart} → ${vacEnd}</div>
+    <div class="an-flat-card-title">CPP &amp; EI Caps <span class="an-section-sub" style="text-transform:none;letter-spacing:0">${targetYear}</span></div>
+    <div id="chart-rings" class="ch-rings"></div>
   </div>
 
-  <div class="an-section-title">Lieu &amp; Drop Day Balance</div>
   <div class="an-flat-card">
+    <div class="an-flat-card-title">Pay Trend <span class="an-section-sub" style="text-transform:none;letter-spacing:0">last ${trendSlice.length} pay period${trendSlice.length !== 1 ? 's' : ''}</span></div>
+    <div class="ch-seg" id="trend-seg">
+      <button class="active" onclick="chartTrendSwitch(this,'gross')">Gross</button>
+      <button onclick="chartTrendSwitch(this,'hours')">Hours</button>
+      <button onclick="chartTrendSwitch(this,'ot')">OT/DT</button>
+    </div>
+    <div id="chart-trend" class="ch-host"></div>
+  </div>
+
+  <div class="an-flat-card">
+    <div class="an-flat-card-title">Year to Date <span class="an-section-sub" style="text-transform:none;letter-spacing:0">${targetYear}</span></div>
+    <div class="an-grid-2 ytd-hero-grid">
+      <div class="an-hero-card" style="--hero-color:#f59e0b">
+        <div class="an-hero-label">YTD Gross</div>
+        <div class="an-hero-value">$${Math.round(ytdGross).toLocaleString()}</div>
+      </div>
+      <div class="an-hero-card" style="--hero-color:#8a8fa8">
+        <div class="an-hero-label">Projected</div>
+        <div class="an-hero-value">$${Math.round(projectedAnnual).toLocaleString()}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="an-flat-card">
+    <div class="an-flat-card-title">Time Off</div>
+    <div class="an-row"><span>Vacation Used</span><strong style="color:#00bcd4">${fH(vacUsed)}</strong></div>
+    <div class="an-row"><span>Vacation Remaining</span><strong>${fH(vacRem)}</strong></div>
+    <div class="an-progress-meta">${vacPct}% used · ${vacStart} → ${vacEnd}</div>
+    <div class="an-sep"></div>
     <div class="an-row"><span>Banked Lieu Days</span><strong style="color:#fbbc04">${lieuBanked} day${lieuBanked !== 1 ? 's' : ''}</strong></div>
     ${lieuTaken > 0 ? `<div class="an-row"><span>Lieu Taken (${targetYear})</span><strong style="color:var(--text-muted)">${lieuTaken}d</strong></div>` : ''}
-    <div class="an-sep"></div>
     <div class="an-row"><span>Drop Off Taken (${targetYear})</span><strong style="color:var(--day)">${dropOffTaken}d</strong></div>
     <div class="an-row"><span>Drop Paid Taken (${targetYear})</span><strong style="color:var(--off)">${dropPaidTaken}d</strong></div>
-  </div>
-
-  <div class="an-section-title">${targetYear} Year to Date</div>
-  <div class="an-grid-2">
-    <div class="an-hero-card" style="--hero-color:#f59e0b">
-      <div class="an-hero-label">YTD Gross</div>
-      <div class="an-hero-value">$${Math.round(ytdGross).toLocaleString()}</div>
-    </div>
-    <div class="an-hero-card" style="--hero-color:#8a8fa8">
-      <div class="an-hero-label">Projected</div>
-      <div class="an-hero-value">$${Math.round(projectedAnnual).toLocaleString()}</div>
-    </div>
-  </div>
-  <div class="an-flat-card">
-    <div class="an-flat-card-title">CPP / EI Progress</div>
-    <div class="an-row"><span>CPP Paid</span><strong>${f$(ytdCPP)} / ${f$(annCPPMax)}</strong></div>
-    <div class="an-progress" style="margin:4px 0 10px"><div class="an-progress-fill" style="width:${cppPct}%;background:#7c3aed"></div></div>
-    <div class="an-row"><span>EI Paid</span><strong>${f$(ytdEI)} / ${f$(annEIMax)}</strong></div>
-    <div class="an-progress" style="margin-top:4px"><div class="an-progress-fill" style="width:${eiPct}%;background:#4285f4"></div></div>
   </div>
 
 </div>`;
@@ -1659,6 +1701,33 @@ function renderAnalyticsDashboard(crew, logicalT) {
     if (elSide)  elSide.innerHTML  = _sideHTML;
     if (elBelow) elBelow.innerHTML = _belowHTML;
     animateHeroCountUps();
+
+    // ── Inline-SVG analytics charts (charts.js) ──────────────
+    if (typeof chartStacked === 'function') {
+        chartStacked('chart-paybar', 'chart-paybar-legend', [
+            ['Net',     dispGross - dispT.total, '--c-net'],
+            ['Fed Tax', dispT.fedTax,            '--c-tax'],
+            ['ON Tax',  dispT.onTax,             '--c-cpp'],
+            ['CPP',     dispT.cpp + dispT.cpp2,  '--c-ot'],
+            ['EI',      dispT.ei,                '--c-ei']
+        ]);
+        const fatigueTrackColor = dispFatigueUsed >= 108 ? '--c-dt' : dispFatigueUsed >= 90 ? '--warn' : '--c-reg';
+        chartStacked('chart-fatigue-bar', 'chart-fatigue-legend', [
+            ['Used', dispFatigueUsed, fatigueTrackColor],
+            ['Left', Math.max(0, 120 - dispFatigueUsed), '--glass-border']
+        ], v => v.toFixed(1) + 'h');
+        chartPaired('chart-paired', [
+            ['Days worked', thisWorked, prevWorked],
+            ['Hours', Math.round(totalMonthHours), Math.round(prevTotalHours)],
+            ['OT/DT hrs', Math.round((monthOT + monthDT) * 10) / 10, Math.round((prevMonthOT + prevMonthDT) * 10) / 10]
+        ], thisMonthName, prevMonthName);
+        chartRings('chart-rings', [
+            ['CPP', `${k$(ytdCPP)} / ${k$(annCPPMax)}`, annCPPMax ? ytdCPP / annCPPMax : 0, '--c-cpp'],
+            ['EI',  `${k$(ytdEI)} / ${k$(annEIMax)}`,   annEIMax  ? ytdEI / annEIMax   : 0, '--c-ei'],
+            ['Vacation', `${vacUsed.toFixed(0)}h / ${vacLimit}h`, vacLimit ? vacUsed / vacLimit : 0, '--off']
+        ]);
+        chartTrend(trendSeries);
+    }
 }
 
 // ── Count-up animation for hero pay figures ───────────────────────────────────
