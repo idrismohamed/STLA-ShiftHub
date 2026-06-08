@@ -296,6 +296,28 @@
         </div>
     </div>
 
+    <div class="bottom-sheet" id="sheet-backupqr">
+        <h3 class="sheet-header">📲 Backup via QR</h3>
+        <div id="backup-qr" class="backup-qr-wrap"></div>
+        <p id="backup-qr-note" style="font-size: 12.5px; color: var(--text-muted); text-align: center; line-height: 1.5; padding: 0 8px;"></p>
+        <div class="btn-row">
+            <button class="btn-action btn-save" onclick="closeAllSheets()">Done</button>
+        </div>
+    </div>
+
+    <div class="bottom-sheet" id="sheet-scan">
+        <h3 class="sheet-header">📷 Restore via QR</h3>
+        <div class="scan-frame">
+            <video id="scan-video" muted playsinline></video>
+            <div class="scan-reticle"></div>
+        </div>
+        <canvas id="scan-canvas" style="display:none;"></canvas>
+        <p id="scan-status" style="font-size: 12.5px; color: var(--text-muted); text-align: center; padding: 10px 8px 0;">Starting camera…</p>
+        <div class="btn-row">
+            <button class="btn-action btn-save" onclick="stopBackupScan(); closeAllSheets()">Cancel</button>
+        </div>
+    </div>
+
     <div class="bottom-sheet" id="sheet-settings" style="display: flex; flex-direction: column; max-height: 85vh; padding-bottom: 0;">
         <h3 class="sheet-header">⚙️ System Settings</h3>
         
@@ -308,6 +330,21 @@
                 <div class="settings-row" style="cursor: pointer;" onclick="document.getElementById('import-file').click(); haptic();">
                     <div class="settings-label" style="color: var(--accent); font-weight: bold;">📥 Import Backup</div>
                     <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importData(event)">
+                </div>
+                <div class="settings-row" style="cursor: pointer;" onclick="showBackupQR()">
+                    <div class="settings-label" style="color: var(--off); font-weight: bold;">📲 Transfer via QR</div>
+                </div>
+                <div class="settings-row" style="cursor: pointer;" onclick="openScanSheet()">
+                    <div class="settings-label" style="color: var(--off); font-weight: bold;">📷 Restore via QR (Scan)</div>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label">Backup Reminder</div>
+                    <select id="setting-backup-reminder" class="settings-select" onchange="setBackupReminder(this.value)">
+                        <option value="0">Off</option>
+                        <option value="7">Weekly</option>
+                        <option value="14">Every 2 weeks</option>
+                        <option value="30">Monthly</option>
+                    </select>
                 </div>
             </div>
 
@@ -483,7 +520,11 @@
     <script src="settings.js"></script>
     <script src="theme.js"></script>
     <script src="yearSelector.js"></script>
+    <script src="vendor/lz-string.min.js"></script>
+    <script src="vendor/qrcode.min.js"></script>
+    <script src="vendor/jsQR.js"></script>
     <script src="dataExport.js"></script>
+    <script src="backup.js"></script>
     <script src="onboarding.js"></script>
     <script src="app.js"></script>
     <div id="ctx-menu" class="cal-ctx-menu"></div>

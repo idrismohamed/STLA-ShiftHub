@@ -14,7 +14,8 @@
     "add:plugins": "cordova plugin add cordova-plugin-device cordova-plugin-statusbar cordova-plugin-x-socialsharing cordova-plugin-local-notification",
     "test:onboarding": "node tests/onboarding.smoke.js",
     "test:payroll": "node tests/payroll-tools.smoke.js",
-    "test": "npm run test:onboarding && npm run test:payroll"
+    "test:backup": "node tests/backup.smoke.js",
+    "test": "npm run test:onboarding && npm run test:payroll && npm run test:backup"
   },
   "keywords": [
     "cordova",

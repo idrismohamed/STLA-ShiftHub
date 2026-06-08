@@ -67,3 +67,6 @@ renderCalendar();
 
 // First-run setup wizard (no-op for returning users).
 if (typeof maybeStartOnboarding === 'function') maybeStartOnboarding();
+
+// Gentle "time to back up" nudge when overdue (no-op unless enabled in Settings).
+if (typeof maybeBackupReminder === 'function') maybeBackupReminder();

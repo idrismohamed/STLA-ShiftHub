@@ -86,6 +86,8 @@ function openSheet(id) {
 function closeAllSheets(fromHistory = false) {
     const isActive = document.querySelector('.bottom-sheet.active') !== null;
     if (!isActive) return;
+    // Release the camera if the QR-scan sheet was open.
+    if (typeof stopBackupScan === 'function') stopBackupScan();
     document.body.style.overflow = '';
     document.querySelectorAll('.bottom-sheet').forEach(s => {
         if (s._motionCancel) { s._motionCancel(); s._motionCancel = null; }
