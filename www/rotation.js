@@ -128,10 +128,13 @@ function precalcFatigue(year, viewCrew) {
     const ePP = Math.floor((yearEnd   - basePPStartUTC) / MS_PP);
 
     for (let i = sPP; i <= ePP; i++) {
-        const ppStart  = basePPStartUTC + i * MS_PP;
-        let running    = 0;
-        let limit      = false;
-        const isD      = (((i % 3) + 3) % 3) === 1; // drop-period flag
+        const ppStart = basePPStartUTC + i * MS_PP;
+        const isD     = (((i % 3) + 3) % 3) === 1;
+
+        // Pass 1: compute per-day hours for all 14 days and total PP hours
+        const rawBaseH    = new Array(14);
+        const rawExpected = new Array(14);
+        let ppTotal = 0;
 
         for (let d = 0; d <= 13; d++) {
             const utc  = ppStart + d * MS_DAY;
@@ -155,16 +158,37 @@ function precalcFatigue(year, viewCrew) {
                 }
             }
 
+            rawBaseH[d]    = baseH;
+            rawExpected[d] = expectedToday;
+            ppTotal       += expectedToday;
+        }
+
+        // Find the first day that can no longer be worked (sequential boundary)
+        let running     = 0;
+        let lockoutFrom = 14; // 14 = no lockout this PP
+        for (let d = 0; d <= 13; d++) {
+            if (running + rawExpected[d] > 120.01) { lockoutFrom = d; break; }
+            running += rawExpected[d];
+            if (running >= 120) { lockoutFrom = d + 1; break; }
+        }
+
+        // Pass 2: assign dayFatigue — lock post-boundary days AND off days in a full PP
+        for (let d = 0; d <= 13; d++) {
+            const utc  = ppStart + d * MS_DAY;
+            const dStr = toDateKey(utc);
+            const ex   = extraShifts[dStr];
+
             let lock = false;
-            if (limit) {
-                lock = true;
-            } else if (running + expectedToday > 120.01) {
-                lock = true;
-                limit = true;
+            if (d >= lockoutFrom) {
+                lock = true;                          // past the sequential 120h boundary
+            } else if (ppTotal >= 120 && rawExpected[d] === 0) {
+                lock = true;                          // off day in a PP already at full capacity
             }
 
-            if (ex && ex.overrideLockout) { lock = false; limit = false; }
+            if (ex && ex.overrideLockout) lock = false;
 
+            let baseH         = rawBaseH[d];
+            let expectedToday = rawExpected[d];
             if (lock) { baseH = 0; expectedToday = 0; }
 
             dayFatigue[dStr] = {
@@ -176,9 +200,6 @@ function precalcFatigue(year, viewCrew) {
                 isDropPeriod:       isD,
                 isPPBoundary:       (d === 13)
             };
-
-            if (!lock) running += expectedToday;
-            if (running >= 120) limit = true;
         }
     }
 }
