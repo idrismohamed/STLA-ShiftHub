@@ -739,6 +739,10 @@ input:checked + .switch-slider:before { transform: translateX(20px); }
 .toggle-btn { flex: 1; text-align: center; padding: 10px 0; background: var(--input-bg); border: 1px solid var(--border); border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s; min-width: 30%; }
 .toggle-btn:active { transform: scale(0.96); }
 .toggle-btn.active { background: rgba(255, 109, 0, 0.15) !important; border-color: var(--accent) !important; color: var(--accent) !important; box-shadow: 0 4px 10px rgba(255, 109, 0, 0.1); }
+.toggle-btn.day-type { border-color: #38bdf8; color: #38bdf8; }
+.toggle-btn.day-type.active { background: rgba(56, 189, 248, 0.15) !important; border-color: #38bdf8 !important; color: #38bdf8 !important; box-shadow: 0 4px 10px rgba(56, 189, 248, 0.2); }
+.toggle-btn.night-type { border-color: #f43f5e; color: #f43f5e; }
+.toggle-btn.night-type.active { background: rgba(244, 63, 94, 0.15) !important; border-color: #f43f5e !important; color: #f43f5e !important; box-shadow: 0 4px 10px rgba(244, 63, 94, 0.2); }
 .time-row { display: flex; gap: 15px; margin-bottom: 5px; }
 .time-row > div { flex: 1; }
 .time-input, .number-input, .date-picker, .text-input { width: 100%; background: var(--input-bg); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 10px; font-size: 16px; outline: none; font-weight: bold; font-family: inherit; transition: background-color 0.3s, border-color 0.3s, color 0.3s; box-sizing: border-box; }

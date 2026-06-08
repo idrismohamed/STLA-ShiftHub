@@ -231,12 +231,29 @@ function updatePickupToggles(skipSliderReset = false) {
         }
     }
 
-    const btnDropPaid = document.getElementById('btn-type-DropPaid');
-    const btnDropOff  = document.getElementById('btn-type-DropOff');
-    if (btnDropPaid && btnDropOff) {
-        btnDropOff.style.display  = 'block';
-        btnDropPaid.style.display = isDropPeriod ? 'block' : 'none';
+    const btnDropPaid      = document.getElementById('btn-type-DropPaid');
+    const btnDropOff       = document.getElementById('btn-type-DropOff');
+    const dropPaidOverride = document.getElementById('drop-paid-override-wrap');
+    // Time Off group is always the parent of btnDropOff (it never moves)
+    const timeOffGroup     = btnDropOff && btnDropOff.parentNode;
+    if (btnDropPaid && dropPaidOverride && timeOffGroup) {
+        if (isDropPeriod) {
+            const overrideGroup = dropPaidOverride.querySelector('.toggle-group');
+            if (overrideGroup && btnDropPaid.parentNode !== overrideGroup) {
+                overrideGroup.appendChild(btnDropPaid);
+            }
+            btnDropPaid.style.flexBasis = '100%';
+            btnDropPaid.style.display   = 'block';
+            dropPaidOverride.style.display = 'block';
+        } else {
+            if (btnDropPaid.parentNode !== timeOffGroup) {
+                timeOffGroup.appendChild(btnDropPaid);
+            }
+            dropPaidOverride.style.display = 'none';
+            btnDropPaid.style.display      = 'none';
+        }
     }
+    if (btnDropOff) btnDropOff.style.display = 'block';
 
     if (selectedType && ['Day', 'Night'].includes(selectedType)) {
         const btn = document.getElementById('btn-type-' + selectedType);

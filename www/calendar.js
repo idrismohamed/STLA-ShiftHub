@@ -1558,7 +1558,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
                            : isFuturePP ? 'Upcoming Pay Period' : 'Pay Period';
     const pastBadge        = isPastPP ? '<span class="pp-past-badge">Past</span>' : '';
 
-    const _newKey = `${crew}|${currentPP}|${ppDayIndex}|${displayMonth}|${displayYear}|${Math.round(gross)}|${Math.round(ytdGross)}|${dCount}|${nCount}|${Math.round(fatigueUsed)}|${Math.round(vacUsed)}|${lieuBanked}|${displayPPIdx}`;
+    const _newKey = `${crew}|${currentPP}|${ppDayIndex}|${displayMonth}|${displayYear}|${Math.round(gross)}|${Math.round(ytdGross)}|${dCount}|${nCount}|${Math.round(fatigueUsed)}|${Math.round(vacUsed)}|${lieuBanked}|${displayPPIdx}|${Math.round(brkGross)}`;
     if (_newKey === _anKey) return;
     _anKey = _newKey;
 
