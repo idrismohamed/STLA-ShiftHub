@@ -821,13 +821,17 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
     const dispDate  = `${months[m]} ${d}, ${year}`;
     const baseShift = getShiftForCrew(pI, crew);
 
+    const shift2Chip = (ex && ex.shift2 && ex.shift2.startTime)
+        ? `<span class="cal-ot-chip" style="background:rgba(192,163,255,0.18);color:var(--mod);border-color:rgba(192,163,255,0.35);">+2nd</span>`
+        : '';
+
     return `<div class="${cls}" id="day-${dStr}" style="--cell-i:${cellIdx}" onclick="calDayClick('${dStr}','${dispDate}','${baseShift}','${next}')" ontouchstart="calLpStart(event,'${dStr}','${dispDate}','${baseShift}','${next}','month')" ontouchmove="calLpMove(event)" ontouchend="calLpEnd(event)" oncontextmenu="return false">
         ${dropBadge}
         <span class="cal-date-num">${d}</span>
         <span class="cal-cell-type">${typeLabel}</span>
         ${timeLabel ? `<span class="cal-cell-time">${timeLabel}</span>` : ''}
         ${holFlag}
-        ${otChip}
+        ${otChip}${shift2Chip}
         ${ppBadge}
     </div>`;
 }
@@ -1235,6 +1239,11 @@ function renderAnalyticsDashboard(crew, logicalT) {
                 else if (ex.startTime && ex.endTime)               { act = getDuration(ex.startTime, ex.endTime); }
                 else if (ex.type)                                  { act = 12; }
             }
+            // 2nd shift hours
+            const _s2 = ex?.shift2;
+            const _s2dur = (_s2 && _s2.startTime && _s2.endTime) ? getDuration(_s2.startTime, _s2.endTime) : 0;
+            act += _s2dur;
+
             if (f.isLockout && !isVac && ex?.type !== 'Off' && ex?.type !== 'DropOff' && ex?.type !== 'Lieu') act = 0;
 
             const dayR = Math.min(act, bH);
@@ -1257,10 +1266,17 @@ function renderAnalyticsDashboard(crew, logicalT) {
                 piAft   += pD.aftHrs; piNight += pD.nightHrs; piSat += pD.satHrs; piSun += pD.sunHrs;
 
                 if (dayE > 0) {
-                    let sO = ex?.otHours || 0, sD = ex?.dtHours || 0;
+                    let sO = (ex?.otHours || 0) + (_s2?.otHours || 0);
+                    let sD = (ex?.dtHours || 0) + (_s2?.dtHours || 0);
                     if (sO === 0 && sD === 0) { if (ex?.type === 'DropPaid') sO = dayE; else sD = dayE; }
                     piGross += (sO * rate * 1.5) + (sD * rate * 2.0);
                     piOT += sO; piDT += sD;
+                    // 2nd shift premium differentials
+                    if (_s2dur > 0 && _s2.startTime) {
+                        const pD2 = calcPremiums(dS, _s2.startTime, _s2dur, rate);
+                        piGross += pD2.total;
+                        piAft += pD2.aftHrs; piNight += pD2.nightHrs; piSat += pD2.satHrs; piSun += pD2.sunHrs;
+                    }
                 }
             }
 
@@ -1506,6 +1522,9 @@ function renderAnalyticsDashboard(crew, logicalT) {
                 else if (ex.startTime && ex.endTime)               { act = getDuration(ex.startTime, ex.endTime); }
                 else if (ex.type)                                  { act = 12; }
             }
+            const _bs2 = ex?.shift2;
+            const _bs2dur = (_bs2 && _bs2.startTime && _bs2.endTime) ? getDuration(_bs2.startTime, _bs2.endTime) : 0;
+            act += _bs2dur;
             if (f.isLockout && !isVac && ex?.type !== 'Off' && ex?.type !== 'DropOff' && ex?.type !== 'Lieu') act = 0;
             const dayR = Math.min(act, bH);
             const dayE = Math.max(0, act - bH);
@@ -1522,10 +1541,16 @@ function renderAnalyticsDashboard(crew, logicalT) {
                 brkGross += (dayR * rate) + pD.total;
                 brkAftH  += pD.aftHrs; brkNightH += pD.nightHrs; brkSatH += pD.satHrs; brkSunH += pD.sunHrs;
                 if (dayE > 0) {
-                    let sO = ex?.otHours || 0, sD = ex?.dtHours || 0;
+                    let sO = (ex?.otHours || 0) + (_bs2?.otHours || 0);
+                    let sD = (ex?.dtHours || 0) + (_bs2?.dtHours || 0);
                     if (sO === 0 && sD === 0) { if (ex?.type === 'DropPaid') sO = dayE; else sD = dayE; }
                     brkGross += (sO * rate * 1.5) + (sD * rate * 2.0);
                     brkOT += sO; brkDT += sD;
+                    if (_bs2dur > 0 && _bs2.startTime) {
+                        const pD2b = calcPremiums(dS, _bs2.startTime, _bs2dur, rate);
+                        brkGross += pD2b.total;
+                        brkAftH += pD2b.aftHrs; brkNightH += pD2b.nightHrs; brkSatH += pD2b.satHrs; brkSunH += pD2b.sunHrs;
+                    }
                 }
             }
             const holYear = parseInt(dS.substring(0, 4));

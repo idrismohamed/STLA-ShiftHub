@@ -18,8 +18,40 @@ function clearTimes() {
     if (eInput) eInput.value = '';
     if (rInput) rInput.value = '';
     selectedRegPay = false;
+    clearShift2();
     resetSliders();
     updatePickupToggles();
+}
+
+function addShift2() {
+    haptic();
+    const sec = document.getElementById('section-shift2');
+    const btn = document.getElementById('btn-add-shift2');
+    if (sec) sec.style.display = 'block';
+    if (btn) btn.style.display = 'none';
+}
+
+function clearShift2() {
+    haptic();
+    const s2 = document.getElementById('input-start-time-2');
+    const e2 = document.getElementById('input-end-time-2');
+    if (s2) s2.value = '';
+    if (e2) e2.value = '';
+    const sec = document.getElementById('section-shift2');
+    if (sec) sec.style.display = 'none';
+    updatePickupToggles();
+}
+
+function updateShift2SliderLabels() {
+    const slider = document.getElementById('shift2-ot-slider');
+    if (!slider) return;
+    slider.setAttribute('data-user-modified', 'true');
+    const dt    = parseFloat(slider.value) || 0;
+    const total = parseFloat(slider.max)   || 0;
+    const otLbl = document.getElementById('lbl-shift2-ot');
+    const dtLbl = document.getElementById('lbl-shift2-dt');
+    if (otLbl) otLbl.innerText = Math.max(0, total - dt).toFixed(1) + 'h';
+    if (dtLbl) dtLbl.innerText = dt.toFixed(1) + 'h';
 }
 
 function toggleRegPay() {
@@ -126,6 +158,29 @@ function openPickupSheet(dStr, disp, curS, nextS) {
 
     const rInput = document.getElementById('input-ot-reason');
     if (rInput) rInput.value = ex.otReason || '';
+
+    // Restore 2nd shift state
+    const s2Sec = document.getElementById('section-shift2');
+    const s2Btn = document.getElementById('btn-add-shift2');
+    const s2St  = document.getElementById('input-start-time-2');
+    const s2Et  = document.getElementById('input-end-time-2');
+    const s2Slider = document.getElementById('shift2-ot-slider');
+    if (ex.shift2 && ex.shift2.startTime) {
+        if (s2Sec) s2Sec.style.display = 'block';
+        if (s2Btn) s2Btn.style.display = 'none';
+        if (s2St)  s2St.value  = ex.shift2.startTime || '';
+        if (s2Et)  s2Et.value  = ex.shift2.endTime   || '';
+        if (s2Slider) {
+            s2Slider.removeAttribute('data-user-modified');
+            if (ex.shift2.dtHours !== undefined) s2Slider.dataset.savedDt = ex.shift2.dtHours;
+            else delete s2Slider.dataset.savedDt;
+        }
+    } else {
+        if (s2Sec) s2Sec.style.display = 'none';
+        if (s2St)  s2St.value  = '';
+        if (s2Et)  s2Et.value  = '';
+        if (s2Slider) { s2Slider.removeAttribute('data-user-modified'); delete s2Slider.dataset.savedDt; }
+    }
 
     updatePickupToggles();
 
@@ -551,6 +606,45 @@ function updatePickupToggles(skipSliderReset = false) {
         }
     }
 
+    // ── 2nd shift section visibility and OT slider ───────────────────────────
+    const _isWorking = selectedType && !['Vacation', 'Off', 'DropOff', 'Lieu', 'DropPaid'].includes(selectedType);
+    const _addBtn    = document.getElementById('btn-add-shift2');
+    const _shift2Sec = document.getElementById('section-shift2');
+    const _shift2Vis = _shift2Sec && _shift2Sec.style.display !== 'none';
+    if (_addBtn) _addBtn.style.display = (_isWorking && !_shift2Vis) ? 'block' : 'none';
+
+    const _s2St = document.getElementById('input-start-time-2');
+    const _s2Et = document.getElementById('input-end-time-2');
+    const _s2St_v = _s2St ? _s2St.value : '';
+    const _s2Et_v = _s2Et ? _s2Et.value : '';
+    const _s2Sec_ot = document.getElementById('section-shift2-ot');
+    const _s2Slider = document.getElementById('shift2-ot-slider');
+    if (_s2St_v && _s2Et_v) {
+        const _s2dur = getDuration(_s2St_v, _s2Et_v);
+        if (_s2Sec_ot) _s2Sec_ot.style.display = _s2dur > 0.05 ? 'block' : 'none';
+        const _s2disp = document.getElementById('display-shift2-hours');
+        if (_s2disp) _s2disp.textContent = _s2dur.toFixed(1);
+        if (_s2Slider) {
+            _s2Slider.max = _s2dur;
+            if (_s2Slider.dataset.savedDt !== undefined) {
+                _s2Slider.value = _s2Slider.dataset.savedDt;
+                _s2Slider.setAttribute('data-user-modified', 'true');
+                delete _s2Slider.dataset.savedDt;
+            } else if (!_s2Slider.hasAttribute('data-user-modified')) {
+                _s2Slider.value = 0; // default all OT
+            } else if (parseFloat(_s2Slider.value) > _s2dur) {
+                _s2Slider.value = _s2dur;
+            }
+            const _s2dt = parseFloat(_s2Slider.value) || 0;
+            const _s2otLbl = document.getElementById('lbl-shift2-ot');
+            const _s2dtLbl = document.getElementById('lbl-shift2-dt');
+            if (_s2otLbl) _s2otLbl.innerText = Math.max(0, _s2dur - _s2dt).toFixed(1) + 'h';
+            if (_s2dtLbl) _s2dtLbl.innerText = _s2dt.toFixed(1) + 'h';
+        }
+    } else {
+        if (_s2Sec_ot) _s2Sec_ot.style.display = 'none';
+    }
+
     const cw = document.getElementById('conflict-warning');
     if (cw) cw.style.display = (wT && wT.innerHTML) ? 'block' : 'none';
     if (bSave) { bSave.disabled = !canS; bSave.style.opacity = canS ? '1' : '0.5'; bSave.style.pointerEvents = canS ? 'auto' : 'none'; }
@@ -624,7 +718,25 @@ function saveShift() {
         if (_pendingOverridePayload.overrideRule16h) payload.overrideRule16h  = true;
         if (_pendingOverridePayload.overrideRest)    payload.overrideRest     = true;
         if (!_pendingOverridePayload.overrideLockout && !_pendingOverridePayload.overrideRule16h && !_pendingOverridePayload.overrideRest) {
-            payload.overrideLockout = true; // safety fallback (override shown for non-specific reason)
+            payload.overrideLockout = true;
+        }
+    }
+
+    // Save 2nd shift if the section is visible and has times
+    const _s2Sec2 = document.getElementById('section-shift2');
+    if (_s2Sec2 && _s2Sec2.style.display !== 'none') {
+        const _s2StV = (document.getElementById('input-start-time-2') || {}).value || '';
+        const _s2EtV = (document.getElementById('input-end-time-2')   || {}).value || '';
+        if (_s2StV && _s2EtV) {
+            const _s2dur2 = getDuration(_s2StV, _s2EtV);
+            const _s2sl   = document.getElementById('shift2-ot-slider');
+            const _s2dtH  = _s2sl ? (parseFloat(_s2sl.value) || 0) : 0;
+            payload.shift2 = {
+                startTime: _s2StV,
+                endTime:   _s2EtV,
+                otHours:   parseFloat(Math.max(0, _s2dur2 - _s2dtH).toFixed(2)),
+                dtHours:   parseFloat(_s2dtH.toFixed(2))
+            };
         }
     }
 

@@ -162,6 +162,11 @@ function precalcFatigue(year, viewCrew) {
                 }
             }
 
+            // Add 2nd shift hours if present
+            if (ex && ex.shift2 && ex.shift2.startTime && ex.shift2.endTime) {
+                expectedToday += getDuration(ex.shift2.startTime, ex.shift2.endTime);
+            }
+
             rawBaseH[d]    = baseH;
             rawExpected[d] = expectedToday;
             ppTotal       += expectedToday;
