@@ -153,6 +153,8 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; ov
 .pp-top-wrap .an-grid-3 { border-radius: 0; gap: 1px; background: var(--border); border-top: 1px solid var(--border); margin: 0; }
 .pp-top-wrap .an-hero-card { border-radius: 0; flex: 1; }
 .pp-bars-section { padding: 14px 18px; border-top: 1px solid var(--glass-border); }
+.pp-breakdown-section { padding: 14px 18px; border-top: 1px solid var(--glass-border); }
+.ytd-hero-grid { margin: 8px 0 0; }
 .an-hero-micro { font-size: 9px; font-weight: 700; color: #34a853; margin-top: 3px; letter-spacing: 0.03em; }
 
 /* Enhanced Modern Header (Glassmorphism) */
@@ -170,6 +172,7 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; ov
     width: 54px;
     height: 54px;
     min-width: 54px;
+    border-radius: 50%;
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     outline: 1px solid rgba(255,255,255,0.10);
     outline-offset: 0;

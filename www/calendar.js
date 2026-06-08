@@ -1172,7 +1172,8 @@ function renderAnalyticsDashboard(crew, logicalT) {
 
     const nowUTC    = Date.UTC(logicalT.getFullYear(), logicalT.getMonth(), logicalT.getDate());
     const todayStr  = toDateKey(nowUTC);
-    const currentPP = Math.floor((nowUTC - basePPStartUTC) / MS_PP);
+    const currentPP    = Math.floor((nowUTC - basePPStartUTC) / MS_PP);
+    const displayPPIdx = calendarViewMode === 'week' ? currentPP + currentWeekOffset : currentPP;
     const ppS       = basePPStartUTC + currentPP * MS_PP;
     const ppE          = ppS + MS_PP_TO_END;
     const targetYear   = new Date(ppE).getUTCFullYear();
@@ -1271,10 +1272,17 @@ function renderAnalyticsDashboard(crew, logicalT) {
         ytdGross += piGross; ytdCPP += piTax.cpp + piTax.cpp2; ytdEI += piTax.ei; ppsDone++;
 
         ppSeries.push({
-            gross: piGross,
-            hours: piRegH + piOT + piDT,
-            ot:    piOT + piDT,
-            label: new Date(s).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })
+            gross:  piGross,
+            hours:  piRegH + piOT + piDT,
+            ot:     piOT + piDT,
+            regH:   piRegH,
+            otH:    piOT,
+            dtH:    piDT,
+            aftH:   piAft,
+            nightH: piNight,
+            satH:   piSat,
+            sunH:   piSun,
+            label:  new Date(s).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' })
         });
 
         if (pi === currentPP) {
@@ -1457,9 +1465,78 @@ function renderAnalyticsDashboard(crew, logicalT) {
     const fatigueRightLabel = fatigueAtMax ? '' : `<span style="color:${fatigueColor};font-weight:700">${fatigueRem.toFixed(1)}h left</span>`;
     const ppHoursMicro = (ot + dt > 0) ? `<div class="an-hero-micro">+${(ot + dt).toFixed(1)}h OT/DT</div>` : '';
 
+    // ── Breakdown data for the viewed PP (dynamic in week view) ─────────────────
+    const brkPPS        = basePPStartUTC + displayPPIdx * MS_PP;
+    const brkPPE        = brkPPS + MS_PP_TO_END;
+    const brkStartLabel = new Date(brkPPS).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const brkEndLabel   = new Date(brkPPE).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const brkIsOtherPP  = calendarViewMode === 'week' && displayPPIdx !== currentPP;
+    let brkRegH, brkOT, brkDT, brkAftH, brkNightH, brkSatH, brkSunH, brkGross;
+    const brkSeriesIdx = displayPPIdx - firstPP;
+    if (brkSeriesIdx >= 0 && brkSeriesIdx < ppSeries.length) {
+        const p = ppSeries[brkSeriesIdx];
+        brkRegH = p.regH; brkOT = p.otH; brkDT = p.dtH;
+        brkAftH = p.aftH; brkNightH = p.nightH; brkSatH = p.satH; brkSunH = p.sunH;
+        brkGross = p.gross;
+    } else {
+        brkRegH = 0; brkOT = 0; brkDT = 0; brkAftH = 0; brkNightH = 0; brkSatH = 0; brkSunH = 0; brkGross = 0;
+        for (let d = 0; d <= 13; d++) {
+            const u   = brkPPS + d * MS_DAY;
+            const dS  = toDateKey(u);
+            const bS  = getShiftForCrew(getPIndex(u), crew);
+            const ex  = extraShifts[dS];
+            const f   = dayFatigue[dS] || {};
+            const bH  = f.baseWorkHours !== undefined ? f.baseWorkHours : ((bS === 'D' || bS === 'N') ? 12 : 0);
+            const st  = ex?.startTime || ((bS === 'D' || ex?.type === 'Day') ? '06:30' : '18:30');
+            let act = bH, isVac = false;
+            if (ex) {
+                if      (ex.type === 'DropOff')                    { act = 0; }
+                else if (ex.type === 'DropPaid')                   { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 12; }
+                else if (ex.type === 'Vacation')                   { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; isVac = true; }
+                else if (ex.type === 'Off' || ex.type === 'Lieu')  { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; }
+                else if (ex.startTime && ex.endTime)               { act = getDuration(ex.startTime, ex.endTime); }
+                else if (ex.type)                                  { act = 12; }
+            }
+            if (f.isLockout && !isVac && ex?.type !== 'Off' && ex?.type !== 'DropOff' && ex?.type !== 'Lieu') act = 0;
+            const dayR = Math.min(act, bH);
+            const dayE = Math.max(0, act - bH);
+            let rate = sysSettings.regRate;
+            if (ex?.role === 'TL')                            rate = sysSettings.tlRate;
+            else if (ex?.role === 'Manual' && ex?.manualRate) rate = ex.manualRate;
+            brkRegH += dayR;
+            if (isVac) {
+                const vH = ex.vacHours !== undefined ? ex.vacHours : (ex.startTime && ex.endTime ? Math.max(0, bH - act) : (bH || 12));
+                brkGross += vH * rate;
+            }
+            if (!f.isLockout && act > 0) {
+                const pD = calcPremiums(dS, st, dayR, rate);
+                brkGross += (dayR * rate) + pD.total;
+                brkAftH  += pD.aftHrs; brkNightH += pD.nightHrs; brkSatH += pD.satHrs; brkSunH += pD.sunHrs;
+                if (dayE > 0) {
+                    let sO = ex?.otHours || 0, sD = ex?.dtHours || 0;
+                    if (sO === 0 && sD === 0) { if (ex?.type === 'DropPaid') sO = dayE; else sD = dayE; }
+                    brkGross += (sO * rate * 1.5) + (sD * rate * 2.0);
+                    brkOT += sO; brkDT += sD;
+                }
+            }
+            const holYear = parseInt(dS.substring(0, 4));
+            const holInfo = getHols(holYear)[dS];
+            if (holInfo) {
+                brkGross += 8 * rate;
+                if (dayR > 0) brkGross += dayR * rate * (holInfo.m === 2.0 ? 1.0 : 0.5);
+            }
+            const nextDStr    = toDateKey(u + MS_DAY);
+            const nextHolInfo = getHols(parseInt(nextDStr.substring(0, 4)))[nextDStr];
+            if (nextHolInfo && dayR > 0 && (bS === 'N' || ex?.type === 'Night')) {
+                brkGross += Math.min(dayR, 10) * rate * (nextHolInfo.m === 2.0 ? 1.0 : 0.5);
+            }
+        }
+    }
+    const brkT = calculateTaxes(brkGross, displayPPIdx, targetYear);
+
     // Skip DOM rebuild and chart animations if nothing has changed.
     // This prevents re-animation on every calendar view switch or scroll-triggered re-render.
-    const _newKey = `${crew}|${currentPP}|${ppDayIndex}|${displayMonth}|${displayYear}|${Math.round(gross)}|${Math.round(ytdGross)}|${dCount}|${nCount}|${Math.round(fatigueUsed)}|${Math.round(vacUsed)}|${lieuBanked}`;
+    const _newKey = `${crew}|${currentPP}|${ppDayIndex}|${displayMonth}|${displayYear}|${Math.round(gross)}|${Math.round(ytdGross)}|${dCount}|${nCount}|${Math.round(fatigueUsed)}|${Math.round(vacUsed)}|${lieuBanked}|${displayPPIdx}`;
     if (_newKey === _anKey) return;
     _anKey = _newKey;
 
@@ -1495,23 +1572,22 @@ function renderAnalyticsDashboard(crew, logicalT) {
     <div id="chart-fatigue-bar" class="ch-host-bar"></div>
     <div class="ch-legend" id="chart-fatigue-legend"></div>
   </div>
+  <div class="pp-breakdown-section">
+    <div class="an-flat-card-title">Pay Period Breakdown${brkIsOtherPP ? ` <span class="an-section-sub" style="text-transform:none;letter-spacing:0;font-size:10px">${brkStartLabel}–${brkEndLabel}</span>` : ''}</div>
+    <div class="an-row"><span>Regular</span><strong>${fH(brkRegH)}</strong></div>
+    <div class="an-row"><span>OT</span><strong style="color:#34a853">${fH(brkOT)}</strong></div>
+    <div class="an-row"><span>DT</span><strong style="color:#4285f4">${fH(brkDT)}</strong></div>
+    <div class="an-sep"></div>
+    <div class="an-row"><span>Aft / Night hrs</span><strong>${fH(brkAftH + brkNightH)}</strong></div>
+    <div class="an-row"><span>Sat / Sun hrs</span><strong>${fH(brkSatH + brkSunH)}</strong></div>
+    <div class="an-sep"></div>
+    <div class="an-row"><span>Tax (Fed + ON)</span><strong style="color:var(--night)">-${f$(brkT.fedTax + brkT.onTax)}</strong></div>
+    <div class="an-row"><span>CPP + EI</span><strong style="color:var(--night)">-${f$(brkT.cpp + brkT.cpp2 + brkT.ei)}</strong></div>
+  </div>
 </div>`;
 
     const _sideHTML = `
 <div class="analytics-wrap">
-
-  <div class="an-flat-card">
-    <div class="an-row"><span>Regular</span><strong>${fH(regH)}</strong></div>
-    <div class="an-row"><span>OT</span><strong style="color:#34a853">${fH(ot)}</strong></div>
-    <div class="an-row"><span>DT</span><strong style="color:#4285f4">${fH(dt)}</strong></div>
-    <div class="an-sep"></div>
-    <div class="an-row"><span>Aft / Night hrs</span><strong>${fH(aftH + nightH)}</strong></div>
-    <div class="an-row"><span>Sat / Sun hrs</span><strong>${fH(satH + sunH)}</strong></div>
-    <div class="an-sep"></div>
-    <div class="an-row"><span>Tax (Fed + ON)</span><strong style="color:var(--night)">-${f$(t.fedTax + t.onTax)}</strong></div>
-    <div class="an-row"><span>CPP + EI</span><strong style="color:var(--night)">-${f$(t.cpp + t.cpp2 + t.ei)}</strong></div>
-    ${monthExRows ? `<div class="an-sep"></div>${monthExRows}` : ''}
-  </div>
 
   <div class="an-flat-card">
     <div class="an-flat-card-title">${thisMonthName} vs ${prevMonthName}${prevYear !== displayYear ? ` <span class="an-section-sub" style="text-transform:none;letter-spacing:0">${prevYear}</span>` : ''}</div>
@@ -1523,13 +1599,13 @@ function renderAnalyticsDashboard(crew, logicalT) {
     const _belowHTML = `
 <div class="analytics-wrap">
 
-  <div class="an-section-title">${targetYear} Annual Caps</div>
   <div class="an-flat-card">
+    <div class="an-flat-card-title">CPP &amp; EI Caps <span class="an-section-sub" style="text-transform:none;letter-spacing:0">${targetYear}</span></div>
     <div id="chart-rings" class="ch-rings"></div>
   </div>
 
-  <div class="an-section-title">Pay / Hours Trend <span class="an-section-sub" style="text-transform:none;letter-spacing:0">last ${trendSlice.length} pay period${trendSlice.length !== 1 ? 's' : ''}</span></div>
   <div class="an-flat-card">
+    <div class="an-flat-card-title">Pay Trend <span class="an-section-sub" style="text-transform:none;letter-spacing:0">last ${trendSlice.length} pay period${trendSlice.length !== 1 ? 's' : ''}</span></div>
     <div class="ch-seg" id="trend-seg">
       <button class="active" onclick="chartTrendSwitch(this,'gross')">Gross</button>
       <button onclick="chartTrendSwitch(this,'hours')">Hours</button>
@@ -1538,20 +1614,22 @@ function renderAnalyticsDashboard(crew, logicalT) {
     <div id="chart-trend" class="ch-host"></div>
   </div>
 
-  <div class="an-section-title">${targetYear} Year to Date</div>
-  <div class="an-grid-2">
-    <div class="an-hero-card" style="--hero-color:#f59e0b">
-      <div class="an-hero-label">YTD Gross</div>
-      <div class="an-hero-value">$${Math.round(ytdGross).toLocaleString()}</div>
-    </div>
-    <div class="an-hero-card" style="--hero-color:#8a8fa8">
-      <div class="an-hero-label">Projected</div>
-      <div class="an-hero-value">$${Math.round(projectedAnnual).toLocaleString()}</div>
+  <div class="an-flat-card">
+    <div class="an-flat-card-title">Year to Date <span class="an-section-sub" style="text-transform:none;letter-spacing:0">${targetYear}</span></div>
+    <div class="an-grid-2 ytd-hero-grid">
+      <div class="an-hero-card" style="--hero-color:#f59e0b">
+        <div class="an-hero-label">YTD Gross</div>
+        <div class="an-hero-value">$${Math.round(ytdGross).toLocaleString()}</div>
+      </div>
+      <div class="an-hero-card" style="--hero-color:#8a8fa8">
+        <div class="an-hero-label">Projected</div>
+        <div class="an-hero-value">$${Math.round(projectedAnnual).toLocaleString()}</div>
+      </div>
     </div>
   </div>
 
-  <div class="an-section-title">Vacation · Lieu &amp; Drop</div>
   <div class="an-flat-card">
+    <div class="an-flat-card-title">Time Off</div>
     <div class="an-row"><span>Vacation Used</span><strong style="color:#00bcd4">${fH(vacUsed)}</strong></div>
     <div class="an-row"><span>Vacation Remaining</span><strong>${fH(vacRem)}</strong></div>
     <div class="an-progress-meta">${vacPct}% used · ${vacStart} → ${vacEnd}</div>
