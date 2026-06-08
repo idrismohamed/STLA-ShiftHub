@@ -1534,8 +1534,30 @@ function renderAnalyticsDashboard(crew, logicalT) {
     }
     const brkT = calculateTaxes(brkGross, displayPPIdx, targetYear);
 
-    // Skip DOM rebuild and chart animations if nothing has changed.
-    // This prevents re-animation on every calendar view switch or scroll-triggered re-render.
+    // ── Display values for the full top card (viewed PP in week view, else current PP) ─
+    const isWeekView     = calendarViewMode === 'week';
+    const isPastPP       = isWeekView && displayPPIdx < currentPP;
+    const isFuturePP     = isWeekView && displayPPIdx > currentPP;
+    const dispGross      = isWeekView ? brkGross : gross;
+    const dispT          = isWeekView ? brkT     : t;
+    const dispOT         = isWeekView ? brkOT    : ot;
+    const dispDT         = isWeekView ? brkDT    : dt;
+    const dispFatigueUsed  = isWeekView ? brkRegH + brkOT + brkDT : fatigueUsed;
+    const dispFatigueRem   = Math.max(0, 120 - dispFatigueUsed);
+    const dispFatigueColor = dispFatigueUsed >= 108 ? 'var(--night)' : dispFatigueUsed >= 90 ? 'var(--accent)' : '#34d399';
+    const dispFatigueAtMax = dispFatigueUsed >= 120;
+    const dispHoursMicro   = (dispOT + dispDT > 0) ? `<div class="an-hero-micro">+${(dispOT + dispDT).toFixed(1)}h OT/DT</div>` : '';
+    let dispPpDayIndex;
+    if (!isWeekView || displayPPIdx === currentPP) { dispPpDayIndex = ppDayIndex; }
+    else if (isPastPP)   { dispPpDayIndex = 13; }
+    else                 { dispPpDayIndex = -1; }
+    const dispPpDayDisplay = dispPpDayIndex + 1;
+    const dispPpDaysLeft   = 14 - dispPpDayDisplay;
+    const dispPpPct        = Math.round((dispPpDayDisplay / 14) * 100);
+    const topCardTitle     = (!isWeekView || displayPPIdx === currentPP) ? 'Current Pay Period'
+                           : isFuturePP ? 'Upcoming Pay Period' : 'Pay Period';
+    const pastBadge        = isPastPP ? '<span class="pp-past-badge">Past</span>' : '';
+
     const _newKey = `${crew}|${currentPP}|${ppDayIndex}|${displayMonth}|${displayYear}|${Math.round(gross)}|${Math.round(ytdGross)}|${dCount}|${nCount}|${Math.round(fatigueUsed)}|${Math.round(vacUsed)}|${lieuBanked}|${displayPPIdx}`;
     if (_newKey === _anKey) return;
     _anKey = _newKey;
@@ -1544,36 +1566,36 @@ function renderAnalyticsDashboard(crew, logicalT) {
     if (elTop) elTop.innerHTML = `
 <div class="pp-top-wrap">
   <div class="an-flat-card">
-    <div class="an-flat-card-title">Current Pay Period <span class="an-section-sub" style="text-transform:none;letter-spacing:0;font-size:10px">${ppStartLabel}–${ppEndLabel}</span></div>
-    <div class="an-pp-bar-labels"><span>Day ${ppDayDisplay} of 14</span><span>${ppDaysLeft} day${ppDaysLeft !== 1 ? 's' : ''} left</span></div>
-    <div class="an-progress" style="margin:5px 0 0"><div class="an-progress-fill" style="width:${ppPct}%;background:var(--accent)"></div></div>
+    <div class="an-flat-card-title">${topCardTitle} ${pastBadge}<span class="an-section-sub" style="text-transform:none;letter-spacing:0;font-size:10px">${brkStartLabel}–${brkEndLabel}</span></div>
+    <div class="an-pp-bar-labels"><span>Day ${dispPpDayDisplay} of 14</span><span>${isPastPP ? 'Complete' : isFuturePP ? 'Not started' : `${dispPpDaysLeft} day${dispPpDaysLeft !== 1 ? 's' : ''} left`}</span></div>
+    <div class="an-progress" style="margin:5px 0 0"><div class="an-progress-fill" style="width:${dispPpPct}%;background:var(--accent)"></div></div>
   </div>
   <div class="an-grid-3">
     <div class="an-hero-card" style="--hero-color:#7c3aed">
       <div class="an-hero-label">Gross</div>
-      <div class="an-hero-value">${f$(gross)}</div>
+      <div class="an-hero-value">${f$(dispGross)}</div>
     </div>
     <div class="an-hero-card" style="--hero-color:#34d399">
       <div class="an-hero-label">Net Pay</div>
-      <div class="an-hero-value">${f$(gross - t.total)}</div>
+      <div class="an-hero-value">${f$(dispGross - dispT.total)}</div>
     </div>
     <div class="an-hero-card" style="--hero-color:var(--day)">
       <div class="an-hero-label">PP Hours</div>
-      <div class="an-hero-value">${fatigueUsed.toFixed(1)}h</div>
-      ${ppHoursMicro}
+      <div class="an-hero-value">${dispFatigueUsed.toFixed(1)}h</div>
+      ${dispHoursMicro}
     </div>
   </div>
   <div class="pp-bars-section">
-    <div class="ch-sub-label">Where Your Pay Goes <span class="ch-sub-val">Net ${f$(gross - t.total)}</span></div>
+    <div class="ch-sub-label">Where Your Pay Goes <span class="ch-sub-val">Net ${f$(dispGross - dispT.total)}</span></div>
     <div id="chart-paybar" class="ch-host-bar"></div>
     <div class="ch-legend" id="chart-paybar-legend"></div>
     <div class="an-sep" style="margin:12px 0 10px"></div>
-    <div class="ch-sub-label">120H Limit${fatigueAtMax ? ' · ⛔ MAX' : ''} <span class="ch-sub-val" style="color:${fatigueColor}">${fatigueAtMax ? 'Limit reached' : fatigueRem.toFixed(1) + 'h left'}</span></div>
+    <div class="ch-sub-label">120H Limit${dispFatigueAtMax ? ' · ⛔ MAX' : ''} <span class="ch-sub-val" style="color:${dispFatigueColor}">${dispFatigueAtMax ? 'Limit reached' : dispFatigueRem.toFixed(1) + 'h left'}</span></div>
     <div id="chart-fatigue-bar" class="ch-host-bar"></div>
     <div class="ch-legend" id="chart-fatigue-legend"></div>
   </div>
   <div class="pp-breakdown-section">
-    <div class="an-flat-card-title">Pay Period Breakdown${brkIsOtherPP ? ` <span class="an-section-sub" style="text-transform:none;letter-spacing:0;font-size:10px">${brkStartLabel}–${brkEndLabel}</span>` : ''}</div>
+    <div class="an-flat-card-title">Pay Period Breakdown</div>
     <div class="an-row"><span>Regular</span><strong>${fH(brkRegH)}</strong></div>
     <div class="an-row"><span>OT</span><strong style="color:#34a853">${fH(brkOT)}</strong></div>
     <div class="an-row"><span>DT</span><strong style="color:#4285f4">${fH(brkDT)}</strong></div>
@@ -1649,16 +1671,16 @@ function renderAnalyticsDashboard(crew, logicalT) {
     // ── Inline-SVG analytics charts (charts.js) ──────────────
     if (typeof chartStacked === 'function') {
         chartStacked('chart-paybar', 'chart-paybar-legend', [
-            ['Net',     gross - t.total, '--c-net'],
-            ['Fed Tax', t.fedTax,        '--c-tax'],
-            ['ON Tax',  t.onTax,         '--c-cpp'],
-            ['CPP',     t.cpp + t.cpp2,  '--c-ot'],
-            ['EI',      t.ei,            '--c-ei']
+            ['Net',     dispGross - dispT.total, '--c-net'],
+            ['Fed Tax', dispT.fedTax,            '--c-tax'],
+            ['ON Tax',  dispT.onTax,             '--c-cpp'],
+            ['CPP',     dispT.cpp + dispT.cpp2,  '--c-ot'],
+            ['EI',      dispT.ei,                '--c-ei']
         ]);
-        const fatigueTrackColor = fatigueUsed >= 108 ? '--c-dt' : fatigueUsed >= 90 ? '--warn' : '--c-reg';
+        const fatigueTrackColor = dispFatigueUsed >= 108 ? '--c-dt' : dispFatigueUsed >= 90 ? '--warn' : '--c-reg';
         chartStacked('chart-fatigue-bar', 'chart-fatigue-legend', [
-            ['Used', fatigueUsed, fatigueTrackColor],
-            ['Left', Math.max(0, 120 - fatigueUsed), '--glass-border']
+            ['Used', dispFatigueUsed, fatigueTrackColor],
+            ['Left', Math.max(0, 120 - dispFatigueUsed), '--glass-border']
         ], v => v.toFixed(1) + 'h');
         chartPaired('chart-paired', [
             ['Days worked', thisWorked, prevWorked],

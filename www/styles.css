@@ -154,6 +154,21 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; ov
 .pp-top-wrap .an-hero-card { border-radius: 0; flex: 1; }
 .pp-bars-section { padding: 14px 18px; border-top: 1px solid var(--glass-border); }
 .pp-breakdown-section { padding: 14px 18px; border-top: 1px solid var(--glass-border); }
+.pp-past-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(251, 191, 36, 0.12);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.28);
+    vertical-align: middle;
+    margin: 0 5px 1px 4px;
+    text-transform: uppercase;
+}
 .ytd-hero-grid { margin: 8px 0 0; }
 .an-hero-micro { font-size: 9px; font-weight: 700; color: #34a853; margin-top: 3px; letter-spacing: 0.03em; }
 
