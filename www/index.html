@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#141218">
     <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="./icon.png">
     <link rel="apple-touch-icon" href="./icon.png">
     <title>Shift Hub</title>
     <link rel="stylesheet" href="styles.css">
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script src="vendor/jspdf.umd.min.js"></script>
     <script src="motion.js"></script>
 </head>
 <body>
@@ -434,6 +435,8 @@
 
     <div id="toast-container"></div>
 
+    <div id="onboarding-root"></div>
+
     <script src="cordova.js"></script>
     <script src="constants.js"></script>
     <script src="utils.js"></script>
@@ -449,6 +452,7 @@
     <script src="theme.js"></script>
     <script src="yearSelector.js"></script>
     <script src="dataExport.js"></script>
+    <script src="onboarding.js"></script>
     <script src="app.js"></script>
     <div id="ctx-menu" class="cal-ctx-menu"></div>
 </body>

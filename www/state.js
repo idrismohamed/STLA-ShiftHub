@@ -46,6 +46,7 @@ function initDefaults() {
     if (sysSettings.notif3h   === undefined) sysSettings.notif3h       = true;
 if (sysSettings.syncCalendar  === undefined) sysSettings.syncCalendar  = false;
     if (sysSettings.smartAlarms   === undefined) sysSettings.smartAlarms   = false;
+    if (sysSettings.hasSeenOnboarding === undefined) sysSettings.hasSeenOnboarding = false;
 }
 
 initDefaults();

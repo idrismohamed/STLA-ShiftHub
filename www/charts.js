@@ -133,7 +133,7 @@ function chartStacked(hostId, legendId, segs, fmtVal) {
         const rect = _cEl('rect', { x: xpos, y: 0, width: 0, height: H, fill: _cCol(seg[2]) });
         g.appendChild(rect);
         const fx = xpos;
-        _cAnimate(t => rect.setAttribute('width', w * t), 600, i * 70);
+        _cAnimate(t => rect.setAttribute('width', Math.max(0, w * t)), 600, i * 70);
         if (w > 42) {
             const pctTxt = _cText(fx + w / 2, H / 2 + 4, Math.round(seg[1] / total * 100) + '%', 11, 900, '#1a1820');
             pctTxt.style.opacity = 0;
@@ -349,7 +349,7 @@ function _drawTrend() {
         const last = i === n - 1;
         const rect = _cEl('rect', { x: x(i), y: H - padB, width: bwi, height: 0, rx: 6, fill: last ? color : _cCol('--border'), opacity: last ? 1 : 0.55 });
         s.appendChild(rect);
-        _cAnimate(t => { rect.setAttribute('height', bh * t); rect.setAttribute('y', H - padB - bh * t); }, 520, i * 45);
+        _cAnimate(t => { const hh = Math.max(0, bh * t); rect.setAttribute('height', hh); rect.setAttribute('y', H - padB - hh); }, 520, i * 45);
         if (last) {
             const tx = _cText(x(i) + bwi / 2, y(v) - 6, meta.fmt(v), 12, 800, '--text');
             tx.style.opacity = 0; s.appendChild(tx);

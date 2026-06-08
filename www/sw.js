@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shift-hub-v24';
+const CACHE_NAME = 'shift-hub-v25';
 const urlsToCache = [
   './index.html',
   './styles.css',
@@ -7,15 +7,19 @@ const urlsToCache = [
   './state.js',
   './rotation.js',
   './payroll.js',
+  './charts.js',
   './calendar.js',
   './notifications.js',
   './shiftForm.js',
+  './ui.js',
   './settings.js',
   './theme.js',
   './yearSelector.js',
   './dataExport.js',
-  './ui.js',
+  './motion.js',
+  './onboarding.js',
   './app.js',
+  './vendor/jspdf.umd.min.js',
   './manifest.json',
   './icon.png'
 ];
@@ -45,10 +49,15 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch Event: "Network First, Fallback to Cache" Strategy
+// Fetch Event: "Network First, Fallback to Cache" Strategy.
+// Only manage same-origin GET requests. Cross-origin calls (e.g. the remote
+// tax-tables API) are left to the browser so their failures are handled by the
+// caller's own try/catch instead of surfacing as service-worker fetch errors.
 self.addEventListener('fetch', event => {
+  const req = event.request;
+  if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
   event.respondWith(
-    fetch(event.request)
+    fetch(req)
       .then(networkResponse => {
         // If network fetch is successful, update the cache with the newest version
         if (networkResponse && networkResponse.status === 200) {
