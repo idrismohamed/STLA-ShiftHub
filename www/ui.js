@@ -83,6 +83,30 @@ function openSheet(id) {
     history.pushState({ sheetOpen: true }, '');
 }
 
+/**
+ * Replace the currently-open sheet with another, reusing the existing overlay
+ * and history entry (so a sheet opened from inside another sheet — e.g. the QR
+ * sheets launched from Settings — appears on top instead of behind it).
+ * Falls back to openSheet() when no sheet is currently open.
+ * @param {string} id
+ */
+function switchSheet(id) {
+    if (!document.querySelector('.bottom-sheet.active')) { openSheet(id); return; }
+    const target = document.getElementById(id);
+    document.querySelectorAll('.bottom-sheet.active').forEach(s => {
+        if (s === target) return;
+        if (s._motionCancel) { s._motionCancel(); s._motionCancel = null; }
+        s.classList.remove('active');
+        s.style.transform = '';
+    });
+    if (target) {
+        if (target._motionCancel) { target._motionCancel(); target._motionCancel = null; }
+        target.style.transform = '';
+        // Re-trigger the slide-up if it's already in the DOM but inactive.
+        requestAnimationFrame(() => target.classList.add('active'));
+    }
+}
+
 function closeAllSheets(fromHistory = false) {
     const isActive = document.querySelector('.bottom-sheet.active') !== null;
     if (!isActive) return;
