@@ -76,3 +76,8 @@ if (typeof maybeStartOnboarding === 'function') maybeStartOnboarding();
 
 // Gentle "time to back up" nudge when overdue (no-op unless enabled in Settings).
 if (typeof maybeBackupReminder === 'function') maybeBackupReminder();
+
+// First-run guided tour (no-op once seen; deferred while onboarding is showing).
+if (sysSettings.hasSeenOnboarding && typeof maybeStartCoachmarks === 'function') {
+    setTimeout(maybeStartCoachmarks, 600);
+}
