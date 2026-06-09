@@ -12,7 +12,7 @@ document.addEventListener('deviceready', function() {
         const activeEl       = document.activeElement;
         const isInputFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
         if (isInputFocused) { activeEl.blur(); return; }
-        if (document.querySelector('.bottom-sheet.active')) closeAllSheets();
+        if (typeof _sheetStack !== 'undefined' && _sheetStack.length) sheetBack();
         else if (navigator.app && navigator.app.exitApp) navigator.app.exitApp();
     }, false);
 
@@ -30,8 +30,8 @@ document.addEventListener('deviceready', function() {
 window.addEventListener('popstate', () => {
     const activeEl       = document.activeElement;
     const isInputFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
-    if (isInputFocused) { activeEl.blur(); history.pushState({ sheetOpen: true }, ''); return; }
-    if (document.querySelector('.bottom-sheet.active')) closeAllSheets(true);
+    if (isInputFocused) { activeEl.blur(); history.pushState({ sheet: '_input' }, ''); return; }
+    if (typeof _sheetStack !== 'undefined' && _sheetStack.length) _popSheet();
 });
 
 if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {

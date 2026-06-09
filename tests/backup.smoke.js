@@ -108,17 +108,29 @@ function check(name, cond, detail) {
   check('Transfer QR renders an image', qrImg && qrImg.startsWith('data:image'), `src=${qrImg}`);
   await page.evaluate(() => closeAllSheets(true));
 
-  // ── QR sheet opens ON TOP of Settings (stacking regression) ─────────────────
+  // ── QR sheet opens ON TOP of Settings, and Back returns to Settings ─────────
   await page.evaluate(() => openSettingsSheet());
   await wait(120);                       // let the settings sheet finish opening
   await page.evaluate(() => showBackupQR());
   await wait(200);
-  const stack = await page.evaluate(() => ({
+  const stack = await page.evaluate(() => {
+    const z = el => parseInt(getComputedStyle(document.getElementById(el)).zIndex) || 0;
+    return {
+      qrActive: document.getElementById('sheet-backupqr').classList.contains('active'),
+      qrAbove: z('sheet-backupqr') > z('sheet-settings')
+    };
+  });
+  check('QR sheet opened from Settings is active', stack.qrActive);
+  check('QR sheet paints above Settings (higher z-index)', stack.qrAbove);
+  // Going back from the QR sheet should return to Settings, not home.
+  await page.evaluate(() => sheetBack());
+  await wait(350);
+  const afterBack = await page.evaluate(() => ({
     qrActive: document.getElementById('sheet-backupqr').classList.contains('active'),
     settingsActive: document.getElementById('sheet-settings').classList.contains('active')
   }));
-  check('QR sheet opened from Settings is active', stack.qrActive);
-  check('Settings sheet is dismissed underneath (not stacked over QR)', !stack.settingsActive);
+  check('Back from QR closes the QR sheet', !afterBack.qrActive);
+  check('Back from QR returns to Settings (not home)', afterBack.settingsActive);
   await page.evaluate(() => closeAllSheets(true));
 
   // ── Reminder nudge ──────────────────────────────────────────────────────────

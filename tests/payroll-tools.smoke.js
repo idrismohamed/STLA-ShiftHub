@@ -150,6 +150,20 @@ function check(name, cond, detail) {
   }));
   check('Holiday explainer lists stat holidays + total', hol.rows >= 10 && hol.total, `rows=${hol.rows}`);
 
+  // ── Back-navigation: closing a child sheet returns to its parent ────────────
+  await page.evaluate(() => { closeAllSheets(true); openPayrollSheet(); openPayTools(); openCapTracker(); });
+  await wait(250);
+  const deep = await page.evaluate(() => ['sheet-payroll','sheet-paytools','sheet-captrack'].map(id => document.getElementById(id).classList.contains('active')));
+  check('Three sheets stacked (payroll → tools → caps)', deep[0] && deep[1] && deep[2], `active=${deep}`);
+  await page.evaluate(() => sheetBack());           // caps → tools
+  await wait(550);
+  const back1 = await page.evaluate(() => ({ caps: document.getElementById('sheet-captrack').classList.contains('active'), tools: document.getElementById('sheet-paytools').classList.contains('active'), pay: document.getElementById('sheet-payroll').classList.contains('active') }));
+  check('Back from Caps returns to Tools (pay dashboard still open)', !back1.caps && back1.tools && back1.pay, JSON.stringify(back1));
+  await page.evaluate(() => sheetBack());           // tools → payroll
+  await wait(550);
+  const back2 = await page.evaluate(() => ({ tools: document.getElementById('sheet-paytools').classList.contains('active'), pay: document.getElementById('sheet-payroll').classList.contains('active') }));
+  check('Back from Tools returns to the pay period sheet (not home)', !back2.tools && back2.pay, JSON.stringify(back2));
+
   check('Zero console/page errors during flow', errors.length === 0, errors.slice(0, 4).join(' | '));
 
   await browser.close();

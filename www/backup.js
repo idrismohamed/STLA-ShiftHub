@@ -31,7 +31,7 @@ function showBackupQR() {
         // Too much data for a single QR — fall back to file export.
         note.innerHTML = `Your backup is large (${payload.length.toLocaleString()} chars) and won't fit one QR code. Use <b>Export Backup (.json)</b> instead.`;
         note.style.color = 'var(--night)';
-        switchSheet('sheet-backupqr');
+        openSheet('sheet-backupqr');
         return;
     }
 
@@ -42,7 +42,7 @@ function showBackupQR() {
     host.appendChild(img);
     note.textContent = "On your other phone, open Shift Hub → Settings → Restore via QR, and scan this.";
     note.style.color = 'var(--text-muted)';
-    switchSheet('sheet-backupqr');
+    openSheet('sheet-backupqr');
 }
 
 /** Decompress + restore a scanned/typed payload. Returns true on success. */
@@ -62,7 +62,7 @@ let _scanStream = null, _scanRAF = null;
 
 function openScanSheet() {
     haptic();
-    switchSheet('sheet-scan');
+    openSheet('sheet-scan');
     startBackupScan();
 }
 
