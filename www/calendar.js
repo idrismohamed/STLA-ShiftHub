@@ -1599,8 +1599,9 @@ function renderAnalyticsDashboard(crew, logicalT) {
     const elTop = document.getElementById('pp-top-summary');
     if (elTop) elTop.innerHTML = `
 <div class="pp-top-wrap">
+  <div class="pp-top-tap" onclick="haptic(); openPayrollSheet(${displayPPIdx})" role="button" tabindex="0">
   <div class="an-flat-card">
-    <div class="an-flat-card-title">${topCardTitle} ${pastBadge}<span class="an-section-sub" style="text-transform:none;letter-spacing:0;font-size:10px">${brkStartLabel}–${brkEndLabel}</span></div>
+    <div class="an-flat-card-title">${topCardTitle} ${pastBadge}<span class="an-section-sub" style="text-transform:none;letter-spacing:0;font-size:10px">${brkStartLabel}–${brkEndLabel}</span><span class="pp-top-chev">›</span></div>
     <div class="an-pp-bar-labels"><span>Day ${dispPpDayDisplay} of 14</span><span>${isPastPP ? 'Complete' : isFuturePP ? 'Not started' : `${dispPpDaysLeft} day${dispPpDaysLeft !== 1 ? 's' : ''} left`}</span></div>
     <div class="an-progress" style="margin:5px 0 0"><div class="an-progress-fill" style="width:${dispPpPct}%;background:var(--accent)"></div></div>
   </div>
@@ -1618,6 +1619,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
       <div class="an-hero-value">${dispFatigueUsed.toFixed(1)}h</div>
       ${dispHoursMicro}
     </div>
+  </div>
   </div>
   <div class="pp-bars-section">
     <div class="ch-sub-label">Where Your Pay Goes <span class="ch-sub-val">Net ${f$(dispGross - dispT.total)}</span></div>

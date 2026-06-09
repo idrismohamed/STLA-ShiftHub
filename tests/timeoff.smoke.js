@@ -73,6 +73,14 @@ function check(name, cond, detail) {
   check('Vacation is no longer in the caps card', !/Vacation/.test(rings.capsText));
   check('Time Off card shows 3 rings (Vacation/Holiday/Drop)', rings.timeoff === 3, `timeoff=${rings.timeoff}`);
 
+  // Tapping the top summary card opens the relevant pay-period sheet.
+  await page.evaluate(() => document.querySelector('.pp-top-tap').click());
+  await wait(250);
+  const topTap = await page.evaluate(() => document.getElementById('sheet-payroll').classList.contains('active'));
+  check('Tapping the top summary card opens the pay-period sheet', topTap);
+  await page.evaluate(() => closeAllSheets(true));
+  await wait(200);
+
   // Tapping the Vacation ring opens the detail sheet with both vacation days.
   await page.evaluate(() => document.querySelectorAll('#chart-timeoff .ch-ring-cap')[0].click());
   await wait(250);

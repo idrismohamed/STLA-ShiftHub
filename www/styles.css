@@ -2196,3 +2196,8 @@ input, textarea, select, [contenteditable="true"] {
 .to-when { display: flex; flex-direction: column; font-size: 14px; font-weight: 700; color: var(--text); }
 .to-where { font-size: 11px; font-weight: 500; color: var(--text-muted); margin-top: 1px; }
 .to-detail { font-size: 14px; font-weight: 800; color: var(--off); white-space: nowrap; }
+
+/* ─── Tappable top pay-period summary ──────────────────────────────────────── */
+.pp-top-tap { cursor: pointer; border-radius: 16px; transition: transform 0.12s ease, opacity 0.12s ease; }
+.pp-top-tap:active { transform: scale(0.99); opacity: 0.92; }
+.pp-top-chev { float: right; color: var(--text-muted); font-size: 18px; font-weight: 800; line-height: 1; margin-left: 8px; }
