@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shift-hub-v30';
+const CACHE_NAME = 'shift-hub-v31';
 const urlsToCache = [
   './index.html',
   './styles.css',

@@ -2190,3 +2190,9 @@ input, textarea, select, [contenteditable="true"] {
     user-select: text;
     -webkit-touch-callout: default;
 }
+
+/* ─── Time-off usage detail ────────────────────────────────────────────────── */
+.to-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 11px 4px; border-bottom: 1px solid var(--glass-border); }
+.to-when { display: flex; flex-direction: column; font-size: 14px; font-weight: 700; color: var(--text); }
+.to-where { font-size: 11px; font-weight: 500; color: var(--text-muted); margin-top: 1px; }
+.to-detail { font-size: 14px; font-weight: 800; color: var(--off); white-space: nowrap; }
