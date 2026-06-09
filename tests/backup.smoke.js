@@ -68,6 +68,25 @@ function check(name, cond, detail) {
   check('qrcode generator available', libs.qr === 'function');
   check('jsQR scanner available', libs.jsqr === 'function');
 
+  // ── Native copy/paste menu suppressed (except inputs) ───────────────────────
+  const sel = await page.evaluate(() => {
+    const bodySel  = getComputedStyle(document.body).webkitUserSelect || getComputedStyle(document.body).userSelect;
+    const inp = document.querySelector('input');
+    const inpSel = inp ? (getComputedStyle(inp).webkitUserSelect || getComputedStyle(inp).userSelect) : 'text';
+    // contextmenu prevented on a non-input element?
+    const ev = new Event('contextmenu', { bubbles: true, cancelable: true });
+    document.querySelector('.app-header').dispatchEvent(ev);
+    const prevented = ev.defaultPrevented;
+    // ...but allowed inside an input
+    const ev2 = new Event('contextmenu', { bubbles: true, cancelable: true });
+    if (inp) inp.dispatchEvent(ev2);
+    return { bodySel, inpSel, prevented, inputAllowed: inp ? !ev2.defaultPrevented : true };
+  });
+  check('Body text is not selectable (no long-press menu)', sel.bodySel === 'none', `body=${sel.bodySel}`);
+  check('Inputs remain selectable/editable', sel.inpSel === 'text', `input=${sel.inpSel}`);
+  check('contextmenu suppressed outside inputs', sel.prevented);
+  check('contextmenu allowed inside inputs', sel.inputAllowed);
+
   // ── QR payload round-trip ───────────────────────────────────────────────────
   const payload = await page.evaluate(() => backupPayload());
   check('Backup payload is tagged + compressed', typeof payload === 'string' && payload.indexOf('SHB1:') === 0, `len=${payload.length}`);

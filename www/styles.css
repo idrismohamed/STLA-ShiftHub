@@ -2172,3 +2172,21 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
 .t4-v { font-size: 19px; font-weight: 800; color: var(--text); }
 .t4-refund { margin-top: 14px; padding: 14px 16px; border: 1.5px solid var(--off); border-radius: 14px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; font-weight: 700; color: var(--text); }
 .t4-refund b { font-size: 22px; }
+
+/* ─── Suppress the native long-press copy/paste & callout menu app-wide ──────── */
+/* Text isn't selectable anywhere by default (so long-press shows no selection
+   menu), but real input fields stay fully editable. */
+html, body {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+input, textarea, select, [contenteditable="true"] {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+}

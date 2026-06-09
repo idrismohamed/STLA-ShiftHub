@@ -34,6 +34,12 @@ window.addEventListener('popstate', () => {
     if (typeof _sheetStack !== 'undefined' && _sheetStack.length) _popSheet();
 });
 
+// Suppress the native long-press / right-click context (copy-paste) menu
+// everywhere except real input fields, where the paste menu is still useful.
+document.addEventListener('contextmenu', function (e) {
+    if (!e.target.closest('input, textarea, [contenteditable="true"]')) e.preventDefault();
+}, false);
+
 if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(err => console.warn('Service worker registration failed:', err));
