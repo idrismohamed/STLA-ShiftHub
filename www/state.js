@@ -47,6 +47,7 @@ function initDefaults() {
 if (sysSettings.syncCalendar  === undefined) sysSettings.syncCalendar  = false;
     if (sysSettings.smartAlarms   === undefined) sysSettings.smartAlarms   = false;
     if (sysSettings.hasSeenOnboarding === undefined) sysSettings.hasSeenOnboarding = false;
+    if (sysSettings.backupReminderDays === undefined) sysSettings.backupReminderDays = 0;
 }
 
 initDefaults();

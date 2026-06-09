@@ -31,7 +31,8 @@ function openSettingsSheet() {
         'setting-vac-end':      { el: null, key: 'vacationEndDate' },
         'setting-default-crew': { el: null, key: 'defaultCrew' },
         'setting-start-year':   { el: null, key: 'startYear' },
-        'setting-end-year':     { el: null, key: 'endYear' }
+        'setting-end-year':     { el: null, key: 'endYear' },
+        'setting-backup-reminder': { el: null, key: 'backupReminderDays', fmt: v => String(v || 0) }
     };
     for (const [id, cfg] of Object.entries(fields)) {
         const el = document.getElementById(id);

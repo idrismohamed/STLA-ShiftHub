@@ -60,48 +60,97 @@ function showToastWithUndo(msg, dateKey, payload) {
     };
 }
 
-function openSheet(id) {
-    document.body.style.overflow = 'hidden';
+// ── Sheet navigation stack ────────────────────────────────────────────────
+// Sheets form a back-stack. Opening B from A stacks B above A (A stays visible
+// underneath); going back pops B and reveals A; only when the last sheet closes
+// do we return home. Each opened sheet gets an incrementing z-index so a child
+// always paints above its parent regardless of DOM order.
+let _sheetStack = [];
+
+function _ensureOverlay() {
     const overlay = document.getElementById('overlay');
-    const sheet   = document.getElementById(id);
-    // Cancel any in-progress animation and clear leftover transform so the
-    // CSS bottom-transition can open the sheet from the correct position.
-    if (sheet) {
-        if (sheet._motionCancel) { sheet._motionCancel(); sheet._motionCancel = null; }
-        sheet.style.transform = '';
-    }
-    if (overlay) { overlay.style.display = 'block'; overlay.style.opacity = '0'; }
-    setTimeout(() => {
-        if (overlay) {
-            if (overlay._motionCancel) { overlay._motionCancel(); overlay._motionCancel = null; }
-            const oa = window.Motion?.animate(overlay, { opacity: 1 }, { duration: 0.3, easing: 'ease' });
-            if (oa) overlay._motionCancel = () => oa.cancel();
-            else overlay.style.opacity = '1';
-        }
-        if (sheet) sheet.classList.add('active');
-    }, 10);
-    history.pushState({ sheetOpen: true }, '');
+    if (!overlay) return;
+    if (overlay._motionCancel) { overlay._motionCancel(); overlay._motionCancel = null; }
+    overlay.style.display = 'block';
+    const a = window.Motion?.animate(overlay, { opacity: 1 }, { duration: 0.25, easing: 'ease' });
+    if (a) overlay._motionCancel = () => a.cancel();
+    else overlay.style.opacity = '1';
 }
 
+function _hideOverlay() {
+    const overlay = document.getElementById('overlay');
+    if (!overlay) return;
+    if (overlay._motionCancel) { overlay._motionCancel(); overlay._motionCancel = null; }
+    overlay.style.opacity = '0';
+    overlay.style.transition = 'opacity 0.3s';
+    setTimeout(() => { overlay.style.display = 'none'; overlay.style.transition = ''; }, 300);
+}
+
+function openSheet(id) {
+    if (_sheetStack[_sheetStack.length - 1] === id) return; // already on top
+    document.body.style.overflow = 'hidden';
+    const target = document.getElementById(id);
+    if (!target) return;
+    if (target._motionCancel) { target._motionCancel(); target._motionCancel = null; }
+    target.style.transform = '';
+    target.style.zIndex = String(100 + _sheetStack.length); // sit above the parent sheet
+    _ensureOverlay();
+    setTimeout(() => target.classList.add('active'), 10);
+    _sheetStack.push(id);
+    history.pushState({ sheet: id }, '');
+}
+
+/**
+ * Pop the top sheet (slide it down, reveal the parent). This is the single place
+ * that mutates the stack on "back"; it's driven by popstate so that buttons, the
+ * overlay tap, swipe-down and hardware back all funnel through history.back().
+ */
+function _popSheet() {
+    if (!_sheetStack.length) return;
+    const top = _sheetStack.pop();
+    if (top === 'sheet-scan' && typeof stopBackupScan === 'function') stopBackupScan();
+    const el = document.getElementById(top);
+    if (el) {
+        if (el._motionCancel) { el._motionCancel(); el._motionCancel = null; }
+        const finalize = () => {
+            el._motionCancel = null;
+            el.style.transition = 'none';
+            el.classList.remove('active');
+            el.style.transform = '';
+            el.style.zIndex = '';
+            requestAnimationFrame(() => { el.style.transition = ''; });
+        };
+        el.style.transition = 'none';
+        const a = window.Motion?.animate(el, { transform: 'translateY(110%)' }, { duration: 0.28, easing: [0.4, 0, 0.6, 1] });
+        if (a) { el._motionCancel = () => a.cancel(); a.then(finalize); }
+        else {
+            el.style.transition = 'transform 0.28s cubic-bezier(0.4,0,0.6,1)';
+            el.style.transform = 'translateY(110%)';
+            el.addEventListener('transitionend', function h() { el.removeEventListener('transitionend', h); finalize(); }, { once: true });
+        }
+    }
+    if (_sheetStack.length) _ensureOverlay();          // parent revealed; restore dim
+    else { document.body.style.overflow = ''; _hideOverlay(); }
+}
+
+/** Go back one sheet (Close/Cancel buttons, overlay tap, swipe-down, hardware back). */
+function sheetBack() { if (_sheetStack.length) history.back(); }
+
+/** Close the entire stack back to the home screen (used after save/restore). */
 function closeAllSheets(fromHistory = false) {
-    const isActive = document.querySelector('.bottom-sheet.active') !== null;
-    if (!isActive) return;
+    const depth = _sheetStack.length;
+    if (!depth && !document.querySelector('.bottom-sheet.active')) return;
+    if (typeof stopBackupScan === 'function') stopBackupScan();
+    _sheetStack = [];
     document.body.style.overflow = '';
     document.querySelectorAll('.bottom-sheet').forEach(s => {
         if (s._motionCancel) { s._motionCancel(); s._motionCancel = null; }
         s.classList.remove('active');
         s.style.transform = '';
+        s.style.zIndex = '';
     });
-    const overlay = document.getElementById('overlay');
-    if (overlay) {
-        if (overlay._motionCancel) { overlay._motionCancel(); overlay._motionCancel = null; }
-        overlay.style.opacity = '0';
-        overlay.style.transition = 'opacity 0.3s';
-    }
-    setTimeout(() => {
-        if (overlay) { overlay.style.display = 'none'; overlay.style.transition = ''; }
-    }, 300);
-    if (fromHistory !== true) history.back();
+    _hideOverlay();
+    if (fromHistory !== true && depth > 0) history.go(-depth);
 }
 
 // ── Sheet drag-to-dismiss ─────────────────────────────────────────────────
@@ -171,48 +220,14 @@ function closeAllSheets(fromHistory = false) {
 
     function dismiss(sheet) {
         haptic();
-        const overlay = document.getElementById('overlay');
-        if (sheet._motionCancel) { sheet._motionCancel(); sheet._motionCancel = null; }
-        sheet.style.transition = 'none';
-
-        const anim = window.Motion?.animate(sheet,
-            { transform: 'translateY(110%)' },
-            { duration: 0.3, easing: [0.4, 0, 0.6, 1] }
-        );
-        if (anim) {
-            sheet._motionCancel = () => anim.cancel();
-            anim.then(() => {
-                sheet._motionCancel = null;
-                // Disable the CSS bottom transition so removing active doesn't
-                // trigger a second slide-out animation after Motion already dismissed.
-                sheet.style.transition = 'none';
-                sheet.classList.remove('active');  // bottom: -100% (instant, no CSS transition)
-                sheet.style.transform = '';         // safe to clear — sheet is off-screen via bottom
-                requestAnimationFrame(() => { sheet.style.transition = ''; }); // re-enable next frame
-                document.body.style.overflow = '';
-                if (overlay) overlay.style.display = 'none';
-                history.back();
-            });
+        // Hand off to the nav stack: going back animates this (top) sheet out
+        // from its current dragged position and reveals the parent, or returns
+        // home when it's the last sheet. Falls back to a local close if the
+        // dragged sheet isn't the tracked top.
+        if (_sheetStack.length && _sheetStack[_sheetStack.length - 1] === sheet.id) {
+            sheetBack();
         } else {
-            sheet.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.6,1)';
-            sheet.style.transform  = 'translateY(110%)';
-            sheet.addEventListener('transitionend', function h() {
-                sheet.removeEventListener('transitionend', h);
-                sheet.style.transition = 'none';
-                sheet.classList.remove('active');
-                sheet.style.transform = '';
-                requestAnimationFrame(() => { sheet.style.transition = ''; });
-                document.body.style.overflow = '';
-                if (overlay) { overlay.style.display = 'none'; }
-                history.back();
-            }, { once: true });
-        }
-
-        if (overlay) {
-            _cancelOverlay(overlay);
-            const oa = window.Motion?.animate(overlay, { opacity: 0 }, { duration: 0.22, easing: 'ease' });
-            if (oa) overlay._motionCancel = () => oa.cancel();
-            else { overlay.style.transition = 'opacity 0.22s ease'; overlay.style.opacity = '0'; }
+            closeAllSheets();
         }
     }
 

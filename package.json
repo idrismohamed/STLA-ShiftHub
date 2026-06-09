@@ -12,7 +12,12 @@
     "run:browser": "cordova run browser",
     "add:platforms": "cordova platform add android && cordova platform add ios",
     "add:plugins": "cordova plugin add cordova-plugin-device cordova-plugin-statusbar cordova-plugin-x-socialsharing cordova-plugin-local-notification",
-    "test:onboarding": "node tests/onboarding.smoke.js"
+    "test:onboarding": "node tests/onboarding.smoke.js",
+    "test:payroll": "node tests/payroll-tools.smoke.js",
+    "test:backup": "node tests/backup.smoke.js",
+    "test:timeoff": "node tests/timeoff.smoke.js",
+    "test:engine": "node tests/payroll-engine.test.js",
+    "test": "npm run test:engine && npm run test:onboarding && npm run test:payroll && npm run test:backup && npm run test:timeoff"
   },
   "keywords": [
     "cordova",

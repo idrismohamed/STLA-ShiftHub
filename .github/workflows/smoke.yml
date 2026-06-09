@@ -1,4 +1,4 @@
-name: Onboarding smoke test
+name: Smoke tests
 
 on:
   push:
@@ -21,5 +21,5 @@ jobs:
       - name: Install Puppeteer
         run: npm install --no-save --no-audit --no-fund puppeteer@^25.1.0
 
-      - name: Run onboarding smoke test
-        run: npm run test:onboarding
+      - name: Run smoke tests
+        run: npm test

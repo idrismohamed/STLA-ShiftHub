@@ -1316,6 +1316,13 @@ function renderAnalyticsDashboard(crew, logicalT) {
         }
     }
 
+    // Fold in manually-logged bonus / VCP payments for the year so YTD gross and
+    // the CPP/EI cap rings reflect them too.
+    if (typeof extraPaymentsYTD === 'function') {
+        const _xp = extraPaymentsYTD(targetYear);
+        ytdGross += _xp.gross; ytdCPP += _xp.cpp; ytdEI += _xp.ei;
+    }
+
     const t = calculateTaxes(gross, currentPP, targetYear);
 
     // ── Month stats ──────────────────────────────────────────
@@ -1599,8 +1606,9 @@ function renderAnalyticsDashboard(crew, logicalT) {
     const elTop = document.getElementById('pp-top-summary');
     if (elTop) elTop.innerHTML = `
 <div class="pp-top-wrap">
+  <div class="pp-top-tap" onclick="haptic(); openPayrollSheet(${displayPPIdx})" role="button" tabindex="0">
   <div class="an-flat-card">
-    <div class="an-flat-card-title">${topCardTitle} ${pastBadge}<span class="an-section-sub" style="text-transform:none;letter-spacing:0;font-size:10px">${brkStartLabel}–${brkEndLabel}</span></div>
+    <div class="an-flat-card-title">${topCardTitle} ${pastBadge}<span class="an-section-sub" style="text-transform:none;letter-spacing:0;font-size:10px">${brkStartLabel}–${brkEndLabel}</span><span class="pp-top-chev">›</span></div>
     <div class="an-pp-bar-labels"><span>Day ${dispPpDayDisplay} of 14</span><span>${isPastPP ? 'Complete' : isFuturePP ? 'Not started' : `${dispPpDaysLeft} day${dispPpDaysLeft !== 1 ? 's' : ''} left`}</span></div>
     <div class="an-progress" style="margin:5px 0 0"><div class="an-progress-fill" style="width:${dispPpPct}%;background:var(--accent)"></div></div>
   </div>
@@ -1618,6 +1626,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
       <div class="an-hero-value">${dispFatigueUsed.toFixed(1)}h</div>
       ${dispHoursMicro}
     </div>
+  </div>
   </div>
   <div class="pp-bars-section">
     <div class="ch-sub-label">Where Your Pay Goes <span class="ch-sub-val">Net ${f$(dispGross - dispT.total)}</span></div>
@@ -1685,15 +1694,9 @@ function renderAnalyticsDashboard(crew, logicalT) {
   </div>
 
   <div class="an-flat-card">
-    <div class="an-flat-card-title">Time Off</div>
-    <div class="an-row"><span>Vacation Used</span><strong style="color:#00bcd4">${fH(vacUsed)}</strong></div>
-    <div class="an-row"><span>Vacation Remaining</span><strong>${fH(vacRem)}</strong></div>
-    <div class="an-progress-meta">${vacPct}% used · ${vacStart} → ${vacEnd}</div>
-    <div class="an-sep"></div>
-    <div class="an-row"><span>Banked Lieu Days</span><strong style="color:#fbbc04">${lieuBanked} day${lieuBanked !== 1 ? 's' : ''}</strong></div>
-    ${lieuTaken > 0 ? `<div class="an-row"><span>Lieu Taken (${targetYear})</span><strong style="color:var(--text-muted)">${lieuTaken}d</strong></div>` : ''}
-    <div class="an-row"><span>Drop Off Taken (${targetYear})</span><strong style="color:var(--day)">${dropOffTaken}d</strong></div>
-    <div class="an-row"><span>Drop Paid Taken (${targetYear})</span><strong style="color:var(--off)">${dropPaidTaken}d</strong></div>
+    <div class="an-flat-card-title">Time Off <span class="an-section-sub" style="text-transform:none;letter-spacing:0">tap a ring for details</span></div>
+    <div id="chart-timeoff" class="ch-rings"></div>
+    <div class="an-progress-meta">Vacation ${vacPct}% used · ${vacStart} → ${vacEnd}</div>
   </div>
 
 </div>`;
@@ -1723,11 +1726,81 @@ function renderAnalyticsDashboard(crew, logicalT) {
         ], thisMonthName, prevMonthName);
         chartRings('chart-rings', [
             ['CPP', `${k$(ytdCPP)} / ${k$(annCPPMax)}`, annCPPMax ? ytdCPP / annCPPMax : 0, '--c-cpp'],
-            ['EI',  `${k$(ytdEI)} / ${k$(annEIMax)}`,   annEIMax  ? ytdEI / annEIMax   : 0, '--c-ei'],
-            ['Vacation', `${vacUsed.toFixed(0)}h / ${vacLimit}h`, vacLimit ? vacUsed / vacLimit : 0, '--off']
+            ['EI',  `${k$(ytdEI)} / ${k$(annEIMax)}`,   annEIMax  ? ytdEI / annEIMax   : 0, '--c-ei']
         ]);
+        // Time-off rings — separate from the contribution caps, and each is
+        // tappable to list when/where that allowance was used.
+        const lieuEarned = lieuTaken + lieuBanked;
+        const dropTotal  = dropOffTaken + dropPaidTaken;
+        chartRings('chart-timeoff', [
+            ['Vacation', `${Math.round(vacRem)}h left`, vacLimit ? vacUsed / vacLimit : 0, '#00bcd4'],
+            ['Holiday',  `${lieuBanked} banked`,        lieuEarned ? lieuTaken / lieuEarned : 0, '#fbbc04'],
+            ['Drop',     `${dropTotal} used`,           dropTotal ? dropPaidTaken / dropTotal : 0, '--c-net']
+        ]);
+        const _toHost = document.getElementById('chart-timeoff');
+        if (_toHost) {
+            const _types = ['vacation', 'lieu', 'drop'];
+            _toHost.querySelectorAll('.ch-ring-cap').forEach((c, i) => {
+                c.style.cursor = 'pointer';
+                c.onclick = () => openTimeOffDetail(_types[i]);
+            });
+        }
         chartTrend(trendSeries);
     }
+}
+
+/**
+ * List when/where a time-off allowance (vacation / lieu / drop) has been used,
+ * in a detail sheet. Triggered by tapping a Time Off ring on the dashboard.
+ * @param {'vacation'|'lieu'|'drop'} type
+ */
+function openTimeOffDetail(type) {
+    haptic();
+    const crew = (document.getElementById('crew-select') || {}).value || sysSettings.defaultCrew;
+    const meta = {
+        vacation: { title: '🏖️ Vacation Days',     unit: 'h' },
+        lieu:     { title: '🏛️ Lieu (Holiday) Days', unit: 'd' },
+        drop:     { title: '💧 Drop Days',           unit: 'd' }
+    }[type] || { title: 'Time Off', unit: '' };
+
+    const match = ex =>
+        type === 'vacation' ? (ex.type === 'Vacation' || (ex.vacHours > 0 && ex.type !== 'Off')) :
+        type === 'lieu'     ? ex.type === 'Lieu' :
+        type === 'drop'     ? (ex.type === 'DropOff' || ex.type === 'DropPaid') : false;
+
+    const days = Object.keys(extraShifts).filter(d => match(extraShifts[d])).sort().reverse();
+    const titleEl = document.getElementById('timeoff-detail-title');
+    const host    = document.getElementById('timeoff-detail-content');
+    if (titleEl) titleEl.textContent = meta.title;
+    if (!host) return;
+
+    if (!days.length) {
+        host.innerHTML = `<div class="vf-hint">None logged yet.</div>`;
+        openSheet('sheet-timeoff-detail');
+        return;
+    }
+
+    let total = 0;
+    host.innerHTML = days.map(d => {
+        const ex   = extraShifts[d];
+        const u    = Date.UTC(+d.substring(0, 4), +d.substring(5, 7) - 1, +d.substring(8, 10));
+        const base = getShiftForCrew(getPIndex(u), crew);
+        const baseLabel = base === 'D' ? 'Day shift' : base === 'N' ? 'Night shift' : 'Off day';
+        const when = new Date(u).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+        let detail;
+        if (type === 'vacation') {
+            const h = ex.vacHours !== undefined ? ex.vacHours : (ex.startTime && ex.endTime ? getDuration(ex.startTime, ex.endTime) : 12);
+            total += h; detail = `${h}h`;
+        } else if (type === 'drop') {
+            total += 1; detail = ex.type === 'DropPaid' ? 'Paid' : 'Unpaid';
+        } else {
+            total += 1; detail = '1 day';
+        }
+        return `<div class="to-row"><div class="to-when">${when}<span class="to-where">covers your ${baseLabel}</span></div><div class="to-detail">${detail}</div></div>`;
+    }).join('') +
+    `<div class="cap-foot">${days.length} entr${days.length === 1 ? 'y' : 'ies'} · total ${meta.unit === 'h' ? total + 'h' : total + ' day' + (total !== 1 ? 's' : '')}</div>`;
+
+    openSheet('sheet-timeoff-detail');
 }
 
 // ── Count-up animation for hero pay figures ───────────────────────────────────

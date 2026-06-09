@@ -12,7 +12,7 @@ document.addEventListener('deviceready', function() {
         const activeEl       = document.activeElement;
         const isInputFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
         if (isInputFocused) { activeEl.blur(); return; }
-        if (document.querySelector('.bottom-sheet.active')) closeAllSheets();
+        if (typeof _sheetStack !== 'undefined' && _sheetStack.length) sheetBack();
         else if (navigator.app && navigator.app.exitApp) navigator.app.exitApp();
     }, false);
 
@@ -30,9 +30,15 @@ document.addEventListener('deviceready', function() {
 window.addEventListener('popstate', () => {
     const activeEl       = document.activeElement;
     const isInputFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
-    if (isInputFocused) { activeEl.blur(); history.pushState({ sheetOpen: true }, ''); return; }
-    if (document.querySelector('.bottom-sheet.active')) closeAllSheets(true);
+    if (isInputFocused) { activeEl.blur(); history.pushState({ sheet: '_input' }, ''); return; }
+    if (typeof _sheetStack !== 'undefined' && _sheetStack.length) _popSheet();
 });
+
+// Suppress the native long-press / right-click context (copy-paste) menu
+// everywhere except real input fields, where the paste menu is still useful.
+document.addEventListener('contextmenu', function (e) {
+    if (!e.target.closest('input, textarea, [contenteditable="true"]')) e.preventDefault();
+}, false);
 
 if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
     window.addEventListener('load', () => {
@@ -67,3 +73,6 @@ renderCalendar();
 
 // First-run setup wizard (no-op for returning users).
 if (typeof maybeStartOnboarding === 'function') maybeStartOnboarding();
+
+// Gentle "time to back up" nudge when overdue (no-op unless enabled in Settings).
+if (typeof maybeBackupReminder === 'function') maybeBackupReminder();
