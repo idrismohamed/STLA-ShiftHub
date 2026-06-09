@@ -1316,6 +1316,13 @@ function renderAnalyticsDashboard(crew, logicalT) {
         }
     }
 
+    // Fold in manually-logged bonus / VCP payments for the year so YTD gross and
+    // the CPP/EI cap rings reflect them too.
+    if (typeof extraPaymentsYTD === 'function') {
+        const _xp = extraPaymentsYTD(targetYear);
+        ytdGross += _xp.gross; ytdCPP += _xp.cpp; ytdEI += _xp.ei;
+    }
+
     const t = calculateTaxes(gross, currentPP, targetYear);
 
     // ── Month stats ──────────────────────────────────────────

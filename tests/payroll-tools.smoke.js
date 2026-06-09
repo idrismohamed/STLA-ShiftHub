@@ -150,6 +150,38 @@ function check(name, cond, detail) {
   }));
   check('Holiday explainer lists stat holidays + total', hol.rows >= 10 && hol.total, `rows=${hol.rows}`);
 
+  // ── Bonus / VCP extra payments ──────────────────────────────────────────────
+  await page.evaluate(() => { closeAllSheets(true); openPayrollSheet(); openPayTools(); openExtraPayments(); });
+  await wait(250);
+  await page.evaluate(() => {
+    selectExtraType('Bonus');
+    document.getElementById('xp-date').value  = '2026-02-14';
+    document.getElementById('xp-gross').value = '5000';
+    document.getElementById('xp-net').value   = '3200';
+    document.getElementById('xp-tax').value   = '1500';
+    document.getElementById('xp-cpp').value   = '250';
+    document.getElementById('xp-ei').value    = '50';
+    addExtraPayment();
+  });
+  await wait(200);
+  const xp = await page.evaluate(() => {
+    const all = loadExtraPayments(); const ytd = extraPaymentsYTD(2026);
+    return { count: all.length, type: all[0] && all[0].type, gross: ytd.gross, cpp: ytd.cpp, rows: document.querySelectorAll('#xp-list .xp-row').length };
+  });
+  check('Bonus/VCP payment is saved and listed', xp.count === 1 && xp.type === 'Bonus' && xp.rows === 1, `count=${xp.count} rows=${xp.rows}`);
+  check('extraPaymentsYTD sums the payment', xp.gross === 5000 && xp.cpp === 250, `gross=${xp.gross} cpp=${xp.cpp}`);
+
+  const capXp = await page.evaluate(() => computeYearCaps(sysSettings.defaultCrew, Math.floor((Date.UTC(2026,5,8)-basePPStartUTC)/MS_PP), 2026).cpp1.ytd);
+  check('Cap tracker folds the bonus CPP into YTD', capXp >= 250, `cpp1Ytd=${capXp.toFixed(0)}`);
+
+  await page.evaluate(() => { closeAllSheets(true); openT4Estimate(); });
+  await wait(200);
+  const t4txt = await page.evaluate(() => document.getElementById('t4-content').textContent);
+  check('T4 estimate notes the logged bonus/VCP', /logged bonus\/VCP/.test(t4txt));
+
+  await page.evaluate(() => { const all = loadExtraPayments(); deleteExtraPayment(all[0].id); });
+  check('Payment can be deleted', (await page.evaluate(() => loadExtraPayments().length)) === 0);
+
   // ── Back-navigation: closing a child sheet returns to its parent ────────────
   await page.evaluate(() => { closeAllSheets(true); openPayrollSheet(); openPayTools(); openCapTracker(); });
   await wait(250);

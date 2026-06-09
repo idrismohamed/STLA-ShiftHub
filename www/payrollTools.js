@@ -102,7 +102,9 @@ function computeYTDModel(crew, currentPP, targetYear) {
 function computeYearCaps(crew, currentPP, targetYear) {
     const tbl = getTaxYear(targetYear);
     const ytd = computeYTDModel(crew, currentPP, targetYear);
-    const ytdCPP1 = ytd.cpp1, ytdCPP2 = ytd.cpp2, ytdEI = ytd.ei, ppsDone = ytd.ppsDone;
+    // Bonus / VCP contributions count toward the same annual CPP/EI maximums.
+    const xtra = extraPaymentsYTD(targetYear);
+    const ytdCPP1 = ytd.cpp1 + xtra.cpp, ytdCPP2 = ytd.cpp2, ytdEI = ytd.ei + xtra.ei, ppsDone = ytd.ppsDone;
 
     const avgGross = ppsDone > 0 ? ytd.gross / ppsDone : 0;
     const per = calculateTaxes(avgGross, currentPP + 1, targetYear); // representative future PP
@@ -394,11 +396,14 @@ function renderT4Estimate() {
     }
     if (ppsDone <= 0) { host.innerHTML = `<div class="vf-hint">No pay periods yet this year to estimate from.</div>`; return; }
 
-    const factor = ppCount / ppsDone;                 // project YTD → full year
-    const annGross = gross * factor;
-    const annWithheld = taxWithheld * factor;
-    const annCPP = Math.min(cpp * factor, tbl.annCPPMax + tbl.annCPP2Max);
-    const annEI  = Math.min(ei  * factor, tbl.annEIMax);
+    const factor = ppCount / ppsDone;                 // project regular pay → full year
+    // Bonus / VCP payments are discrete (not per-pay), so add the year's logged
+    // total on top of the projected regular pay rather than scaling it.
+    const xtra = extraPaymentsYTD(targetYear);
+    const annGross = gross * factor + xtra.gross;
+    const annWithheld = taxWithheld * factor + xtra.tax;
+    const annCPP = Math.min(cpp * factor + xtra.cpp, tbl.annCPPMax + tbl.annCPP2Max);
+    const annEI  = Math.min(ei  * factor + xtra.ei,  tbl.annEIMax);
 
     // Annual income tax actually owed on the projected gross.
     const owedPP = calculateTaxes(annGross / ppCount, 0, targetYear);
@@ -408,10 +413,101 @@ function renderT4Estimate() {
     const box = (label, val) => `<div class="t4-box"><span class="t4-k">${label}</span><span class="t4-v num">$${val.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>`;
     const refundColor = refund >= 0 ? 'var(--off)' : 'var(--night)';
     const refundWord  = refund >= 0 ? 'refund' : 'balance owing';
+    const xtraNote = xtra.count > 0 ? ` Includes ${xtra.count} logged bonus/VCP payment${xtra.count > 1 ? 's' : ''}.` : '';
 
     host.innerHTML =
         `<div class="t4-grid">${box('Box 14 · Employment income', annGross)}${box('Box 22 · Income tax deducted', annWithheld)}${box('Box 16 · CPP contributions', annCPP)}${box('Box 18 · EI premiums', annEI)}</div>` +
         `<div class="t4-refund" style="border-color:${refundColor}"><span>Estimated ${refundWord}</span><b style="color:${refundColor}">$${Math.abs(refund).toLocaleString(undefined, { maximumFractionDigits: 0 })}</b></div>` +
-        `<div class="cap-foot">Projected from ${source} (×${factor.toFixed(2)} to a full year). ${actual.count > 0 ? '' : 'Save real paystubs (🔍 Verify → 💾) for a sharper estimate.'} Not tax advice.</div>`;
+        `<div class="cap-foot">Projected from ${source} (×${factor.toFixed(2)} to a full year).${xtraNote} ${actual.count > 0 ? '' : 'Save real paystubs (🔍 Verify → 💾) for a sharper estimate.'} Not tax advice.</div>`;
 }
 function openT4Estimate() { renderT4Estimate(); openSheet('sheet-t4'); }
+
+// ─── Bonus & VCP payments ────────────────────────────────────────────────────
+// One-off / quarterly payments outside the regular pay schedule (annual bonus,
+// quarterly VCP). Logged manually with their gross/net/tax/CPP/EI so they feed
+// YTD totals, the contribution-cap projection and the T4/refund estimate.
+function loadExtraPayments() { try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.EXTRA_PAY)) || []; } catch (e) { return []; } }
+function saveExtraPayments(arr) { try { localStorage.setItem(STORAGE_KEYS.EXTRA_PAY, JSON.stringify(arr)); } catch (e) {} }
+
+/** Sum logged bonus/VCP payments for a calendar year. */
+function extraPaymentsYTD(year) {
+    const acc = { gross: 0, net: 0, tax: 0, cpp: 0, ei: 0, count: 0 };
+    loadExtraPayments().forEach(p => {
+        if (parseInt((p.date || '').substring(0, 4)) !== year) return;
+        acc.gross += +p.gross || 0; acc.net += +p.net || 0; acc.tax += +p.tax || 0;
+        acc.cpp += +p.cpp || 0; acc.ei += +p.ei || 0; acc.count++;
+    });
+    return acc;
+}
+
+/** Read the add-payment form, validate, store, and refresh the list. */
+function addExtraPayment() {
+    const num = id => { const v = parseFloat((document.getElementById(id) || {}).value); return isNaN(v) ? 0 : v; };
+    const date = (document.getElementById('xp-date') || {}).value;
+    const gross = num('xp-gross');
+    if (!date)  { showToast('Pick a payment date', 'error'); return; }
+    if (!gross) { showToast('Enter at least the gross amount', 'error'); return; }
+    const entry = {
+        id: Date.now(),
+        type: window._xpType || 'Bonus',
+        date,
+        gross,
+        net: num('xp-net'),
+        tax: num('xp-tax'),
+        cpp: num('xp-cpp'),
+        ei:  num('xp-ei')
+    };
+    const all = loadExtraPayments();
+    all.push(entry);
+    saveExtraPayments(all);
+    haptic();
+    showToast(`${entry.type} payment saved`);
+    ['xp-gross', 'xp-net', 'xp-tax', 'xp-cpp', 'xp-ei'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    renderExtraPayments();
+}
+
+function deleteExtraPayment(id) {
+    haptic();
+    saveExtraPayments(loadExtraPayments().filter(p => p.id !== id));
+    renderExtraPayments();
+}
+
+/** Set the Bonus/VCP type toggle. */
+function selectExtraType(t) {
+    window._xpType = t;
+    haptic();
+    ['Bonus', 'VCP'].forEach(x => {
+        const b = document.getElementById('xp-type-' + x);
+        if (b) b.classList.toggle('active', x === t);
+    });
+}
+
+function renderExtraPayments() {
+    const host = document.getElementById('xp-list');
+    if (!host) return;
+    const all = loadExtraPayments().slice().sort((a, b) => (a.date < b.date ? 1 : -1));
+    if (!all.length) { host.innerHTML = `<div class="vf-hint">No bonus or VCP payments logged yet.</div>`; return; }
+    const byYear = {};
+    all.forEach(p => { const y = (p.date || '').substring(0, 4); (byYear[y] = byYear[y] || []).push(p); });
+    host.innerHTML = Object.keys(byYear).sort().reverse().map(y => {
+        const tot = byYear[y].reduce((s, p) => s + (+p.gross || 0), 0);
+        const rows = byYear[y].map(p => {
+            const when = new Date(p.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            return `<div class="xp-row">
+                <div class="xp-when"><span class="xp-type xp-${p.type}">${p.type}</span>${when}</div>
+                <div class="xp-amt num">$${(+p.gross || 0).toFixed(0)}<span class="xp-net">net $${(+p.net || 0).toFixed(0)}</span></div>
+                <button class="xp-del" onclick="deleteExtraPayment(${p.id})" aria-label="Delete">✕</button>
+            </div>`;
+        }).join('');
+        return `<div class="xp-year">${y} · <b>$${tot.toLocaleString(undefined, { maximumFractionDigits: 0 })}</b> gross</div>${rows}`;
+    }).join('');
+}
+
+function openExtraPayments() {
+    if (!window._xpType) window._xpType = 'Bonus';
+    selectExtraType(window._xpType);
+    const d = document.getElementById('xp-date');
+    if (d && !d.value) d.value = new Date().toISOString().slice(0, 10);
+    renderExtraPayments();
+    openSheet('sheet-extra-pay');
+}

@@ -20,7 +20,8 @@ const STORAGE_KEYS = {
     SYNCED_EVENTS: 'kingDrewSyncedEventsV20',
     TAX_TABLES:    'kingDrewTaxTablesV20',
     TAX_FETCHED:   'kingDrewTaxFetchedV20',
-    PAYSTUBS:      'kingDrewPaystubsV20'
+    PAYSTUBS:      'kingDrewPaystubsV20',
+    EXTRA_PAY:     'kingDrewExtraPayV20'
 };
 
 const TAX_TABLES_URL = 'https://raw.githubusercontent.com/idrismohamed/STLA-ShiftHub/main/tax-tables.json';

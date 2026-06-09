@@ -2201,3 +2201,15 @@ input, textarea, select, [contenteditable="true"] {
 .pp-top-tap { cursor: pointer; border-radius: 16px; transition: transform 0.12s ease, opacity 0.12s ease; }
 .pp-top-tap:active { transform: scale(0.99); opacity: 0.92; }
 .pp-top-chev { float: right; color: var(--text-muted); font-size: 18px; font-weight: 800; line-height: 1; margin-left: 8px; }
+
+/* ─── Bonus / VCP payments list ────────────────────────────────────────────── */
+.xp-year { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; margin: 14px 0 4px; }
+.xp-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px; padding: 10px 4px; border-bottom: 1px solid var(--glass-border); }
+.xp-when { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--text); }
+.xp-type { font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.4px; }
+.xp-type.xp-Bonus { background: rgba(124, 58, 237, 0.16); color: #a78bfa; }
+.xp-type.xp-VCP { background: rgba(0, 188, 212, 0.16); color: #00bcd4; }
+.xp-amt { display: flex; flex-direction: column; align-items: flex-end; font-size: 14px; font-weight: 800; color: var(--text); line-height: 1.2; }
+.xp-net { font-size: 10px; font-weight: 600; color: var(--text-muted); }
+.xp-del { background: none; border: none; color: var(--text-muted); font-size: 15px; cursor: pointer; padding: 4px 6px; line-height: 1; }
+.xp-del:active { color: var(--night); }

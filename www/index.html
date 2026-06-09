@@ -273,6 +273,7 @@
             <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openVerifySheet()"><div class="settings-label">🔍 Paystub Verifier</div><div class="dash-arrow">❯</div></div>
             <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openPaystubHistory()"><div class="settings-label">🧾 Paystub History</div><div class="dash-arrow">❯</div></div>
             <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openT4Estimate()"><div class="settings-label">📄 T4 / Refund Estimate</div><div class="dash-arrow">❯</div></div>
+            <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openExtraPayments()"><div class="settings-label">💵 Bonus &amp; VCP Payments</div><div class="dash-arrow">❯</div></div>
             <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openHolidayExplainer()"><div class="settings-label">🎉 Holiday Pay Explainer</div><div class="dash-arrow">❯</div></div>
         </div>
         <div class="btn-row">
@@ -362,6 +363,32 @@
     <div class="bottom-sheet" id="sheet-timeoff-detail">
         <h3 class="sheet-header" id="timeoff-detail-title">Time Off</h3>
         <div id="timeoff-detail-content" style="padding: 0 4px;"></div>
+        <div class="btn-row">
+            <button class="btn-action btn-save" onclick="sheetBack()">Close</button>
+        </div>
+    </div>
+
+    <div class="bottom-sheet" id="sheet-extra-pay">
+        <h3 class="sheet-header">💵 Bonus &amp; VCP Payments</h3>
+        <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: -15px; margin-bottom: 15px;">Log one-off pay (annual bonus, quarterly VCP). Counts toward YTD, caps &amp; T4.</p>
+        <div class="sheet-card">
+            <div class="sheet-card-title">Add a payment</div>
+            <div class="toggle-group" style="margin-bottom:12px;">
+                <div class="toggle-btn" id="xp-type-Bonus" onclick="selectExtraType('Bonus')">Bonus</div>
+                <div class="toggle-btn" id="xp-type-VCP" onclick="selectExtraType('VCP')">VCP</div>
+            </div>
+            <div class="vf-input-grid">
+                <label style="grid-column:1 / -1;">Payment date<input type="date" id="xp-date" class="number-input"></label>
+                <label>Gross<input type="number" id="xp-gross" class="number-input" step="0.01" inputmode="decimal" placeholder="$"></label>
+                <label>Net<input type="number" id="xp-net" class="number-input" step="0.01" inputmode="decimal" placeholder="$"></label>
+                <label>Tax paid<input type="number" id="xp-tax" class="number-input" step="0.01" inputmode="decimal" placeholder="$"></label>
+                <label>CPP<input type="number" id="xp-cpp" class="number-input" step="0.01" inputmode="decimal" placeholder="$"></label>
+                <label>EI<input type="number" id="xp-ei" class="number-input" step="0.01" inputmode="decimal" placeholder="$"></label>
+            </div>
+            <button class="btn-action btn-save" style="width:100%;margin-top:12px;" onclick="addExtraPayment()">＋ Add payment</button>
+        </div>
+        <div class="sheet-card-title" style="padding:0 4px;">Logged payments</div>
+        <div id="xp-list" style="padding: 0 4px;"></div>
         <div class="btn-row">
             <button class="btn-action btn-save" onclick="sheetBack()">Close</button>
         </div>
