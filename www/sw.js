@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shift-hub-v33';
+const CACHE_NAME = 'shift-hub-v34';
 const urlsToCache = [
   './index.html',
   './styles.css',
@@ -20,6 +20,7 @@ const urlsToCache = [
   './backup.js',
   './motion.js',
   './onboarding.js',
+  './coachmarks.js',
   './app.js',
   './vendor/jspdf.umd.min.js',
   './vendor/lz-string.min.js',

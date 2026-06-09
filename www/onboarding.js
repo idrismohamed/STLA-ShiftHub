@@ -388,6 +388,8 @@
         applyToApp();
         teardown();
         showToast('Setup complete — welcome aboard!');
+        // Roll straight into the guided tour for brand-new users.
+        if (typeof maybeStartCoachmarks === 'function') setTimeout(maybeStartCoachmarks, 700);
     }
     function skip() {
         sysSettings.hasSeenOnboarding = true;
