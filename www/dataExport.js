@@ -8,7 +8,8 @@ function buildBackupData() {
         rotation:    localStorage.getItem(STORAGE_KEYS.ROTATION),
         synced:      localStorage.getItem(STORAGE_KEYS.SYNCED_EVENTS),
         taxTables:   localStorage.getItem(STORAGE_KEYS.TAX_TABLES),
-        taxFetched:  localStorage.getItem(STORAGE_KEYS.TAX_FETCHED)
+        taxFetched:  localStorage.getItem(STORAGE_KEYS.TAX_FETCHED),
+        paystubs:    localStorage.getItem(STORAGE_KEYS.PAYSTUBS)
     };
 }
 
@@ -21,6 +22,7 @@ function applyBackupObject(data) {
     localStorage.setItem(STORAGE_KEYS.SYNCED_EVENTS, typeof data.synced   === 'string' ? data.synced   : JSON.stringify(data.synced   || {}));
     if (data.taxTables)  localStorage.setItem(STORAGE_KEYS.TAX_TABLES,  typeof data.taxTables  === 'string' ? data.taxTables  : JSON.stringify(data.taxTables));
     if (data.taxFetched) localStorage.setItem(STORAGE_KEYS.TAX_FETCHED, data.taxFetched);
+    if (data.paystubs)   localStorage.setItem(STORAGE_KEYS.PAYSTUBS,    typeof data.paystubs   === 'string' ? data.paystubs   : JSON.stringify(data.paystubs));
 
     extraShifts  = safeParse(STORAGE_KEYS.SHIFTS,        {});
     savedRot     = safeParse(STORAGE_KEYS.ROTATION,      { date: '2026-04-20', offset: 0 });

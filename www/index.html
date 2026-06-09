@@ -259,10 +259,50 @@
         </div>
 
         <div class="btn-row" style="position: sticky; bottom: 0; padding: 14px 20px 28px; margin: 0; border-radius: 0; border: none; border-top: 1px solid var(--border); box-shadow: none; width: 100%; z-index: 10; justify-content: center; flex-wrap: wrap;">
-            <button class="btn-action btn-cancel" onclick="haptic(); openCapTracker()">📊 Caps</button>
-            <button class="btn-action btn-cancel" onclick="haptic(); openVerifySheet()">🔍 Verify</button>
+            <button class="btn-action btn-cancel" onclick="openPayTools()">🧰 Tools</button>
             <button class="btn-action btn-cancel" style="background: var(--day); border: none; color: #fff;" onclick="exportPDF()">📄 PDF</button>
             <button class="btn-action btn-cancel" onclick="sharePayPeriod()">📤 Text</button>
+            <button class="btn-action btn-save" onclick="closeAllSheets()">Close</button>
+        </div>
+    </div>
+
+    <div class="bottom-sheet" id="sheet-paytools">
+        <h3 class="sheet-header">🧰 Pay Tools</h3>
+        <div class="settings-group">
+            <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openCapTracker()"><div class="settings-label">📊 Contribution Caps</div><div class="dash-arrow">❯</div></div>
+            <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openVerifySheet()"><div class="settings-label">🔍 Paystub Verifier</div><div class="dash-arrow">❯</div></div>
+            <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openPaystubHistory()"><div class="settings-label">🧾 Paystub History</div><div class="dash-arrow">❯</div></div>
+            <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openT4Estimate()"><div class="settings-label">📄 T4 / Refund Estimate</div><div class="dash-arrow">❯</div></div>
+            <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openHolidayExplainer()"><div class="settings-label">🎉 Holiday Pay Explainer</div><div class="dash-arrow">❯</div></div>
+        </div>
+        <div class="btn-row">
+            <button class="btn-action btn-save" onclick="closeAllSheets()">Close</button>
+        </div>
+    </div>
+
+    <div class="bottom-sheet" id="sheet-history">
+        <h3 class="sheet-header">🧾 Paystub History</h3>
+        <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: -15px; margin-bottom: 15px;">Your saved paystubs, reconciled against the app.</p>
+        <div id="history-content" style="padding: 0 4px;"></div>
+        <div class="btn-row">
+            <button class="btn-action btn-save" onclick="closeAllSheets()">Close</button>
+        </div>
+    </div>
+
+    <div class="bottom-sheet" id="sheet-t4">
+        <h3 class="sheet-header">📄 T4 / Refund Estimate</h3>
+        <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: -15px; margin-bottom: 15px;">Projected year-end totals. Not tax advice.</p>
+        <div id="t4-content" style="padding: 0 4px;"></div>
+        <div class="btn-row">
+            <button class="btn-action btn-save" onclick="closeAllSheets()">Close</button>
+        </div>
+    </div>
+
+    <div class="bottom-sheet" id="sheet-holidays">
+        <h3 class="sheet-header">🎉 Holiday Pay</h3>
+        <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: -15px; margin-bottom: 15px;">How each statutory holiday is paid for your crew.</p>
+        <div id="holiday-content" style="padding: 0 4px;"></div>
+        <div class="btn-row">
             <button class="btn-action btn-save" onclick="closeAllSheets()">Close</button>
         </div>
     </div>
@@ -292,6 +332,7 @@
         <div id="vf-results" class="sheet-card"></div>
         <div class="btn-row">
             <button class="btn-action btn-cancel" onclick="closeAllSheets()">Close</button>
+            <button class="btn-action btn-cancel" onclick="savePaystubEntry()">💾 Save</button>
             <button class="btn-action btn-save" onclick="runPaystubCompare()">Compare</button>
         </div>
     </div>

@@ -15,7 +15,8 @@
     "test:onboarding": "node tests/onboarding.smoke.js",
     "test:payroll": "node tests/payroll-tools.smoke.js",
     "test:backup": "node tests/backup.smoke.js",
-    "test": "npm run test:onboarding && npm run test:payroll && npm run test:backup"
+    "test:engine": "node tests/payroll-engine.test.js",
+    "test": "npm run test:engine && npm run test:onboarding && npm run test:payroll && npm run test:backup"
   },
   "keywords": [
     "cordova",

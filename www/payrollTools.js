@@ -78,29 +78,33 @@ function computePPGross(pi, crew, targetYear) {
 }
 
 /**
- * Compute actual YTD CPP1/CPP2/EI for the year-to-date and project the pay
- * period each contribution reaches its annual maximum (and thus stops).
- * @returns {{cpp1,cpp2,ei: {ytd:number,max:number,pct:number,perPP:number,stopIdx:number|null,done:boolean}, bump:number, avgGross:number}}
+ * Year-to-date modelled totals from the schedule: gross, tax (fed+ON), and each
+ * contribution, accumulated PP-by-PP from the first PP of the year to currentPP.
+ * @returns {{gross,fedon,cpp1,cpp2,ei,ppsDone,firstPP}}
  */
-function computeYearCaps(crew, currentPP, targetYear) {
+function computeYTDModel(crew, currentPP, targetYear) {
     precalcFatigue(targetYear, crew);
-    const tbl = getTaxYear(targetYear);
-
     let firstPP = 0;
     for (let i = currentPP; i >= 0; i--) {
         const testE = basePPStartUTC + (i * 14 + 13) * MS_DAY;
         if (new Date(testE).getUTCFullYear() < targetYear) { firstPP = i + 1; break; }
         if (i === 0) firstPP = 0;
     }
-
-    let ytdCPP1 = 0, ytdCPP2 = 0, ytdEI = 0, ytdGross = 0, ppsDone = 0;
+    let gross = 0, fedon = 0, cpp1 = 0, cpp2 = 0, ei = 0, ppsDone = 0;
     for (let pi = firstPP; pi <= currentPP; pi++) {
-        const g = computePPGross(pi, crew, targetYear);
+        const g  = computePPGross(pi, crew, targetYear);
         const tx = calculateTaxes(g, pi, targetYear);
-        ytdCPP1 += tx.cpp; ytdCPP2 += tx.cpp2; ytdEI += tx.ei; ytdGross += g; ppsDone++;
+        gross += g; fedon += tx.fedTax + tx.onTax; cpp1 += tx.cpp; cpp2 += tx.cpp2; ei += tx.ei; ppsDone++;
     }
+    return { gross, fedon, cpp1, cpp2, ei, ppsDone, firstPP };
+}
 
-    const avgGross = ppsDone > 0 ? ytdGross / ppsDone : 0;
+function computeYearCaps(crew, currentPP, targetYear) {
+    const tbl = getTaxYear(targetYear);
+    const ytd = computeYTDModel(crew, currentPP, targetYear);
+    const ytdCPP1 = ytd.cpp1, ytdCPP2 = ytd.cpp2, ytdEI = ytd.ei, ppsDone = ytd.ppsDone;
+
+    const avgGross = ppsDone > 0 ? ytd.gross / ppsDone : 0;
     const per = calculateTaxes(avgGross, currentPP + 1, targetYear); // representative future PP
 
     /** Build a per-deduction summary + project the stop pay period. */
@@ -240,3 +244,174 @@ function runPaystubCompare() {
     const res = document.getElementById('vf-results');
     if (res) res.innerHTML = header + rows + verdict;
 }
+
+// ─── Shared: current pay-period context ──────────────────────────────────────
+function currentPPInfo() {
+    const crew = (document.getElementById('crew-select') || {}).value || sysSettings.defaultCrew;
+    const logicalT = getLogicalToday();
+    const nowUTC   = Date.UTC(logicalT.getFullYear(), logicalT.getMonth(), logicalT.getDate());
+    const currentPP  = Math.floor((nowUTC - basePPStartUTC) / MS_PP);
+    const targetYear = new Date(basePPStartUTC + currentPP * MS_PP + MS_PP_TO_END).getUTCFullYear();
+    return { crew, currentPP, targetYear };
+}
+
+// ─── Pay tools hub ───────────────────────────────────────────────────────────
+function openPayTools() { haptic(); openSheet('sheet-paytools'); }
+
+// ─── Paystub history & reconciliation ────────────────────────────────────────
+// Stored as { [ppIdx]: { gross, tax, cpp, ei, net, year, savedAt } } — the user's
+// real paystub numbers, keyed by pay-period index.
+function loadPaystubs() { try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.PAYSTUBS)) || {}; } catch (e) { return {}; } }
+function savePaystubs(obj) { try { localStorage.setItem(STORAGE_KEYS.PAYSTUBS, JSON.stringify(obj)); } catch (e) {} }
+
+/** Persist the actuals currently entered in the verifier for the active PP. */
+function savePaystubEntry() {
+    const num = id => { const v = parseFloat((document.getElementById(id) || {}).value); return isNaN(v) ? null : v; };
+    const entry = { gross: num('vf-gross'), tax: num('vf-tax'), cpp: num('vf-cpp'), ei: num('vf-ei'), net: num('vf-net') };
+    if (entry.gross === null && entry.net === null) { showToast('Enter your paystub first', 'error'); return; }
+    entry.year = simTargetYear;
+    entry.savedAt = Date.now();
+    const all = loadPaystubs();
+    all[simTargetPP] = entry;
+    savePaystubs(all);
+    haptic();
+    showToast('Paystub saved to history');
+}
+
+/** Sum saved actuals for a year. @returns {{gross,tax,cpp,ei,net,count}} */
+function ytdFromActuals(year) {
+    const all = loadPaystubs();
+    const acc = { gross: 0, tax: 0, cpp: 0, ei: 0, net: 0, count: 0 };
+    for (const k of Object.keys(all)) {
+        const e = all[k];
+        if (e.year !== year) continue;
+        acc.gross += e.gross || 0; acc.tax += e.tax || 0; acc.cpp += e.cpp || 0;
+        acc.ei += e.ei || 0; acc.net += e.net || 0; acc.count++;
+    }
+    return acc;
+}
+
+function renderPaystubHistory() {
+    const host = document.getElementById('history-content');
+    if (!host) return;
+    const { crew } = currentPPInfo();
+    const all = loadPaystubs();
+    const keys = Object.keys(all).map(Number).sort((a, b) => b - a);
+    if (!keys.length) {
+        host.innerHTML = `<div class="vf-hint">No saved paystubs yet. Open a pay period → 🔍 Verify → 💾 Save to keep a record here.</div>`;
+        return;
+    }
+
+    let drift = { tax: 0, cpp: 0, ei: 0 }, driftN = 0;
+    let rows = '';
+    for (const pp of keys) {
+        const e = all[pp];
+        const g = computePPGross(pp, crew, e.year);
+        const t = calculateTaxes(g, pp, e.year);
+        const appTax = t.fedTax + t.onTax, appCpp = t.cpp + t.cpp2, appEi = t.ei;
+        if (e.tax != null) { drift.tax += e.tax - appTax; driftN++; }
+        if (e.cpp != null)   drift.cpp += e.cpp - appCpp;
+        if (e.ei != null)    drift.ei  += e.ei  - appEi;
+        const net = e.net != null ? e.net : (e.gross || 0);
+        rows += `<div class="hist-row"><span class="hist-pp">${ppEndLabel(pp)}</span>` +
+                `<span class="num">$${(e.gross || 0).toFixed(0)}</span>` +
+                `<span class="num" style="color:var(--off);font-weight:800">$${net.toFixed(0)}</span></div>`;
+    }
+
+    const ytd = ytdFromActuals(keys.length ? all[keys[0]].year : new Date().getFullYear());
+    const driftLine = driftN
+        ? `<div class="cap-foot">Average drift vs app over ${driftN} cheque${driftN > 1 ? 's' : ''}: ` +
+          `Tax <b style="color:${Math.abs(drift.tax / driftN) > 2 ? 'var(--night)' : 'var(--off)'}">${(drift.tax / driftN >= 0 ? '+' : '')}$${(drift.tax / driftN).toFixed(2)}</b>, ` +
+          `CPP <b>${(drift.cpp / driftN >= 0 ? '+' : '')}$${(drift.cpp / driftN).toFixed(2)}</b>, ` +
+          `EI <b>${(drift.ei / driftN >= 0 ? '+' : '')}$${(drift.ei / driftN).toFixed(2)}</b>.</div>`
+        : '';
+
+    host.innerHTML =
+        `<div class="hist-row hist-head"><span>Pay period</span><span>Gross</span><span>Net</span></div>` +
+        rows +
+        `<div class="cap-foot" style="margin-top:14px">YTD from your saved stubs (${ytd.count}): ` +
+        `gross <b>$${ytd.gross.toFixed(0)}</b>, net <b style="color:var(--off)">$${ytd.net.toFixed(0)}</b>.</div>` +
+        driftLine;
+}
+function openPaystubHistory() { renderPaystubHistory(); openSheet('sheet-history'); }
+
+// ─── Holiday-pay explainer ───────────────────────────────────────────────────
+function renderHolidayExplainer() {
+    const host = document.getElementById('holiday-content');
+    if (!host) return;
+    const { crew, targetYear } = currentPPInfo();
+    precalcFatigue(targetYear, crew);
+    const rate = sysSettings.defaultRole === 'TL' ? sysSettings.tlRate : sysSettings.regRate;
+    const hols = getHolidays(targetYear);
+
+    let rows = '', total = 0;
+    Object.keys(hols).sort().forEach(dS => {
+        const h = hols[dS];
+        const u  = Date.UTC(+dS.substring(0, 4), +dS.substring(5, 7) - 1, +dS.substring(8, 10));
+        const bS = getShiftForCrew(getPIndex(u), crew);
+        const ex = extraShifts[dS];
+        let worked = (bS === 'D' || bS === 'N') ? 12 : 0;
+        if (ex) {
+            if (['Off', 'Vacation', 'Lieu', 'DropOff'].includes(ex.type)) worked = 0;
+            else if (ex.startTime && ex.endTime) worked = Math.min(12, getDuration(ex.startTime, ex.endTime));
+        }
+        const base8   = 8 * rate;
+        const premMul = h.m === 2.0 ? 1.0 : 0.5;
+        const premium = worked > 0 ? worked * rate * premMul : 0;
+        const dayTotal = base8 + premium;
+        total += dayTotal;
+        const when = new Date(u).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        rows += `<div class="hol-row">
+            <div class="hol-main"><span class="hol-name">${h.n}</span><span class="hol-when">${when} · ${h.m}×</span></div>
+            <div class="hol-calc">8h&nbsp;pay $${base8.toFixed(0)}${worked > 0 ? ` + ${worked}h&nbsp;@&nbsp;${premMul === 1 ? '+100%' : '+50%'} $${premium.toFixed(0)}` : ' · off, no premium'}</div>
+            <div class="hol-total num">$${dayTotal.toFixed(2)}</div>
+        </div>`;
+    });
+    host.innerHTML = rows +
+        `<div class="cap-foot">Estimated holiday pay for ${targetYear} (Crew ${crew}, ${sysSettings.defaultRole === 'TL' ? 'TL' : 'Reg'} rate): ` +
+        `<b style="color:var(--off)">$${total.toFixed(2)}</b>. Night shifts before a holiday earn extra premium not shown here.</div>`;
+}
+function openHolidayExplainer() { renderHolidayExplainer(); openSheet('sheet-holidays'); }
+
+// ─── T4 / refund estimator ───────────────────────────────────────────────────
+function renderT4Estimate() {
+    const host = document.getElementById('t4-content');
+    if (!host) return;
+    const { crew, currentPP, targetYear } = currentPPInfo();
+    const ppCount = getPayPeriodsInYear(targetYear);
+    const tbl = getTaxYear(targetYear);
+
+    // Prefer the user's real paystubs; fall back to the schedule model.
+    const actual = ytdFromActuals(targetYear);
+    let gross, taxWithheld, cpp, ei, ppsDone, source;
+    if (actual.count > 0) {
+        gross = actual.gross; taxWithheld = actual.tax; cpp = actual.cpp; ei = actual.ei;
+        ppsDone = actual.count; source = `your ${actual.count} saved paystub${actual.count > 1 ? 's' : ''}`;
+    } else {
+        const m = computeYTDModel(crew, currentPP, targetYear);
+        gross = m.gross; taxWithheld = m.fedon; cpp = m.cpp1 + m.cpp2; ei = m.ei;
+        ppsDone = m.ppsDone; source = 'your scheduled hours so far';
+    }
+    if (ppsDone <= 0) { host.innerHTML = `<div class="vf-hint">No pay periods yet this year to estimate from.</div>`; return; }
+
+    const factor = ppCount / ppsDone;                 // project YTD → full year
+    const annGross = gross * factor;
+    const annWithheld = taxWithheld * factor;
+    const annCPP = Math.min(cpp * factor, tbl.annCPPMax + tbl.annCPP2Max);
+    const annEI  = Math.min(ei  * factor, tbl.annEIMax);
+
+    // Annual income tax actually owed on the projected gross.
+    const owedPP = calculateTaxes(annGross / ppCount, 0, targetYear);
+    const annOwed = (owedPP.fedTax + owedPP.onTax) * ppCount;
+    const refund = annWithheld - annOwed;
+
+    const box = (label, val) => `<div class="t4-box"><span class="t4-k">${label}</span><span class="t4-v num">$${val.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>`;
+    const refundColor = refund >= 0 ? 'var(--off)' : 'var(--night)';
+    const refundWord  = refund >= 0 ? 'refund' : 'balance owing';
+
+    host.innerHTML =
+        `<div class="t4-grid">${box('Box 14 · Employment income', annGross)}${box('Box 22 · Income tax deducted', annWithheld)}${box('Box 16 · CPP contributions', annCPP)}${box('Box 18 · EI premiums', annEI)}</div>` +
+        `<div class="t4-refund" style="border-color:${refundColor}"><span>Estimated ${refundWord}</span><b style="color:${refundColor}">$${Math.abs(refund).toLocaleString(undefined, { maximumFractionDigits: 0 })}</b></div>` +
+        `<div class="cap-foot">Projected from ${source} (×${factor.toFixed(2)} to a full year). ${actual.count > 0 ? '' : 'Save real paystubs (🔍 Verify → 💾) for a sharper estimate.'} Not tax advice.</div>`;
+}
+function openT4Estimate() { renderT4Estimate(); openSheet('sheet-t4'); }

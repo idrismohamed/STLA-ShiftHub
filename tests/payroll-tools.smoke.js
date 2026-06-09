@@ -112,6 +112,44 @@ function check(name, cond, detail) {
   check('Verifier flags the wrong CPP line', vf.badRows >= 1, `badRows=${vf.badRows}`);
   check('Verifier shows a discrepancy verdict', vf.verdictBad);
 
+  // ── Paystub history (save from verifier → reconcile) ────────────────────────
+  await page.evaluate(() => {
+    const t = calculateTaxes(simBaseGross, simTargetPP, simTargetYear);
+    document.getElementById('vf-gross').value = simBaseGross.toFixed(2);
+    document.getElementById('vf-tax').value   = (t.fedTax + t.onTax).toFixed(2);
+    document.getElementById('vf-cpp').value   = (t.cpp + t.cpp2).toFixed(2);
+    document.getElementById('vf-ei').value    = t.ei.toFixed(2);
+    document.getElementById('vf-net').value   = (simBaseGross - t.total).toFixed(2);
+    savePaystubEntry();
+  });
+  const stored = await page.evaluate(() => Object.keys(loadPaystubs()).length);
+  check('Verifier saves a paystub to history', stored >= 1, `entries=${stored}`);
+  await page.evaluate(() => { closeAllSheets(true); openPaystubHistory(); });
+  await wait(200);
+  const hist = await page.evaluate(() => ({
+    rows: document.querySelectorAll('#history-content .hist-row:not(.hist-head)').length,
+    hasYtd: /YTD from your saved stubs/.test(document.getElementById('history-content').textContent)
+  }));
+  check('History lists the saved paystub + YTD', hist.rows >= 1 && hist.hasYtd, `rows=${hist.rows}`);
+
+  // ── T4 / refund estimate ────────────────────────────────────────────────────
+  await page.evaluate(() => { closeAllSheets(true); openT4Estimate(); });
+  await wait(200);
+  const t4 = await page.evaluate(() => ({
+    boxes: document.querySelectorAll('#t4-content .t4-box').length,
+    refund: !!document.querySelector('#t4-content .t4-refund')
+  }));
+  check('T4 estimate renders the 4 boxes + refund', t4.boxes === 4 && t4.refund, `boxes=${t4.boxes}`);
+
+  // ── Holiday explainer ───────────────────────────────────────────────────────
+  await page.evaluate(() => { closeAllSheets(true); openHolidayExplainer(); });
+  await wait(200);
+  const hol = await page.evaluate(() => ({
+    rows: document.querySelectorAll('#holiday-content .hol-row').length,
+    total: /Estimated holiday pay/.test(document.getElementById('holiday-content').textContent)
+  }));
+  check('Holiday explainer lists stat holidays + total', hol.rows >= 10 && hol.total, `rows=${hol.rows}`);
+
   check('Zero console/page errors during flow', errors.length === 0, errors.slice(0, 4).join(' | '));
 
   await browser.close();
