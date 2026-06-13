@@ -1048,6 +1048,8 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         // Drop cycle is shown in the header for the week view — omit from individual cards
         const pills    = buildCellPills(dStr, shift, ex, f, baseH, holsMap)
             .filter(p => !(p.cls === 'pill-drop' && p.text === '💧 Drop Cycle'));
+        // Flag days worked at the Team Leader rate.
+        if (ex && ex.role === 'TL') pills.unshift({ cls: 'pill-tl', text: 'TL' });
         const visible  = pills.slice(0, 5);
         const overflow = pills.length - 5;
 
