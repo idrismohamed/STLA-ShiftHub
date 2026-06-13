@@ -11,7 +11,17 @@
  * Requires precalcFatigue(targetYear, crew) to have run for the relevant year.
  * @returns {number}
  */
+// Memo for the per-PP gross loop. The key includes _fatigueVersion (bumped on
+// any schedule change), the pay rates and the rotation anchor — i.e. everything
+// that can change the result — so a cached value is never stale.
+let _ppGrossMemo = {}, _ppGrossMemoVer = -1;
 function computePPGross(pi, crew, targetYear) {
+    // Drop the whole memo when the schedule changes so it can't grow unbounded.
+    if (_ppGrossMemoVer !== _fatigueVersion) { _ppGrossMemo = {}; _ppGrossMemoVer = _fatigueVersion; }
+    const memoKey = `${pi}|${crew}|${targetYear}|${sysSettings.regRate}|${sysSettings.tlRate}|${savedRot.date}|${savedRot.offset}`;
+    const cached = _ppGrossMemo[memoKey];
+    if (cached !== undefined) return cached;
+
     const s = basePPStartUTC + pi * MS_PP;
     const holCache = {};
     const getHols = y => { if (!holCache[y]) holCache[y] = getHolidays(y); return holCache[y]; };
@@ -74,6 +84,7 @@ function computePPGross(pi, crew, targetYear) {
             gross += Math.min(dayR, 10) * rate * (nextHolInfo.m === 2.0 ? 1.0 : 0.5);
         }
     }
+    _ppGrossMemo[memoKey] = gross;
     return gross;
 }
 

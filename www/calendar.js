@@ -602,9 +602,12 @@ function positionTabIndicator() {
     if (activeIdx < 0) { ind.style.opacity = '0'; return; }
     ind.style.opacity = '1';
 
+    // Batch all layout reads up front so the style writes below don't force a
+    // re-read (reflow) of each tab's geometry.
     const wrapLeft = wrap.getBoundingClientRect().left;
+    const rects = tabs.map(t => t.getBoundingClientRect());
     const setTo = idx => {
-        const r = tabs[idx].getBoundingClientRect();
+        const r = rects[idx];
         ind.style.width = r.width + 'px';
         ind.style.transform = `translateX(${r.left - wrapLeft}px)`;
     };
