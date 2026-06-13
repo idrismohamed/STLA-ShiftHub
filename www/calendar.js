@@ -76,6 +76,7 @@ function calDragEnd(e) {
 // PP swipe tracking — elastic overscroll only activates at scroll boundary
 let _ppDragStartX = 0, _ppDragActive = false, _ppDragDx = 0;
 let _ppEdgeHitX = null, _ppEdgeDir = 0;
+let _ppStartAtLeft = false, _ppStartAtRight = false;
 
 function _ppSwipeEls() {
     return [document.getElementById('cal-pp-wrap'), document.querySelector('.cal-dow-row.week-mode')];
@@ -95,6 +96,12 @@ function ppDragStart(e) {
     _ppDragDx     = 0;
     _ppEdgeHitX   = null;
     _ppEdgeDir    = 0;
+    // Only allow a pay-period change if THIS gesture already begins at an edge.
+    // A swipe that merely scrolls to the edge won't flip the period — it takes a
+    // second, deliberate swipe (which then starts at the edge) to change it.
+    const scroll = document.querySelector('.cal-scroll-area');
+    _ppStartAtLeft  = !scroll || scroll.scrollLeft <= 0;
+    _ppStartAtRight = !scroll || scroll.scrollLeft >= scroll.scrollWidth - scroll.clientWidth - 1;
     _ppSetStyle('none', '', '1');
 }
 
@@ -107,10 +114,10 @@ function ppDragMove(e) {
     const atRight = !scroll || scroll.scrollLeft >= scroll.scrollWidth - scroll.clientWidth - 1;
 
     if (_ppEdgeHitX === null) {
-        // Only enter overscroll mode once we hit a boundary
-        if      (rawDx >  8 && atLeft)  { _ppEdgeHitX = touch.clientX; _ppEdgeDir =  1; }
-        else if (rawDx < -8 && atRight) { _ppEdgeHitX = touch.clientX; _ppEdgeDir = -1; }
-        else return; // still scrolling normally — don't interfere
+        // Enter overscroll mode only when the gesture began at this boundary
+        if      (rawDx >  8 && atLeft  && _ppStartAtLeft)  { _ppEdgeHitX = touch.clientX; _ppEdgeDir =  1; }
+        else if (rawDx < -8 && atRight && _ppStartAtRight) { _ppEdgeHitX = touch.clientX; _ppEdgeDir = -1; }
+        else return; // still scrolling normally (or just reaching the edge) — don't interfere
     }
 
     _ppDragDx = touch.clientX - _ppEdgeHitX;

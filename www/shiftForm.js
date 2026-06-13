@@ -644,12 +644,12 @@ function updatePickupToggles(skipSliderReset = false) {
         if (_s2Sec_ot) _s2Sec_ot.style.display = 'none';
     }
 
-    // ── Single-day 16h cap: total hours booked on THIS day (main + 2nd shift)
-    //    may not exceed 16h unless the override is checked. ────────────────────
-    if (selectedType && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(selectedType)) {
-        const _mainH = (st && et) ? dur
-            : (['Day', 'Night'].includes(selectedType) ? 12
-            : (selectedType === 'DropPaid' ? 12 : 0));
+    // ── Single-day 16h cap: total hours on THIS day (the modified main shift +
+    //    any 2nd shift) may not exceed 16h unless the override is checked. Runs
+    //    for any working day from the actual times — not only when a shift type
+    //    was explicitly tapped (an unmodified scheduled day has selectedType null).
+    if (!['Vacation', 'Off', 'DropOff', 'Lieu'].includes(selectedType)) {
+        const _mainH = (st && et) ? dur : 0;
         const _s2H = (_s2St_v && _s2Et_v) ? getDuration(_s2St_v, _s2Et_v) : 0;
         const _dayTotal = _mainH + _s2H;
         const _exCur16 = extraShifts[activeDate];

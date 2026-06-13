@@ -42,10 +42,10 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond }); console
   await page.reload({ waitUntil: 'networkidle0' });
   await wait(300);
 
-  // Helper: open the shift form for a date and set the main shift times.
+  // Helper: open the shift form for a SCHEDULED Day (no explicit type tap, so
+  // selectedType stays null — the real scenario) and modify the main times.
   const setShift = (start, end) => page.evaluate((start, end) => {
-    openPickupSheet('2026-07-15', 'Wed Jul 15', 'D', 'O');
-    selectType('Day');
+    openPickupSheet('2026-07-15', 'Wed Jul 15', 'D', 'O'); // prefills 06:30/18:30
     document.getElementById('input-start-time').value = start;
     document.getElementById('input-end-time').value = end;
     const cb = document.getElementById('cb-override'); if (cb) cb.checked = false;
