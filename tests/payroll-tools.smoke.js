@@ -87,6 +87,19 @@ function check(name, cond, detail) {
   check('Cheque-bump is positive', capMath.bump > 0, `bump=$${capMath.bump.toFixed(2)}`);
   check('CPP1 projects a stop pay period', capMath.stop === null || capMath.stop > 0, `stopIdx=${capMath.stop}`);
 
+  // Memo guard: the per-PP gross memo must reflect an input change (e.g. a rate
+  // change), never serve a stale value.
+  const memoOk = await page.evaluate(() => {
+    const cur = Math.floor((Date.UTC(2026, 5, 8) - basePPStartUTC) / MS_PP);
+    const before = computeYTDModel(sysSettings.defaultCrew, cur, 2026).gross;
+    const r0 = sysSettings.regRate, t0 = sysSettings.tlRate;
+    sysSettings.regRate *= 2; sysSettings.tlRate *= 2;
+    const after = computeYTDModel(sysSettings.defaultCrew, cur, 2026).gross;
+    sysSettings.regRate = r0; sysSettings.tlRate = t0; // restore for later checks
+    return after > before * 1.5; // gross scales with rate — memo must recompute
+  });
+  check('Per-PP gross memo reflects input changes (not stale)', memoOk);
+
   // ── Paystub verifier ────────────────────────────────────────────────────────
   await page.evaluate(() => { closeAllSheets(true); openPayrollSheet(); openVerifySheet(); });
   await wait(200);

@@ -110,6 +110,11 @@ function getShiftStartFloat(dateStr, crew) {
 }
 
 let _fatigueKey = '';
+// Bumped every time dayFatigue is actually rebuilt (i.e. after any schedule
+// change). Other caches (e.g. the per-PP gross memo) key off this so they can
+// never serve stale results: any shift edit calls invalidateFatigueCache(),
+// which forces a rebuild and increments this.
+let _fatigueVersion = 0;
 /** Call before mutating extraShifts so the next precalcFatigue call recomputes. */
 function invalidateFatigueCache() { _fatigueKey = ''; }
 
@@ -125,6 +130,7 @@ function precalcFatigue(year, viewCrew) {
     const key = `${year}-${viewCrew}`;
     if (key === _fatigueKey) return;
     _fatigueKey = key;
+    _fatigueVersion++;
     dayFatigue = {};
     const yearStart = Date.UTC(year - 1, 11, 1);
     const yearEnd   = Date.UTC(year + 1, 0, 31);
