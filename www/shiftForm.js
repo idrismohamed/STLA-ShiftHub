@@ -644,6 +644,23 @@ function updatePickupToggles(skipSliderReset = false) {
         if (_s2Sec_ot) _s2Sec_ot.style.display = 'none';
     }
 
+    // ── Single-day 16h cap: total hours on THIS day (the modified main shift +
+    //    any 2nd shift) may not exceed 16h unless the override is checked. Runs
+    //    for any working day from the actual times — not only when a shift type
+    //    was explicitly tapped (an unmodified scheduled day has selectedType null).
+    if (!['Vacation', 'Off', 'DropOff', 'Lieu'].includes(selectedType)) {
+        const _mainH = (st && et) ? dur : 0;
+        const _s2H = (_s2St_v && _s2Et_v) ? getDuration(_s2St_v, _s2Et_v) : 0;
+        const _dayTotal = _mainH + _s2H;
+        const _exCur16 = extraShifts[activeDate];
+        if (_dayTotal > 16.01 && !(_exCur16 && _exCur16.overrideRule16h)) {
+            if (wT)  wT.innerHTML += `🚨 16H LIMIT: ${_dayTotal.toFixed(1)}h booked on this day (max 16h without override).<br>`;
+            if (ovL) ovL.style.display = 'flex';
+            _pendingOverridePayload.overrideRule16h = true;
+            if (!cbOv || !cbOv.checked) canS = false;
+        }
+    }
+
     const cw = document.getElementById('conflict-warning');
     if (cw) cw.style.display = (wT && wT.innerHTML) ? 'block' : 'none';
     if (bSave) { bSave.disabled = !canS; bSave.style.opacity = canS ? '1' : '0.5'; bSave.style.pointerEvents = canS ? 'auto' : 'none'; }
