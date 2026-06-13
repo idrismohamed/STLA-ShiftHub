@@ -580,7 +580,10 @@ function buildCalendarHeader(viewMode, leftContent) {
         const label = v.charAt(0).toUpperCase() + v.slice(1);
         return `<div class="cal-tab${v === viewMode ? ' active' : ''}" onclick="haptic(); setCalendarViewMode('${v}')">${label}</div>`;
     }).join('');
-    return `<div class="cal-header"><div class="cal-header-left">${leftContent}</div><div class="cal-header-right"><div class="cal-view-tabs"><span class="cal-tab-ind" id="cal-tab-ind"></span>${tabs}</div><button class="cal-today-top-btn" onclick="haptic(); scrollToToday()">Today</button></div></div>`;
+    // Highlight the Today button in the app's hero orange when you're already on
+    // the current pay period (week view, no offset).
+    const onCurrentPP = (viewMode === 'week' && currentWeekOffset === 0);
+    return `<div class="cal-header"><div class="cal-header-left">${leftContent}</div><div class="cal-header-right"><div class="cal-view-tabs"><span class="cal-tab-ind" id="cal-tab-ind"></span>${tabs}</div><button class="cal-today-top-btn${onCurrentPP ? ' is-current-pp' : ''}" onclick="haptic(); scrollToToday()">Today</button></div></div>`;
 }
 
 /** Position the sliding view-tab indicator under the active tab. Slides from the

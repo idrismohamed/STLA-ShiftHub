@@ -83,6 +83,16 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond }); console
   s = await saveState();
   check('Exactly 16h is allowed without override', s.disabled === false && !s.warns16, `disabled=${s.disabled}`);
 
+  // ── Today button highlights orange on the current pay period (week view) ────
+  await page.evaluate(() => { closeAllSheets(true); setCalendarViewMode('week'); scrollToToday(); });
+  await wait(300);
+  check('Today button is highlighted on the current pay period',
+    await page.evaluate(() => !!document.querySelector('.cal-today-top-btn.is-current-pp')));
+  await page.evaluate(() => navigatePP(1));   // move off the current pay period
+  await wait(300);
+  check('Today highlight clears when off the current pay period',
+    await page.evaluate(() => !document.querySelector('.cal-today-top-btn.is-current-pp')));
+
   check('Zero console/page errors during flow', errors.length === 0, errors.slice(0, 4).join(' | '));
 
   await browser.close();
