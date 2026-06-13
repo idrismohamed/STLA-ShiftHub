@@ -93,6 +93,28 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond }); console
   check('Today highlight clears when off the current pay period',
     await page.evaluate(() => !document.querySelector('.cal-today-top-btn.is-current-pp')));
 
+  // ── TL badge shows in week view on days worked at the Team Leader rate ──────
+  const tl = await page.evaluate(() => {
+    const lt = getLogicalToday();
+    const ds = toDateKey(Date.UTC(lt.getFullYear(), lt.getMonth(), lt.getDate()));
+    extraShifts[ds] = { type: 'Day', role: 'TL', startTime: '06:30', endTime: '18:30' };
+    localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts));
+    invalidateFatigueCache();
+    setCalendarViewMode('week'); scrollToToday();
+    return ds;
+  });
+  await wait(300);
+  const hasTL = await page.evaluate(() => [...document.querySelectorAll('.cal-week-card .pill-tl')].some(p => p.textContent.trim() === 'TL'));
+  check('TL badge appears in week view on a TL-rate day', hasTL, `date=${tl}`);
+  // A Regular-rate day shows no TL badge.
+  const noTLwhenReg = await page.evaluate((ds) => {
+    extraShifts[ds].role = 'Reg';
+    localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts));
+    invalidateFatigueCache(); renderCalendar();
+    return !document.querySelector('.cal-week-card .pill-tl');
+  }, tl);
+  check('No TL badge on a Regular-rate day', noTLwhenReg);
+
   check('Zero console/page errors during flow', errors.length === 0, errors.slice(0, 4).join(' | '));
 
   await browser.close();

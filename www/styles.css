@@ -1435,6 +1435,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
 .pill-unpaid { background: rgba(244,63,94,0.18);          color: #ffffff; }
 .pill-lock   { background: rgba(244,63,94,0.12);          color: #ffffff; border: 1px solid rgba(244,63,94,0.28); }
 .pill-pp     { background: rgba(255,107,53,0.16);         color: #ffffff; }
+.pill-tl     { background: rgba(255,138,92,0.22);         color: #ffffff; border: 1px solid rgba(255,138,92,0.5); font-weight: 800; letter-spacing: 0.5px; }
 
 /* ── Week View ── */
 /* PP view wrapper — receives swipe transform */
