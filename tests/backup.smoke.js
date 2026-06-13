@@ -143,7 +143,7 @@ function check(name, cond, detail) {
   check('QR sheet paints above Settings (higher z-index)', stack.qrAbove);
   // Going back from the QR sheet should return to Settings, not home.
   await page.evaluate(() => sheetBack());
-  await wait(350);
+  await wait(550); // allow the pop animation (280ms) + parent reactivation to settle
   const afterBack = await page.evaluate(() => ({
     qrActive: document.getElementById('sheet-backupqr').classList.contains('active'),
     settingsActive: document.getElementById('sheet-settings').classList.contains('active')

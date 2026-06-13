@@ -115,6 +115,14 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond }); console
   }, tl);
   check('No TL badge on a Regular-rate day', noTLwhenReg);
 
+  // ── Navigating to another pay period starts at the beginning of it ──────────
+  await page.evaluate(() => { setCalendarViewMode('week'); scrollToToday(); const sa = document.querySelector('.cal-scroll-area'); if (sa) sa.scrollLeft = 99999; });
+  await wait(200);
+  await page.evaluate(() => navigatePP(1));
+  await wait(400);
+  const sx = await page.evaluate(() => { const sa = document.querySelector('.cal-scroll-area'); return sa ? sa.scrollLeft : -1; });
+  check('New pay period starts scrolled to the beginning', sx === 0, `scrollLeft=${sx}`);
+
   check('Zero console/page errors during flow', errors.length === 0, errors.slice(0, 4).join(' | '));
 
   await browser.close();

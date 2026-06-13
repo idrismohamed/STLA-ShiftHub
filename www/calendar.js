@@ -4,6 +4,7 @@ let calendarViewMode = localStorage.getItem('calendarViewMode') || 'week';
 if (!CALENDAR_VIEWS.includes(calendarViewMode)) calendarViewMode = 'week';
 let currentCalMonth = parseInt(localStorage.getItem('currentCalMonth') || new Date().getMonth());
 let currentWeekOffset = parseInt(localStorage.getItem('currentWeekOffset')) || 0;
+let _resetWeekScroll = false; // one-shot: snap week scroll to the PP start after navigation
 let calMonthExpanded = localStorage.getItem('calMonthExpanded') !== 'false';
 
 // Month drag tracking — direction-locked so vertical scroll still works
@@ -289,7 +290,10 @@ function renderCalendar() {
         requestAnimationFrame(() => {
             window.scrollTo(0, savedScrollY);
             const sa = document.querySelector('.cal-scroll-area');
-            if (sa) sa.scrollLeft = savedScrollX;
+            // After changing pay period, snap to the start of the new PP instead
+            // of carrying over the previous scroll position.
+            if (sa) sa.scrollLeft = _resetWeekScroll ? 0 : savedScrollX;
+            _resetWeekScroll = false;
             positionTabIndicator();
         });
         renderCalendarWidget(crew, logicalT, todayStr);
@@ -1096,6 +1100,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
 function navigatePP(dir) {
     currentWeekOffset += dir;
     localStorage.setItem('currentWeekOffset', currentWeekOffset);
+    _resetWeekScroll = true;   // start the new pay period at the beginning
     renderCalendar();
 }
 
