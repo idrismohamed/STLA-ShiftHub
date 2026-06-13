@@ -123,7 +123,7 @@ function ppDragMove(e) {
     }
 
     // Apply elastic resistance past the boundary
-    const FREE = 55;
+    const FREE = 80;
     const abs  = Math.abs(_ppDragDx);
     const eff  = abs <= FREE ? abs : FREE + (abs - FREE) * 0.22;
     const disp = Math.sign(_ppDragDx) * eff;
@@ -134,7 +134,9 @@ function ppDragMove(e) {
 function ppDragEnd(e) {
     if (!_ppDragActive) return;
     _ppDragActive = false;
-    const THRESHOLD = 45;
+    // Require a deliberate overscroll so a normal horizontal scroll that just
+    // bumps the edge doesn't flip pay periods (was 45px — far too sensitive).
+    const THRESHOLD = 110;
     if (_ppEdgeHitX !== null && Math.abs(_ppDragDx) > THRESHOLD) {
         const exitDir = _ppDragDx > 0 ? '55vw' : '-55vw';
         _ppSetStyle('transform 0.25s cubic-bezier(0.4,0,1,1), opacity 0.25s ease', `translateX(${exitDir})`, '0.5');
