@@ -49,7 +49,7 @@ function getLogicalToday() {
         let isNight = false;
         if (yEx) {
             if (yEx.type === 'Night') isNight = true;
-            else if (['Day', 'Off', 'DropOff', 'Vacation', 'DropPaid', 'Lieu'].includes(yEx.type)) isNight = false;
+            else if (['Day', 'Off', 'DropOff', 'Vacation', 'DropPaid', 'Lieu', 'OffDay'].includes(yEx.type)) isNight = false;
             else if (yBase === 'N') isNight = true;
         } else if (yBase === 'N') {
             isNight = true;
@@ -75,7 +75,7 @@ function getShiftEndFloat(dateStr, crew) {
     const s   = getShiftForCrew(getPIndex(Date.UTC(+dateStr.substring(0, 4), +dateStr.substring(5, 7) - 1, +dateStr.substring(8, 10))), crew);
     const ex  = extraShifts[dateStr];
     if (ex) {
-        if (['Vacation', 'Off', 'DropOff', 'Lieu'].includes(ex.type) && !ex.startTime) return null;
+        if (['Vacation', 'Off', 'DropOff', 'Lieu', 'OffDay'].includes(ex.type) && !ex.startTime) return null;
         if (ex.endTime) {
             let endF = getFloatTime(ex.endTime);
             if (ex.startTime && endF < getFloatTime(ex.startTime)) endF += 24;
@@ -101,7 +101,7 @@ function getShiftStartFloat(dateStr, crew) {
     const s  = getShiftForCrew(getPIndex(Date.UTC(+dateStr.substring(0, 4), +dateStr.substring(5, 7) - 1, +dateStr.substring(8, 10))), crew);
     const ex = extraShifts[dateStr];
     if (ex) {
-        if (['Vacation', 'Off', 'DropOff', 'Lieu'].includes(ex.type) && !ex.startTime) return null;
+        if (['Vacation', 'Off', 'DropOff', 'Lieu', 'OffDay'].includes(ex.type) && !ex.startTime) return null;
         if (ex.startTime) return getFloatTime(ex.startTime);
     }
     if (s === 'D') return 6.5;
@@ -153,11 +153,11 @@ function precalcFatigue(year, viewCrew) {
             const ex   = extraShifts[dStr];
             let baseH  = (bS === 'D' || bS === 'N') ? 12 : 0;
 
-            if (ex && (ex.type === 'DropOff' || ex.type === 'DropPaid' || ex.type === 'Lieu')) baseH = 0;
+            if (ex && (ex.type === 'DropOff' || ex.type === 'DropPaid' || ex.type === 'Lieu' || ex.type === 'OffDay')) baseH = 0;
 
             let expectedToday = baseH;
             if (ex) {
-                if (['Vacation', 'Off', 'DropOff', 'Lieu'].includes(ex.type)) {
+                if (['Vacation', 'Off', 'DropOff', 'Lieu', 'OffDay'].includes(ex.type)) {
                     expectedToday = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0;
                 } else if (ex.type === 'DropPaid') {
                     expectedToday = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 12;

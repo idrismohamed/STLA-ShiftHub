@@ -360,13 +360,14 @@ function renderWeekView(year, crew, logicalT, todayStr, yearHols) {
         if (ex) {
             if (ex.type === 'Vacation') lbl = ex.startTime || ex.endTime ? 'Partial Vacation' : 'Vacation';
             else if (ex.type === 'Off') lbl = ex.startTime || ex.endTime ? 'Partial Off' : 'Absence';
+            else if (ex.type === 'OffDay') lbl = 'Off';
             else if (ex.type === 'Lieu') lbl = ex.startTime || ex.endTime ? 'Partial Lieu' : 'Lieu Day';
             else if (ex.type === 'DropOff') lbl = 'Drop Off';
             else if (ex.type === 'DropPaid') lbl = 'Drop Paid';
             else lbl = ex.type === 'Day' ? 'Day' : ex.type === 'Night' ? 'Night' : lbl;
 
             if (ex.startTime || ex.endTime) detail = `${formatTime12(ex.startTime)} - ${formatTime12(ex.endTime)}`;
-            if (ex.type && !['Vacation', 'Off', 'DropOff'].includes(ex.type)) badgeHtml += `<span class="agenda-badge">${ex.type}</span>`;
+            if (ex.type && !['Vacation', 'Off', 'DropOff', 'OffDay'].includes(ex.type)) badgeHtml += `<span class="agenda-badge">${ex.type}</span>`;
         }
         if (!detail && ['D', 'N'].includes(shift)) detail = shift === 'D' ? '06:30 - 18:30' : '18:30 - 06:30';
 
@@ -427,6 +428,8 @@ function renderAgendaView(year, crew, logicalT, todayStr, yearHols, currentTarge
                 lbl = ex.startTime || ex.endTime ? 'Partial Vacation' : 'Vacation';
             } else if (ex.type === 'Off') {
                 lbl = ex.startTime || ex.endTime ? 'Partial Off' : 'Absence';
+            } else if (ex.type === 'OffDay') {
+                lbl = 'Off';
             } else if (ex.type === 'Lieu') {
                 lbl = ex.startTime || ex.endTime ? 'Partial Lieu' : 'Lieu Day';
             } else if (ex.type === 'DropOff') {
@@ -440,7 +443,7 @@ function renderAgendaView(year, crew, logicalT, todayStr, yearHols, currentTarge
             if (ex.startTime || ex.endTime) {
                 timeText = `${formatTime12(ex.startTime)} - ${formatTime12(ex.endTime)}`;
             }
-            if (ex.type && !['Vacation', 'Off', 'DropOff'].includes(ex.type)) {
+            if (ex.type && !['Vacation', 'Off', 'DropOff', 'OffDay'].includes(ex.type)) {
                 badgeHtml += `<span class="agenda-badge">${ex.type}</span>`;
             }
         }
@@ -515,7 +518,7 @@ function getUpcomingShift(crew, fromDate) {
         let isWork = baseShift !== 'O';
 
         if (ex) {
-            if (['Vacation', 'Off', 'DropOff'].includes(ex.type)) {
+            if (['Vacation', 'Off', 'DropOff', 'OffDay'].includes(ex.type)) {
                 isWork = false;
             } else {
                 isWork = true;
@@ -654,6 +657,9 @@ function buildCellPills(dStr, shift, ex, f, baseH, yearHols) {
         } else if (t === 'Off') {
             pCls = 'pill-absent';
             pTxt = ht ? `🚫 Partial Off · ${times}` : '🚫 Absent';
+        } else if (t === 'OffDay') {
+            pCls = 'pill-offday';
+            pTxt = '🚫 Off';
         } else if (t === 'Lieu') {
             pCls = 'pill-lieu';
             pTxt = ht ? `🏛️ Partial Lieu · ${times}` : '🏛️ Lieu Day';
@@ -697,7 +703,7 @@ function buildCellPills(dStr, shift, ex, f, baseH, yearHols) {
     pills.push({ cls: pCls, text: pTxt });
 
     // ── Secondary pills ───────────────────────────────────────────────────────
-    if (ex && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(ex.type)) {
+    if (ex && !['Vacation', 'Off', 'DropOff', 'Lieu', 'OffDay'].includes(ex.type)) {
         let displayOT = ex.otHours || 0;
         let displayDT = ex.dtHours || 0;
         if (ex.type === 'DropPaid' && !ex.otHours && !ex.dtHours && (!ex.startTime || !ex.endTime)) displayOT = 12.0;
@@ -723,10 +729,10 @@ function buildCellPills(dStr, shift, ex, f, baseH, yearHols) {
     }
 
     // Lockout secondary — when ex exists but doesn't fully override lockout
-    if (f.isLockout && ex && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(ex.type)) {
+    if (f.isLockout && ex && !['Vacation', 'Off', 'DropOff', 'Lieu', 'OffDay'].includes(ex.type)) {
         pills.push({ cls: 'pill-lock', text: '❌ Max' });
     }
-    if (f.is16hLockout && ex && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(ex.type)) {
+    if (f.is16hLockout && ex && !['Vacation', 'Off', 'DropOff', 'Lieu', 'OffDay'].includes(ex.type)) {
         pills.push({ cls: 'pill-lock', text: '❌ Rest' });
     }
 
@@ -757,6 +763,7 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
     if (ex) {
         if      (ex.type === 'Vacation') sC = (ex.startTime && ex.endTime) ? 'M' : 'O';
         else if (ex.type === 'Off')      sC = (ex.startTime && ex.endTime) ? 'M' : 'O';
+        else if (ex.type === 'OffDay')   sC = 'O';
         else if (ex.type === 'Lieu')     sC = (ex.startTime && ex.endTime) ? 'M' : 'O';
         else if (ex.type === 'DropOff')  sC = 'O';
         else if (ex.type === 'DropPaid') sC = 'M';
@@ -786,6 +793,7 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
         const ht = ex.startTime && ex.endTime;
         if (t === 'Vacation')      { typeLabel = ht ? '🏖️ Partial Vac' : '🏖️ Vacation'; sC += ' vac'; }
         else if (t === 'Off')      { typeLabel = ht ? '🚫 Partial' : '🚫 Absent'; }
+        else if (t === 'OffDay')   { typeLabel = '🚫 Off'; }
         else if (t === 'Lieu')     { typeLabel = ht ? '🏛️ Partial' : '🏛️ Lieu'; }
         else if (t === 'DropOff')  { typeLabel = '💧 Drop'; }
         else if (t === 'DropPaid') { typeLabel = '💰 Drop+'; }
@@ -1027,6 +1035,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         if (ex) {
             if      (ex.type === 'Vacation') sC = (ex.startTime && ex.endTime) ? 'M' : 'O';
             else if (ex.type === 'Off')      sC = (ex.startTime && ex.endTime) ? 'M' : 'O';
+        else if (ex.type === 'OffDay')   sC = 'O';
             else if (ex.type === 'Lieu')     sC = (ex.startTime && ex.endTime) ? 'M' : 'O';
             else if (ex.type === 'DropOff')  sC = 'O';
             else if (ex.type === 'DropPaid') sC = 'M';
@@ -1045,7 +1054,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         if (isToday)          cardCls += ' today';
         else if (isPast)      cardCls += isCurrentPP ? ' current-pp past' : ' past';
         else if (isCurrentPP) cardCls += ' current-pp';
-        if ((f.isLockout || f.is16hLockout) && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(ex?.type)) cardCls += ' lockout';
+        if ((f.isLockout || f.is16hLockout) && !['Vacation', 'Off', 'DropOff', 'Lieu', 'OffDay'].includes(ex?.type)) cardCls += ' lockout';
 
         const [dy, dm, dd] = dStr.split('-').map(Number);
         const localDate = new Date(dy, dm - 1, dd);
@@ -1257,7 +1266,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
                 if      (ex.type === 'DropOff')                    { act = 0; }
                 else if (ex.type === 'DropPaid')                   { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 12; }
                 else if (ex.type === 'Vacation')                   { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; isVac = true; }
-                else if (ex.type === 'Off' || ex.type === 'Lieu')  { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; }
+                else if (ex.type === 'Off' || ex.type === 'Lieu' || ex.type === 'OffDay')  { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; }
                 else if (ex.startTime && ex.endTime)               { act = getDuration(ex.startTime, ex.endTime); }
                 else if (ex.type)                                  { act = 12; }
             }
@@ -1266,7 +1275,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
             const _s2dur = (_s2 && _s2.startTime && _s2.endTime) ? getDuration(_s2.startTime, _s2.endTime) : 0;
             act += _s2dur;
 
-            if (f.isLockout && !isVac && ex?.type !== 'Off' && ex?.type !== 'DropOff' && ex?.type !== 'Lieu') act = 0;
+            if (f.isLockout && !isVac && ex?.type !== 'Off' && ex?.type !== 'DropOff' && ex?.type !== 'Lieu' && ex?.type !== 'OffDay') act = 0;
 
             const dayR = Math.min(act, bH);
             const dayE = Math.max(0, act - bH);
@@ -1374,6 +1383,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
         if (ex) {
             if      (ex.type === 'Vacation') { vacDays++;     hours = 0; eff = 'O'; }
             else if (ex.type === 'Off')      { absenceDays++; hours = 0; eff = 'O'; }
+            else if (ex.type === 'OffDay')   {                hours = 0; eff = 'O'; }
             else if (ex.type === 'Lieu')     { lieuDays++;    hours = 0; eff = 'O'; }
             else if (ex.type === 'DropOff')  { dropDays++;    hours = 0; eff = 'O'; }
             else if (ex.type === 'DropPaid') {
@@ -1433,6 +1443,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
         if (ex2) {
             if      (ex2.type === 'Vacation') { prevVacDays++; hours2 = 0; eff2 = 'O'; }
             else if (ex2.type === 'Off')      { prevAbsDays++; hours2 = 0; eff2 = 'O'; }
+            else if (ex2.type === 'OffDay')   {                hours2 = 0; eff2 = 'O'; }
             else if (ex2.type === 'Lieu')     {                hours2 = 0; eff2 = 'O'; }
             else if (ex2.type === 'DropOff')  {                hours2 = 0; eff2 = 'O'; }
             else if (ex2.type === 'DropPaid') { hours2 = (ex2.startTime && ex2.endTime) ? getDuration(ex2.startTime, ex2.endTime) : 12; if (eff2 === 'O') eff2 = 'D'; }
@@ -1547,14 +1558,14 @@ function renderAnalyticsDashboard(crew, logicalT) {
                 if      (ex.type === 'DropOff')                    { act = 0; }
                 else if (ex.type === 'DropPaid')                   { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 12; }
                 else if (ex.type === 'Vacation')                   { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; isVac = true; }
-                else if (ex.type === 'Off' || ex.type === 'Lieu')  { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; }
+                else if (ex.type === 'Off' || ex.type === 'Lieu' || ex.type === 'OffDay')  { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; }
                 else if (ex.startTime && ex.endTime)               { act = getDuration(ex.startTime, ex.endTime); }
                 else if (ex.type)                                  { act = 12; }
             }
             const _bs2 = ex?.shift2;
             const _bs2dur = (_bs2 && _bs2.startTime && _bs2.endTime) ? getDuration(_bs2.startTime, _bs2.endTime) : 0;
             act += _bs2dur;
-            if (f.isLockout && !isVac && ex?.type !== 'Off' && ex?.type !== 'DropOff' && ex?.type !== 'Lieu') act = 0;
+            if (f.isLockout && !isVac && ex?.type !== 'Off' && ex?.type !== 'DropOff' && ex?.type !== 'Lieu' && ex?.type !== 'OffDay') act = 0;
             const dayR = Math.min(act, bH);
             const dayE = Math.max(0, act - bH);
             let rate = sysSettings.regRate;
