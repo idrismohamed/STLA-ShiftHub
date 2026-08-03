@@ -41,7 +41,7 @@ function computePPGross(pi, crew, targetYear) {
             if      (ex.type === 'DropOff')                   { act = 0; }
             else if (ex.type === 'DropPaid')                  { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 12; }
             else if (ex.type === 'Vacation')                  { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; isVac = true; }
-            else if (ex.type === 'Off' || ex.type === 'Lieu') { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; }
+            else if (ex.type === 'Off' || ex.type === 'Lieu' || ex.type === 'OffDay') { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; }
             else if (ex.startTime && ex.endTime)              { act = getDuration(ex.startTime, ex.endTime); }
             else if (ex.type)                                 { act = 12; }
         }
@@ -49,7 +49,7 @@ function computePPGross(pi, crew, targetYear) {
         const _s2dur = (_s2 && _s2.startTime && _s2.endTime) ? getDuration(_s2.startTime, _s2.endTime) : 0;
         act += _s2dur;
 
-        if (f.isLockout && !isVac && ex?.type !== 'Off' && ex?.type !== 'DropOff' && ex?.type !== 'Lieu') act = 0;
+        if (f.isLockout && !isVac && ex?.type !== 'Off' && ex?.type !== 'DropOff' && ex?.type !== 'Lieu' && ex?.type !== 'OffDay') act = 0;
 
         const dayR = Math.min(act, bH);
         const dayE = Math.max(0, act - bH);

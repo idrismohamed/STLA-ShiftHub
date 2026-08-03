@@ -2242,3 +2242,13 @@ input, textarea, select, [contenteditable="true"] {
 .coach-actions { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
 .coach-skip, .coach-prev { background: none; border: none; color: var(--text-muted); font-size: 13px; font-weight: 700; padding: 8px 6px; cursor: pointer; }
 .coach-next { padding: 9px 22px; font-size: 14px; }
+
+/* ─── Off Day (schedule-override off, not an absence) ──────────────────────── */
+.toggle-btn.offday-type { border-color: var(--off); color: var(--off); }
+.toggle-btn.offday-type.active {
+    background: rgba(95, 214, 166, 0.15) !important;
+    border-color: var(--off) !important;
+    color: var(--off) !important;
+    box-shadow: 0 4px 10px rgba(95, 214, 166, 0.2);
+}
+.pill-offday { background: rgba(95, 214, 166, 0.18); color: #ffffff; }

@@ -117,7 +117,7 @@ function openPickupSheet(dStr, disp, curS, nextS) {
     else if (targetType === 'Night'|| targetType === 'N') { defS = '18:30'; defE = '06:30'; }
     else if (targetType === 'DropPaid') { defS = (curS === 'N') ? '18:30' : '06:30'; defE = (curS === 'N') ? '06:30' : '18:30'; }
 
-    if (['Vacation', 'Off', 'DropOff', 'Lieu'].includes(targetType) || (targetType === 'O' && selectedType !== 'DropPaid')) {
+    if (['Vacation', 'Off', 'DropOff', 'Lieu', 'OffDay'].includes(targetType) || (targetType === 'O' && selectedType !== 'DropPaid')) {
         defS = ''; defE = '';
     }
 
@@ -207,7 +207,7 @@ function quickLog(template) {
         return;
     }
 
-    if (['Vacation', 'Off', 'DropOff', 'Lieu'].includes(selectedType)) selectedType = null;
+    if (['Vacation', 'Off', 'DropOff', 'Lieu', 'OffDay'].includes(selectedType)) selectedType = null;
     resetSliders();
     updatePickupToggles();
 }
@@ -228,7 +228,7 @@ function selectType(t) {
 
     if      (selectedType === 'Day')   { if (stInput) stInput.value = '06:30'; if (etInput) etInput.value = '18:30'; }
     else if (selectedType === 'Night') { if (stInput) stInput.value = '18:30'; if (etInput) etInput.value = '06:30'; }
-    else if (['DropOff', 'Vacation', 'Off', 'Lieu'].includes(selectedType)) {
+    else if (['DropOff', 'Vacation', 'Off', 'Lieu', 'OffDay'].includes(selectedType)) {
         if (stInput) stInput.value = '';
         if (etInput) etInput.value = '';
         const rInput = document.getElementById('input-ot-reason');
@@ -312,7 +312,7 @@ function updatePickupToggles(skipSliderReset = false) {
     }
     if (btnDropOff) btnDropOff.style.display = 'block';
 
-    if (selectedType && ['Day', 'Night'].includes(selectedType)) {
+    if (selectedType && ['Day', 'Night', 'OffDay'].includes(selectedType)) {
         const btn = document.getElementById('btn-type-' + selectedType);
         if (btn) btn.classList.add('active');
     }
@@ -323,7 +323,7 @@ function updatePickupToggles(skipSliderReset = false) {
     const activeRoleBtn = document.getElementById('btn-role-' + selectedRole);
     if (activeRoleBtn) activeRoleBtn.classList.add('active');
 
-    const isTimeOff            = ['Vacation', 'Off', 'DropOff', 'Lieu'].includes(selectedType);
+    const isTimeOff            = ['Vacation', 'Off', 'DropOff', 'Lieu', 'OffDay'].includes(selectedType);
     const crewOverrideContainer = document.getElementById('crew-override-container');
     if (crewOverrideContainer) crewOverrideContainer.style.display = isTimeOff ? 'none' : 'block';
 
@@ -354,7 +354,7 @@ function updatePickupToggles(skipSliderReset = false) {
     const cbOv = document.getElementById('cb-override');
 
     // ── Rule 1: 16h/24h window — Rule 2: 8h rest only when Rule 1 fires ───────
-    if (selectedType && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(selectedType)) {
+    if (selectedType && !['Vacation', 'Off', 'DropOff', 'Lieu', 'OffDay'].includes(selectedType)) {
         const crewSel2  = document.getElementById('crew-select');
         const viewCrew2 = crewSel2 ? crewSel2.value : sysSettings.defaultCrew;
         const stIn2 = document.getElementById('input-start-time');
@@ -446,7 +446,7 @@ function updatePickupToggles(skipSliderReset = false) {
     }
 
     // Rest-time checks (custom times — general adjacency check independent of Rule 1)
-    if (st && et && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(selectedType)) {
+    if (st && et && !['Vacation', 'Off', 'DropOff', 'Lieu', 'OffDay'].includes(selectedType)) {
         let currentStart = getFloatTime(st);
         let currentEnd   = getFloatTime(et); if (currentEnd < currentStart) currentEnd += 24;
         const dateObj    = new Date(activeDate + 'T00:00:00Z');
@@ -488,7 +488,7 @@ function updatePickupToggles(skipSliderReset = false) {
 
     let base  = f ? f.baseWorkHours : 0;
     if (f && f.isLockout && cbOv && cbOv.checked) base = (activeCurrentShift === 'D' || activeCurrentShift === 'N') ? 12 : 0;
-    if (['DropPaid', 'DropOff', 'Lieu'].includes(selectedType)) base = 0;
+    if (['DropPaid', 'DropOff', 'Lieu', 'OffDay'].includes(selectedType)) base = 0;
 
     const dur   = (st && et) ? getDuration(st, et) : 0;
     const extra = Math.max(0, dur - base);
@@ -547,7 +547,7 @@ function updatePickupToggles(skipSliderReset = false) {
         if (shortS) shortS.style.display = 'none';
     }
 
-    if (extra > 0.05 && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(selectedType)) {
+    if (extra > 0.05 && !['Vacation', 'Off', 'DropOff', 'Lieu', 'OffDay'].includes(selectedType)) {
         if (otS) otS.style.display = 'block';
         const deh = document.getElementById('display-extra-hours');
         if (deh) deh.innerText = extra.toFixed(1);
@@ -589,7 +589,7 @@ function updatePickupToggles(skipSliderReset = false) {
     }
 
     // 120h projection check
-    if (f && !['Vacation', 'Off', 'DropOff', 'Lieu'].includes(selectedType)) {
+    if (f && !['Vacation', 'Off', 'DropOff', 'Lieu', 'OffDay'].includes(selectedType)) {
         const crewSelect = document.getElementById('crew-select');
         const viewC      = crewSelect ? crewSelect.value : sysSettings.defaultCrew;
         const ppStart    = basePPStartUTC + f.ppIndex * MS_PP;
@@ -648,7 +648,7 @@ function updatePickupToggles(skipSliderReset = false) {
     //    any 2nd shift) may not exceed 16h unless the override is checked. Runs
     //    for any working day from the actual times — not only when a shift type
     //    was explicitly tapped (an unmodified scheduled day has selectedType null).
-    if (!['Vacation', 'Off', 'DropOff', 'Lieu'].includes(selectedType)) {
+    if (!['Vacation', 'Off', 'DropOff', 'Lieu', 'OffDay'].includes(selectedType)) {
         const _mainH = (st && et) ? dur : 0;
         const _s2H = (_s2St_v && _s2Et_v) ? getDuration(_s2St_v, _s2Et_v) : 0;
         const _dayTotal = _mainH + _s2H;
@@ -696,7 +696,7 @@ function saveShift() {
     if (dayFatigue[activeDate] && dayFatigue[activeDate].isLockout && cbOv && cbOv.checked) {
         base = (activeCurrentShift === 'D' || activeCurrentShift === 'N') ? 12 : 0;
     }
-    if (['DropPaid', 'DropOff', 'Lieu'].includes(selectedType)) base = 0;
+    if (['DropPaid', 'DropOff', 'Lieu', 'OffDay'].includes(selectedType)) base = 0;
 
     let dur   = (st && et) ? getDuration(st, et) : 0;
     if (selectedType === 'DropPaid' && dur === 0) dur = 12;
@@ -712,7 +712,7 @@ function saveShift() {
             const vH          = shortSlider ? (parseFloat(shortSlider.value) || 0) : 0;
             if (vH > 0) payload.vacHours = vH;
         }
-        if (!['Off', 'DropOff', 'Lieu'].includes(selectedType)) {
+        if (!['Off', 'DropOff', 'Lieu', 'OffDay'].includes(selectedType)) {
             if (extra > 0.05) {
                 if (selectedRegPay && base === 0) {
                     payload.regPay = true;

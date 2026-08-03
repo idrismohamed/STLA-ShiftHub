@@ -347,11 +347,11 @@ function openPayrollSheet(target = null) {
                 if      (ex.type === 'DropOff')  { act = 0; ytdDropOff += 12; }
                 else if (ex.type === 'DropPaid')  { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 12; }
                 else if (ex.type === 'Vacation')  { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; isVac = true; }
-                else if (ex.type === 'Off' || ex.type === 'Lieu') { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; }
+                else if (ex.type === 'Off' || ex.type === 'Lieu' || ex.type === 'OffDay') { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; }
                 else if (ex.startTime && ex.endTime) { act = getDuration(ex.startTime, ex.endTime); }
                 else if (ex.type) { act = 12; }
             }
-            if (f.isLockout && !isVac && ex?.type !== 'Off' && ex?.type !== 'DropOff' && ex?.type !== 'Lieu') act = 0;
+            if (f.isLockout && !isVac && ex?.type !== 'Off' && ex?.type !== 'DropOff' && ex?.type !== 'Lieu' && ex?.type !== 'OffDay') act = 0;
 
             const dayR = Math.min(act, bH);
             const dayE = Math.max(0, act - bH);
@@ -360,7 +360,7 @@ function openPayrollSheet(target = null) {
             if (isVac) {
                 const vacHours = ex.vacHours !== undefined ? ex.vacHours : (ex.startTime && ex.endTime ? Math.max(0, bH - act) : (bH || 12));
                 ytdVac += vacHours;
-            } else if (act < bH && ex?.type !== 'Off' && ex?.type !== 'DropOff' && ex?.type !== 'Lieu') {
+            } else if (act < bH && ex?.type !== 'Off' && ex?.type !== 'DropOff' && ex?.type !== 'Lieu' && ex?.type !== 'OffDay') {
                 ytdVac    += ex.vacHours || 0;
                 ytdUnpaid += Math.max(0, bH - act - (ex.vacHours || 0));
             } else if (ex?.type === 'Off') {
@@ -398,12 +398,12 @@ function openPayrollSheet(target = null) {
             if      (ex.type === 'DropOff')  { act = 0; }
             else if (ex.type === 'DropPaid')  { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 12; }
             else if (ex.type === 'Vacation')  { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; isVac = true; }
-            else if (ex.type === 'Off')       { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; }
+            else if (ex.type === 'Off' || ex.type === 'OffDay') { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; }
             else if (ex.type === 'Lieu')      { act = (ex.startTime && ex.endTime) ? getDuration(ex.startTime, ex.endTime) : 0; isLieu = true; }
             else if (ex.startTime && ex.endTime) { act = getDuration(ex.startTime, ex.endTime); }
             else if (ex.type) { act = 12; }
         }
-        if (f.isLockout && !isVac && !isLieu && ex?.type !== 'Off' && ex?.type !== 'DropOff') act = 0;
+        if (f.isLockout && !isVac && !isLieu && ex?.type !== 'Off' && ex?.type !== 'DropOff' && ex?.type !== 'OffDay') act = 0;
 
         const dayR = Math.min(act, bH);
         const dayE = Math.max(0, act - bH);
@@ -421,7 +421,7 @@ function openPayrollSheet(target = null) {
         } else if (isLieu) {
             const lH = (!ex.startTime && !ex.endTime) ? (bH || 12) : Math.max(0, bH - act);
             ppLieuTakenH += lH;
-        } else if (act < bH && ex?.type !== 'Off' && ex?.type !== 'DropOff' && ex?.type !== 'Lieu') {
+        } else if (act < bH && ex?.type !== 'Off' && ex?.type !== 'DropOff' && ex?.type !== 'Lieu' && ex?.type !== 'OffDay') {
             const vH = ex.vacHours || 0;
             vacH  += vH;
             gross += vH * rate;
