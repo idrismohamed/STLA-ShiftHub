@@ -2326,3 +2326,11 @@ input, textarea, select, [contenteditable="true"] {
     box-shadow: 0 4px 10px rgba(95, 214, 166, 0.2);
 }
 .pill-offday { background: rgba(95, 214, 166, 0.18); color: #ffffff; }
+
+/* ── Inline SVG icons (icons.js sprite) ─────────────────────────────────── */
+.shi { display: inline-block; vertical-align: -0.18em; flex: none; }
+.sheet-header .shi, .sheet-card-title .shi { vertical-align: -0.22em; margin-right: 2px; color: var(--md-primary); }
+.settings-label .shi { margin-right: 4px; }
+.cal-pill .shi, .pill-top .shi, .legend-item .shi { vertical-align: -0.15em; }
+.note-del-btn { position: relative; background: none; border: none; color: var(--md-error); cursor: pointer; padding: 4px 6px; }
+.note-del-btn::after { content: ''; position: absolute; inset: -8px; }

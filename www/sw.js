@@ -2,6 +2,7 @@ const CACHE_NAME = 'shift-hub-v42';
 const urlsToCache = [
   './index.html',
   './styles.css',
+  './icons.js',
   './constants.js',
   './utils.js',
   './state.js',

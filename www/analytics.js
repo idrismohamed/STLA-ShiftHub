@@ -526,7 +526,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
     <div id="chart-paybar" class="ch-host-bar"></div>
     <div class="ch-legend" id="chart-paybar-legend"></div>
     <div class="an-sep" style="margin:12px 0 10px"></div>
-    <div class="ch-sub-label">120H Limit${dispFatigueAtMax ? ' · ⛔ MAX' : ''} <span class="ch-sub-val" style="color:${dispFatigueColor}">${dispFatigueAtMax ? 'Limit reached' : dispFatigueRem.toFixed(1) + 'h left'}</span></div>
+    <div class="ch-sub-label">120H Limit${dispFatigueAtMax ? ` · ${icon('ban', 11)} MAX` : ''} <span class="ch-sub-val" style="color:${dispFatigueColor}">${dispFatigueAtMax ? 'Limit reached' : dispFatigueRem.toFixed(1) + 'h left'}</span></div>
     <div id="chart-fatigue-bar" class="ch-host-bar"></div>
     <div class="ch-legend" id="chart-fatigue-legend"></div>
   </div>
@@ -683,9 +683,9 @@ function openTimeOffDetail(type) {
     haptic();
     const crew = (document.getElementById('crew-select') || {}).value || sysSettings.defaultCrew;
     const meta = {
-        vacation: { title: '🏖️ Vacation Days',     unit: 'h' },
-        lieu:     { title: '🏛️ Lieu (Holiday) Days', unit: 'd' },
-        drop:     { title: '💧 Drop Days',           unit: 'd' }
+        vacation: { title: `${icon('umbrella', 14)} Vacation Days`,     unit: 'h' },
+        lieu:     { title: `${icon('landmark', 14)} Lieu (Holiday) Days`, unit: 'd' },
+        drop:     { title: `${icon('droplet', 14)} Drop Days`,           unit: 'd' }
     }[type] || { title: 'Time Off', unit: '' };
 
     const match = ex =>
