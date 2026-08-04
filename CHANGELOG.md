@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.1] - 2026-08-04
 
 ### Fixed
+- Time-off detail sheet (Vacation / Lieu / Drop) printed its title's icon as
+  raw `<svg …>` text — the title was assigned with `textContent` instead of
+  `innerHTML`
+- Signing keystore and passwords no longer live in `voltbuilder.json`; they
+  move to a git-ignored `voltbuilder.local.json` merged in at packaging time
+  by `scripts/package-voltbuilder.sh`. **The old key is still in git history
+  and must be rotated.**
+- App version in `config.xml` bumped 1.0.0 → 1.2.1 (it had drifted behind the
+  changelog, so builds shared a versionCode)
 - **On-shift notification crashed the app on Android 12+.** The "Add note"
   action used an inline text input (RemoteInput); the notification plugin
   builds every action's PendingIntent with FLAG_IMMUTABLE on Android 12+, and
