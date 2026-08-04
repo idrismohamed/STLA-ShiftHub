@@ -778,34 +778,38 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; ov
 .bottom-sheet::before {
     content: '';
     display: block;
-    width: 36px;
+    width: 32px;
     height: 4px;
     border-radius: 2px;
-    background: rgba(255,255,255,0.18);
+    background: var(--md-outline);
     margin: -14px auto 18px auto;
 }
 .sheet-header { font-size: 20px; font-weight: 900; margin-bottom: 20px; color: var(--text); text-align: center; text-wrap: balance; }
 
 .sheet-header-block { text-align: center; margin-bottom: 22px; }
-.sheet-holiday-banner { display: none; margin-bottom: 9px; padding: 5px 16px; border-radius: 20px; background: rgba(251,188,4,0.12); border: 1px solid rgba(251,188,4,0.32); font-size: 11px; font-weight: 700; color: #fbbc04; letter-spacing: 0.7px; text-transform: uppercase; }
+.sheet-holiday-banner { display: none; margin-bottom: 9px; padding: 5px 16px; border-radius: var(--shape-full); background: var(--amber-container); border: none; font-size: 11px; font-weight: 700; color: var(--on-amber-container); letter-spacing: 0.7px; text-transform: uppercase; }
 .sheet-holiday-banner.visible { display: inline-flex; align-items: center; gap: 5px; }
 .sheet-date-line { font-size: 21px; font-weight: 900; color: var(--text); line-height: 1.2; margin-bottom: 4px; text-wrap: balance; }
 .sheet-subtitle { font-size: 10px; color: var(--text-muted); letter-spacing: 1.2px; font-weight: 600; text-transform: uppercase; }
 
-/* Modern Sheet Cards */
-.sheet-card { background: var(--card); border-radius: 10px; border: 1px solid var(--glass-border); padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.12); transition: background-color 0.3s, border-color 0.3s; }
+/* Sheet cards — tonal, concentric with the 28px sheet */
+.sheet-card { background: var(--md-surface-container); border-radius: var(--shape-md); border: none; padding: 15px; margin-bottom: 10px; transition: background-color 0.3s; }
 .sheet-card-title { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
 
 /* Horizontal Scroller for Quick Log */
 .quick-log-scroller { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
 .quick-log-scroller::-webkit-scrollbar { display: none; }
 
-/* Modern Settings Groups */
+/* Settings groups — M3E expressive grouped list (Pixel-Settings style):
+   rows are tonal segments with 2px gaps; end rows get large outer corners,
+   middle rows small ones, so each group reads as one sculpted object. */
 .settings-group-title { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 8px 10px; }
-.settings-group { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 10px; overflow: hidden; transition: background-color 0.3s, border-color 0.3s; }
-.settings-row { padding: 14px 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s; }
-.settings-row:last-child { border-bottom: none; }
-.settings-row:active { background-color: var(--border); }
+.settings-group { display: flex; flex-direction: column; gap: 2px; background: none; border: none; margin-bottom: 10px; }
+.settings-row { padding: 14px 16px; background: var(--md-surface-container); border-radius: 6px; display: flex; justify-content: space-between; align-items: center; transition: background-color 0.2s, border-radius 0.3s var(--spring); }
+.settings-row:first-child { border-radius: var(--shape-md) var(--shape-md) 6px 6px; }
+.settings-row:last-child { border-radius: 6px 6px var(--shape-md) var(--shape-md); }
+.settings-row:only-child { border-radius: var(--shape-md); }
+.settings-row:active { background-color: var(--md-surface-container-high); border-radius: var(--shape-md); }
 .settings-label { font-size: 14px; color: var(--text); font-weight: 500; }
 .settings-input, .settings-select { background: transparent; border: none; color: var(--text); font-size: 14px; text-align: right; outline: none; width: 50%; }
 .settings-select { direction: rtl; }
@@ -819,69 +823,82 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; ov
 input:checked + .switch-slider { background-color: var(--off); }
 input:checked + .switch-slider:before { transform: translateX(20px); }
 
-/* Form Controls inside Sheets */
+/* Form controls — toggle buttons as M3 filter chips. A check mark morphs in
+   (opacity 0→1, scale 0.25→1, blur 4px→0) when a chip becomes selected. */
 .toggle-group { display: flex; gap: 8px; flex-wrap: wrap; }
-.toggle-btn { flex: 1; text-align: center; padding: 10px 0; background: var(--input-bg); border: 1px solid var(--border); border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s; min-width: 30%; }
-.toggle-btn:active { transform: scale(0.96); }
-.toggle-btn.active { background: rgba(255, 109, 0, 0.15) !important; border-color: var(--accent) !important; color: var(--accent) !important; box-shadow: 0 4px 10px rgba(255, 109, 0, 0.1); }
-.toggle-btn.day-type { border-color: #38bdf8; color: #38bdf8; }
-.toggle-btn.day-type.active { background: rgba(56, 189, 248, 0.15) !important; border-color: #38bdf8 !important; color: #38bdf8 !important; box-shadow: 0 4px 10px rgba(56, 189, 248, 0.2); }
-.toggle-btn.night-type { border-color: #f43f5e; color: #f43f5e; }
-.toggle-btn.night-type.active { background: rgba(244, 63, 94, 0.15) !important; border-color: #f43f5e !important; color: #f43f5e !important; box-shadow: 0 4px 10px rgba(244, 63, 94, 0.2); }
+.toggle-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; padding: 10px 6px; background: var(--input-bg); border: 1px solid var(--border); border-radius: var(--shape-full); font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer; transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.28s var(--spring), border-radius 0.28s var(--spring); min-width: 30%; }
+.toggle-btn:active { transform: scale(0.96); border-radius: var(--shape-sm); }
+.toggle-btn::before {
+    content: '';
+    width: 0;
+    height: 12px;
+    flex: none;
+    background: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 6L9 17l-5-5' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 6L9 17l-5-5' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain;
+    opacity: 0;
+    transform: scale(0.25);
+    filter: blur(4px);
+    transition: width 0.25s cubic-bezier(0.2,0,0,1), margin-right 0.25s cubic-bezier(0.2,0,0,1), opacity 0.25s cubic-bezier(0.2,0,0,1), transform 0.25s cubic-bezier(0.2,0,0,1), filter 0.25s cubic-bezier(0.2,0,0,1);
+}
+.toggle-btn.active::before { width: 12px; margin-right: 5px; opacity: 1; transform: scale(1); filter: blur(0); }
+.toggle-btn.active { background: var(--md-primary-container) !important; border-color: transparent !important; color: var(--md-on-primary-container) !important; }
+.toggle-btn.day-type { border-color: var(--day); color: var(--day); }
+.toggle-btn.day-type.active { background: var(--day-container) !important; border-color: transparent !important; color: var(--on-day-container) !important; }
+.toggle-btn.night-type { border-color: var(--night); color: var(--night); }
+.toggle-btn.night-type.active { background: var(--night-container) !important; border-color: transparent !important; color: var(--on-night-container) !important; }
 .time-row { display: flex; gap: 15px; margin-bottom: 5px; }
 .time-row > div { flex: 1; }
-.time-input, .number-input, .date-picker, .text-input { width: 100%; background: var(--input-bg); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 10px; font-size: 16px; outline: none; font-weight: bold; font-family: inherit; transition: background-color 0.3s, border-color 0.3s, color 0.3s; box-sizing: border-box; }
+.time-input, .number-input, .date-picker, .text-input { width: 100%; background: var(--md-surface-container-high); border: 1px solid transparent; color: var(--text); padding: 12px; border-radius: var(--shape-sm); font-size: 16px; outline: none; font-weight: bold; font-family: inherit; transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s; box-sizing: border-box; }
+.time-input:focus, .number-input:focus, .date-picker:focus, .text-input:focus { border-color: var(--md-primary); box-shadow: 0 0 0 1px var(--md-primary); }
 .time-input::-webkit-calendar-picker-indicator, .date-picker::-webkit-calendar-picker-indicator { filter: var(--calendar-filter); }
 
 /* Range Sliders */
-input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; background: transparent; }
-input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: var(--day); cursor: pointer; margin-top: -8px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); border: 2px solid #fff; }
-input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: linear-gradient(90deg, var(--off) 0%, var(--day) 100%); border-radius: 4px; }
-.vac-slider::-webkit-slider-thumb { background: #00bcd4 !important; }
-.vac-slider::-webkit-slider-runnable-track { background: linear-gradient(90deg, var(--night) 0%, #00bcd4 100%) !important; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; background: transparent; padding: 8px 0; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 26px; width: 26px; border-radius: 50%; background: var(--day); cursor: pointer; margin-top: -8px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); border: 3px solid var(--md-surface-container-low); }
+input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 10px; cursor: pointer; background: linear-gradient(90deg, var(--off) 0%, var(--day) 100%); border-radius: 5px; }
+.vac-slider::-webkit-slider-thumb { background: var(--vac) !important; }
+.vac-slider::-webkit-slider-runnable-track { background: linear-gradient(90deg, var(--night) 0%, var(--vac) 100%) !important; }
 
-/* Buttons */
+/* Sheet action footer — full-width sticky bar so buttons never overlap
+   content (they used to float as a pill over the middle of the sheet). */
 .btn-row {
     display: flex;
-    gap: 5px;
-    margin-top: 20px;
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-end;
+    position: sticky;
+    bottom: -80px;
+    z-index: 5;
+    margin: 20px -20px -60px;
+    padding: 12px 20px 16px;
     background: var(--glass-bg);
-    border-radius: 50px;
-    padding: 5px;
-    border: 1px solid var(--glass-border);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.32), 0 1px 0 var(--glass-border) inset;
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    width: fit-content;
-    margin-left: auto;
-    margin-right: auto;
-    align-items: center;
-    position: sticky;
-    bottom: 16px;
-    z-index: 5;
+    border-top: 1px solid var(--glass-border);
 }
 .btn-action {
-    padding: 9px 20px;
-    border-radius: 50px;
+    padding: 11px 20px;
+    border-radius: var(--shape-full);
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 800;
     border: none;
     outline: none;
     cursor: pointer;
     font-family: inherit;
     white-space: nowrap;
     -webkit-tap-highlight-color: transparent;
-    transition: transform 0.15s, box-shadow 0.15s;
+    transition: transform 0.28s var(--spring), border-radius 0.28s var(--spring), box-shadow 0.15s, background-color 0.15s;
 }
-.btn-cancel { background: var(--m3-surface-container-high); color: var(--text); border: 1px solid var(--border); }
-.btn-cancel:active { background: var(--m3-surface-container-highest); }
-.btn-save { background: var(--accent); color: #fff; box-shadow: 0 3px 12px rgba(255, 107, 53, 0.35); }
-.btn-save:active { transform: scale(0.96); box-shadow: 0 1px 4px rgba(255, 107, 53, 0.20); }
-.btn-remove { background: rgba(234, 67, 53, 0.12); color: var(--night); border: 1px solid rgba(234, 67, 53, 0.3); display: none; }
-.btn-remove:active { transform: scale(0.96); }
+.btn-cancel { background: transparent; color: var(--text-muted); }
+.btn-cancel:active { background: var(--m3-surface-container-high); color: var(--text); }
+.btn-save { background: var(--md-primary); color: var(--md-on-primary); box-shadow: 0 3px 12px rgba(255, 107, 53, 0.35); flex: 1; max-width: 200px; }
+.btn-save:active { transform: scale(0.96); border-radius: var(--shape-md); box-shadow: 0 1px 4px rgba(255, 107, 53, 0.20); }
+.btn-remove { background: var(--md-error-container); color: var(--md-on-error-container); display: none; margin-right: auto; }
+.btn-remove:active { transform: scale(0.96); border-radius: var(--shape-md); }
 
-#conflict-warning { margin-top: 15px; padding: 12px; background: rgba(255, 59, 48, 0.15); border: 1px solid rgba(255, 59, 48, 0.4); border-radius: 10px; display: none; }
-#conflict-text { color: var(--night); font-size: 13px; font-weight: bold; line-height: 1.4; }
+#conflict-warning { margin-top: 15px; padding: 12px 14px; background: var(--md-error-container); border: none; border-radius: var(--shape-md); display: none; }
+#conflict-text { color: var(--md-on-error-container); font-size: 13px; font-weight: bold; line-height: 1.4; }
 
 /* Modern Payroll Dashboard Cards */
 .pp-card { background: var(--card); border-radius: 24px; padding: 0; box-shadow: 0 4px 16px rgba(0,0,0,0.1); border: 1px solid var(--border); margin-bottom: 20px; overflow: hidden; transition: background-color 0.3s, border-color 0.3s; }
@@ -2331,13 +2348,18 @@ input, textarea, select, [contenteditable="true"] {
 .coach-next { padding: 9px 22px; font-size: 14px; }
 
 /* ─── Off Day (schedule-override off, not an absence) ──────────────────────── */
-.toggle-btn.offday-type { border-color: var(--off); color: var(--off); }
-.toggle-btn.offday-type.active {
-    background: rgba(95, 214, 166, 0.15) !important;
-    border-color: var(--off) !important;
-    color: var(--off) !important;
-    box-shadow: 0 4px 10px rgba(95, 214, 166, 0.2);
+.toggle-btn.offday-type,
+.toggle-btn.off-type   { border-color: var(--off); color: var(--off); }
+.toggle-btn.offday-type.active,
+.toggle-btn.off-type.active {
+    background: var(--off-container) !important;
+    border-color: transparent !important;
+    color: var(--on-off-container) !important;
 }
+.toggle-btn.vac-type { border-color: var(--vac); color: var(--vac); }
+.toggle-btn.vac-type.active { background: var(--vac-container) !important; border-color: transparent !important; color: var(--on-vac-container) !important; }
+.toggle-btn.lieu-type { border-color: var(--amber); color: var(--amber); }
+.toggle-btn.lieu-type.active { background: var(--amber-container) !important; border-color: transparent !important; color: var(--on-amber-container) !important; }
 .pill-offday { background: var(--off-container); color: var(--on-off-container); }
 
 /* ── Inline SVG icons (icons.js sprite) ─────────────────────────────────── */
@@ -2345,6 +2367,7 @@ input, textarea, select, [contenteditable="true"] {
 .sheet-header .shi, .sheet-card-title .shi { vertical-align: -0.22em; margin-right: 2px; color: var(--md-primary); }
 .settings-label .shi { margin-right: 4px; }
 .cal-pill .shi, .pill-top .shi, .legend-item .shi { vertical-align: -0.15em; }
+.toggle-btn .shi { margin-right: 5px; }
 .note-del-btn { position: relative; background: none; border: none; color: var(--md-error); cursor: pointer; padding: 4px 6px; }
 .note-del-btn::after { content: ''; position: absolute; inset: -8px; }
 
