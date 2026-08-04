@@ -916,8 +916,11 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 10px; cu
 #toast-container { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 1000; pointer-events: none; }
 .native-toast { background: var(--glass-bg); backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%); color: var(--text); padding: 12px 20px; border-radius: 20px; font-size: 13px; font-weight: 600; box-shadow: 0 8px 32px rgba(0,0,0,0.36), 0 1px 0 var(--glass-border) inset; border: 1px solid var(--glass-border); opacity: 0; transform: translateY(-16px); transition: opacity 0.3s, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; }
 .native-toast.show { opacity: 1; transform: translateY(0); }
-.native-toast.error { border-left: 4px solid var(--night); }
+.native-toast.error { border-left: 4px solid var(--md-error); }
 .native-toast.success { border-left: 4px solid var(--off); }
+.native-toast .shi { flex: none; margin-right: 8px; }
+.native-toast.success .shi { color: var(--off); }
+.native-toast.error .shi { color: var(--md-error); }
 .toast-undo-btn { color: var(--off); font-weight: 800; background: none; border: none; text-transform: uppercase; letter-spacing: 0.05em; font-size: 13px; margin-left: 14px; cursor: pointer; padding: 0; flex-shrink: 0; }
 
 /* VISUAL ANALYTICS CHART CONTAINER */
@@ -950,33 +953,43 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 10px; cu
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 12px 8px 12px;
+    padding: 10px 10px 8px 10px;
     background: var(--cal-header-bg);
     border-bottom: 1px solid var(--border);
-    gap: 12px;
-    flex-wrap: wrap;
+    gap: 8px;
+    /* Never wrap: the date label shrinks/ellipsizes so the view tabs and
+       Today button always share its line. */
+    flex-wrap: nowrap;
 }
 .cal-header-left {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 .cal-month-label {
     font-size: 15px;
     font-weight: 900;
     color: var(--text);
     letter-spacing: -0.3px;
-    min-width: 90px;
+    min-width: 0;
     text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
+.cal-pp-label-wrap { min-width: 0; display: flex; }
+.cal-pp-label-wrap .cal-month-label { font-size: 12.5px; }
 .cal-nav-btn {
+    position: relative;
     background: none;
     border: none;
     color: var(--text-muted);
     font-size: 20px;
     cursor: pointer;
-    padding: 8px 10px;
-    min-width: 40px;
+    padding: 8px 4px;
+    min-width: 30px;
     min-height: 40px;
     display: flex;
     align-items: center;
@@ -1049,8 +1062,9 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 10px; cu
     color: var(--text);
     border: 1px solid var(--border);
     border-radius: 50px;
-    padding: 5px 11px;
-    min-height: 40px;
+    padding: 5px 10px;
+    min-height: 38px;
+    flex: none;
     font-size: 11px;
     font-weight: 700;
     cursor: pointer;
@@ -1072,8 +1086,9 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 10px; cu
 .cal-pp-label-current {
     background: var(--accent);
     border-radius: 50px;
-    padding: 5px 14px;
+    padding: 5px 10px;
     box-shadow: 0 3px 10px rgba(255,107,53,0.35);
+    min-width: 0;
 }
 .cal-pp-label-current .cal-month-label,
 .cal-pp-label-current .cal-pp-sublabel {
@@ -2201,7 +2216,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 10px; cu
 
 /* Progress dots */
 .ob-dots { display: flex; justify-content: center; gap: 7px; }
-.ob-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); transition: all 0.25s ease; }
+.ob-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); transition: background-color 0.25s ease, width 0.25s ease, transform 0.25s ease; }
 .ob-dot.done { background: var(--text-muted); }
 .ob-dot.active { background: var(--accent); width: 20px; border-radius: 4px; }
 
@@ -2262,7 +2277,8 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 10px; cu
 
 /* ─── Backup QR + scanner ──────────────────────────────────────────────────── */
 .backup-qr-wrap { display: flex; justify-content: center; padding: 8px 0 14px; }
-.backup-qr-img { width: 100%; max-width: 280px; height: auto; image-rendering: pixelated; background: #fff; border-radius: 14px; padding: 12px; box-sizing: border-box; }
+.backup-qr-img { width: 100%; max-width: 280px; height: auto; image-rendering: pixelated; background: #fff; border-radius: 14px; padding: 12px; box-sizing: border-box; outline: 1px solid rgba(255,255,255,0.1); }
+[data-theme="light"] .backup-qr-img { outline-color: rgba(0,0,0,0.1); }
 .scan-frame { position: relative; width: 100%; max-width: 340px; margin: 4px auto 0; aspect-ratio: 1 / 1; border-radius: 18px; overflow: hidden; background: #000; border: 1px solid var(--glass-border); }
 .scan-frame video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .scan-reticle { position: absolute; inset: 16%; border: 3px solid rgba(255,255,255,0.85); border-radius: 16px; box-shadow: 0 0 0 100vmax rgba(0,0,0,0.35); }
@@ -2327,7 +2343,8 @@ input, textarea, select, [contenteditable="true"] {
 .xp-type.xp-VCP { background: rgba(0, 188, 212, 0.16); color: #00bcd4; }
 .xp-amt { display: flex; flex-direction: column; align-items: flex-end; font-size: 14px; font-weight: 800; color: var(--text); line-height: 1.2; }
 .xp-net { font-size: 10px; font-weight: 600; color: var(--text-muted); }
-.xp-del { background: none; border: none; color: var(--text-muted); font-size: 15px; cursor: pointer; padding: 4px 6px; line-height: 1; }
+.xp-del { position: relative; background: none; border: none; color: var(--text-muted); font-size: 15px; cursor: pointer; padding: 4px 6px; line-height: 1; }
+.xp-del::after { content: ''; position: absolute; inset: -9px; }
 .xp-del:active { color: var(--night); }
 
 /* ─── First-run guided coachmarks ──────────────────────────────────────────── */
@@ -2389,4 +2406,12 @@ input, textarea, select, [contenteditable="true"] {
 }
 @media (prefers-reduced-motion: reduce) {
     .analytics-wrap .an-flat-card { animation: none !important; }
+}
+.cal-nav-btn::after { content: ''; position: absolute; inset: -2px -6px; }
+/* Compact the tab group + Today just a touch on narrow phones so the week
+   header always fits one line */
+@media (max-width: 400px) {
+    .cal-tab { padding: 4px 7px; font-size: 10.5px; min-height: 32px; }
+    .cal-today-top-btn { font-size: 10.5px; padding: 5px 9px; min-height: 34px; }
+    .cal-header-right { gap: 4px; }
 }

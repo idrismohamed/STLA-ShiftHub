@@ -1009,7 +1009,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
     const leftContent = `
         <button class="cal-nav-btn" onclick="haptic(); navigatePP(-1)">&#8249;</button>
         <div class="cal-pp-label-wrap${isCurrentPPView ? ' cal-pp-label-current' : ''}">
-            <span class="cal-month-label" style="font-size:14px">${ppLabel}</span>
+            <span class="cal-month-label">${ppLabel}</span>
         </div>
         <button class="cal-nav-btn" onclick="haptic(); navigatePP(1)">&#8250;</button>`;
 
