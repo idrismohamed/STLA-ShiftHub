@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-08-04
+
+### Fixed
+- **On-shift notification crashed the app on Android 12+.** The "Add note"
+  action used an inline text input (RemoteInput); the notification plugin
+  builds every action's PendingIntent with FLAG_IMMUTABLE on Android 12+, and
+  Android refuses to attach a RemoteInput to an immutable PendingIntent, so
+  posting the card threw. The action now launches the app straight to that
+  day's Notes field instead — same one-tap flow, no RemoteInput
+- On-shift cards are only scheduled 48h ahead (was 30 days), keeping the
+  sticky-notification batch small, and are refreshed on app resume
+- Notification scheduling and the action-handler registration are wrapped so a
+  plugin failure degrades gracefully instead of breaking the render
+
 ## [1.2.0] - 2026-08-04
 
 ### Changed — Material 3 Expressive redesign

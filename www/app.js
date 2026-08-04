@@ -25,16 +25,22 @@ document.addEventListener('deviceready', function() {
             }
         });
 
-        // Notes typed into the on-shift status card's input action land on the
-        // day the notification belongs to (data.dStr set when scheduling).
-        cordova.plugins.notification.local.on('shift-note', function (notification, eopts) {
-            const text = eopts && eopts.text;
-            const dStr = notification && notification.data && notification.data.dStr;
-            if (text && dStr && typeof addShiftNote === 'function') {
-                addShiftNote(dStr, text);
-                showToast('Note saved to ' + dStr);
-            }
-        });
+        // "Add note" on the on-shift status card opens that day straight to its
+        // note field (data.dStr is set when the card is scheduled).
+        try {
+            cordova.plugins.notification.local.on('shift-note', function (notification) {
+                const dStr = notification && notification.data && notification.data.dStr;
+                if (dStr && typeof openDayNotes === 'function') openDayNotes(dStr);
+            });
+        } catch (e) {
+            console.warn('Could not register the shift-note action handler:', e);
+        }
+
+        // Keep the on-shift card in step with reality after the app has been
+        // backgrounded (it is only scheduled 48h ahead).
+        document.addEventListener('resume', () => {
+            if (sysSettings.shiftNotif) updateNotifications();
+        }, false);
     }
 }, false);
 

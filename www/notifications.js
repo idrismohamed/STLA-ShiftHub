@@ -195,19 +195,30 @@ function updateNotifications() {
 
             // On-shift status card: pinned only WHILE the shift runs. Appears at
             // shift start (immediately if we're already mid-shift), auto-dismissed
-            // at shift end via timeoutAfter — no app wake-up needed. Its input
-            // action drops a note straight onto the day (handler in app.js).
-            if (sysSettings.shiftNotif && day.durH > 0) {
+            // at shift end via timeoutAfter — no app wake-up needed. Tapping
+            // "Add note" opens that day straight to its note field (app.js).
+            //
+            // The action deliberately does NOT use type:'input' (inline reply):
+            // the plugin builds every action's PendingIntent with FLAG_IMMUTABLE
+            // on Android 12+, and Android refuses to attach a RemoteInput to an
+            // immutable PendingIntent — posting the notification then throws and
+            // takes the app down. A launching action gets the same job done.
+            //
+            // Only the next 48h of shifts get a card. These are sticky and carry
+            // an action, so scheduling 30 of them bloats the single Binder
+            // transaction that carries the whole batch; the window is refreshed
+            // on every launch/resume anyway.
+            if (sysSettings.shiftNotif && day.durH > 0 && shiftStart.getTime() - now.getTime() < 48 * 3600000) {
                 const shiftEnd = new Date(shiftStart.getTime() + day.durH * 3600000);
                 if (shiftEnd > now) {
                     const n = {
                         id: parseInt(shortDate + '5'),
                         title: `${shiftName} · Crew ${crew}`,
                         text: `${formatTime12(sTime)} – ${formatTime12(day.endTime)} · tap Add note to log something`,
-                        sticky: true, priority: -1, wakeup: false, sound: false,
+                        sticky: true, priority: -1, wakeup: false, silent: true,
                         smallIcon: 'res://icon', color: '#ff6d00',
                         timeoutAfter: shiftEnd.getTime() - Math.max(shiftStart.getTime(), now.getTime()),
-                        actions: [{ id: 'shift-note', type: 'input', title: '📝 Add note', emptyText: 'Quick note…' }],
+                        actions: [{ id: 'shift-note', title: 'Add note', launch: true }],
                         data: { dStr }
                     };
                     if (shiftStart > now) n.trigger = { at: shiftStart };
@@ -217,8 +228,21 @@ function updateNotifications() {
         }
     }
 
-    cordova.plugins.notification.local.cancel(cancelIds, () => {
-        if (notifications.length > 0) cordova.plugins.notification.local.schedule(notifications);
+    // Scheduling talks to the OS through a single Binder transaction, so a bad
+    // option or an oversized batch can throw. Never let that stop the render.
+    const finish = () => {
+        try {
+            if (notifications.length > 0) cordova.plugins.notification.local.schedule(notifications);
+        } catch (e) {
+            console.warn('Notification scheduling failed:', e);
+        }
         handleCalendarSyncAndRender();
-    });
+    };
+
+    try {
+        cordova.plugins.notification.local.cancel(cancelIds, finish);
+    } catch (e) {
+        console.warn('Notification cancel failed:', e);
+        finish();
+    }
 }
