@@ -20,7 +20,8 @@
     "test:shiftform": "node tests/shiftform.smoke.js",
     "test:offday": "node tests/offday.smoke.js",
     "test:engine": "node tests/payroll-engine.test.js",
-    "test": "npm run test:engine && npm run test:onboarding && npm run test:payroll && npm run test:backup && npm run test:timeoff && npm run test:coach && npm run test:shiftform && npm run test:offday"
+    "test:fatigue": "node tests/fatigue.smoke.js",
+    "test": "npm run test:engine && npm run test:fatigue && npm run test:onboarding && npm run test:payroll && npm run test:backup && npm run test:timeoff && npm run test:coach && npm run test:shiftform && npm run test:offday"
   },
   "keywords": [
     "cordova",
