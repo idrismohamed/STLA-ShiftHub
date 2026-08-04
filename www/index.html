@@ -438,6 +438,9 @@
 
             <div class="settings-group-title">Native OS Integrations</div>
             <div class="settings-group">
+                <div class="settings-row" style="cursor: pointer;" onclick="exportICS()">
+                    <div class="settings-label" style="color: var(--day); font-weight: bold;">🗓️ Export Calendar (.ics)</div>
+                </div>
                 <div class="settings-row">
                     <div class="settings-label">Sync to Phone Calendar</div>
                     <label class="switch">
@@ -603,6 +606,7 @@
     <script src="charts.js"></script>
     <script src="calendar.js"></script>
     <script src="notifications.js"></script>
+    <script src="icsExport.js"></script>
     <script src="shiftForm.js"></script>
     <script src="ui.js"></script>
     <script src="settings.js"></script>

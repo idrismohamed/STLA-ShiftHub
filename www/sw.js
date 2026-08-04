@@ -11,6 +11,7 @@ const urlsToCache = [
   './charts.js',
   './calendar.js',
   './notifications.js',
+  './icsExport.js',
   './shiftForm.js',
   './ui.js',
   './settings.js',
