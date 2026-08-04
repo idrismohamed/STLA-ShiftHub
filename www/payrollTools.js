@@ -275,7 +275,7 @@ function openPayTools() { haptic(); openSheet('sheet-paytools'); }
 // Stored as { [ppIdx]: { gross, tax, cpp, ei, net, year, savedAt } } — the user's
 // real paystub numbers, keyed by pay-period index.
 function loadPaystubs() { try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.PAYSTUBS)) || {}; } catch (e) { return {}; } }
-function savePaystubs(obj) { try { localStorage.setItem(STORAGE_KEYS.PAYSTUBS, JSON.stringify(obj)); } catch (e) {} }
+function savePaystubs(obj) { try { localStorage.setItem(STORAGE_KEYS.PAYSTUBS, JSON.stringify(obj)); if (typeof dataChanged === 'function') dataChanged(); } catch (e) {} }
 
 /** Persist the actuals currently entered in the verifier for the active PP. */
 function savePaystubEntry() {
@@ -438,7 +438,7 @@ function openT4Estimate() { renderT4Estimate(); openSheet('sheet-t4'); }
 // quarterly VCP). Logged manually with their gross/net/tax/CPP/EI so they feed
 // YTD totals, the contribution-cap projection and the T4/refund estimate.
 function loadExtraPayments() { try { return JSON.parse(localStorage.getItem(STORAGE_KEYS.EXTRA_PAY)) || []; } catch (e) { return []; } }
-function saveExtraPayments(arr) { try { localStorage.setItem(STORAGE_KEYS.EXTRA_PAY, JSON.stringify(arr)); } catch (e) {} }
+function saveExtraPayments(arr) { try { localStorage.setItem(STORAGE_KEYS.EXTRA_PAY, JSON.stringify(arr)); if (typeof dataChanged === 'function') dataChanged(); } catch (e) {} }
 
 /** Sum logged bonus/VCP payments for a calendar year. */
 function extraPaymentsYTD(year) {

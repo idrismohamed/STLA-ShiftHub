@@ -54,6 +54,7 @@ function showToastWithUndo(msg, dateKey, payload) {
         extraShifts[dateKey] = payload;
         try { localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts)); } catch(e) {}
         invalidateFatigueCache();
+        if (typeof dataChanged === 'function') dataChanged();
         renderCalendar();
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 300);

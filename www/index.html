@@ -62,7 +62,7 @@
                 <div class="toggle-btn role-btn" onclick="selectRole('TL')" id="btn-role-TL">Team Leader</div>
                 <div class="toggle-btn role-btn" onclick="selectRole('Manual')" id="btn-role-Manual">Manual</div>
             </div>
-            <input type="number" id="manual-rate-input" class="number-input" placeholder="Custom Rate ($/hr)" style="display: none; margin-top: 12px;" step="0.01">
+            <input type="number" id="manual-rate-input" class="number-input" placeholder="Custom Rate ($/hr)" style="display: none; margin-top: 12px;" step="0.01" oninput="schedulePayPreview()">
         </div>
 
         <div class="sheet-card" id="section-shift-times">
@@ -198,12 +198,23 @@
             </div>
         </div>
 
+        <div class="sheet-card" id="section-notes">
+            <div class="sheet-card-title">Notes</div>
+            <div id="notes-list"></div>
+            <div style="display:flex; gap:8px; margin-top:10px; align-items:center;">
+                <input type="text" id="input-note" class="text-input" style="flex:1; min-width:0;" placeholder="e.g. Covered line 2, spoke to TL...">
+                <button class="btn-action btn-save" style="padding:8px 16px; font-size:13px; white-space:nowrap;" onclick="addNoteFromForm()">＋ Add</button>
+            </div>
+        </div>
+
         <div id="conflict-warning">
             <div id="conflict-text"></div>
             <label style="display: none; align-items: center; justify-content: center; gap: 5px; margin-top: 10px; font-size: 12px; color: var(--text);" id="override-label">
                 <input type="checkbox" id="cb-override" onchange="haptic(); updatePickupToggles()"> Override Lockdown
             </label>
         </div>
+
+        <div id="pay-preview" style="display:none; margin: 0 0 12px; padding: 10px 14px; border-radius: 12px; background: var(--input-bg); border: 1px solid var(--border); font-size: 13px; font-weight: 700; text-align: center;"></div>
 
         <div class="btn-row">
             <button class="btn-action btn-remove" id="btn-remove" onclick="removeShift()">Clear Day</button>
@@ -415,6 +426,12 @@
                     <div class="settings-label" style="color: var(--off); font-weight: bold;">📷 Restore via QR (Scan)</div>
                 </div>
                 <div class="settings-row">
+                    <div class="settings-label" style="flex-direction:column;align-items:flex-start;gap:2px">
+                        Auto-Backup Safety Net
+                        <span id="autobackup-status" style="font-size:11px;opacity:0.55"></span>
+                    </div>
+                </div>
+                <div class="settings-row">
                     <div class="settings-label">Backup Reminder</div>
                     <select id="setting-backup-reminder" class="settings-select" onchange="setBackupReminder(this.value)">
                         <option value="0">Off</option>
@@ -430,6 +447,9 @@
 
             <div class="settings-group-title">Native OS Integrations</div>
             <div class="settings-group">
+                <div class="settings-row" style="cursor: pointer;" onclick="exportICS()">
+                    <div class="settings-label" style="color: var(--day); font-weight: bold;">🗓️ Export Calendar (.ics)</div>
+                </div>
                 <div class="settings-row">
                     <div class="settings-label">Sync to Phone Calendar</div>
                     <label class="switch">
@@ -498,6 +518,16 @@
                     <div class="settings-label">3-Hour Warning</div>
                     <label class="switch">
                         <input type="checkbox" id="setting-notif-3" onchange="haptic()">
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label" style="flex-direction:column;align-items:flex-start;gap:2px">
+                        On-Shift Status Card
+                        <span style="font-size:11px;opacity:0.55">Pinned notification during your shift, with quick notes</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="setting-shift-notif" onchange="haptic()">
                         <span class="switch-slider"></span>
                     </label>
                 </div>
@@ -593,8 +623,10 @@
     <script src="payroll.js"></script>
     <script src="payrollTools.js"></script>
     <script src="charts.js"></script>
+    <script src="analytics.js"></script>
     <script src="calendar.js"></script>
     <script src="notifications.js"></script>
+    <script src="icsExport.js"></script>
     <script src="shiftForm.js"></script>
     <script src="ui.js"></script>
     <script src="settings.js"></script>
@@ -605,6 +637,7 @@
     <script src="vendor/jsQR.js"></script>
     <script src="dataExport.js"></script>
     <script src="backup.js"></script>
+    <script src="autoBackup.js"></script>
     <script src="onboarding.js"></script>
     <script src="coachmarks.js"></script>
     <script src="app.js"></script>

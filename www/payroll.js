@@ -50,9 +50,35 @@ function getPayPeriodsInYear(year) {
     return count > 0 ? count : 26;
 }
 
+// Default (2026) brackets used when a tax-year table carries no bracket data —
+// keeps years 2024/2025 and older fetched tables computing exactly as before.
+const DEFAULT_FED_BRACKETS = [[58523,0.14],[117045,0.205],[181440,0.26],[258482,0.29],[null,0.33]];
+const DEFAULT_ON_BRACKETS  = [[53891,0.0505],[107785,0.0915],[150000,0.1116],[220000,0.1216],[null,0.1316]];
+const DEFAULT_BPA_PHASEOUT = { start:181440, end:258482, floor:14829 };
+const DEFAULT_ON_SURTAX    = [[5818,0.20],[7446,0.36]];
+
+/**
+ * Progressive tax on an annual amount from [threshold, rate] bracket pairs.
+ * A null threshold means "no upper limit".
+ * @param {number} annG
+ * @param {Array<[number|null, number]>} brackets
+ * @returns {number}
+ */
+function progressiveTax(annG, brackets) {
+    let tax = 0, prev = 0;
+    for (const [upTo, rate] of brackets) {
+        const cap = (upTo == null) ? Infinity : upTo;
+        if (annG <= cap) return tax + (annG - prev) * rate;
+        tax += (cap - prev) * rate;
+        prev = cap;
+    }
+    return tax;
+}
+
 /**
  * Calculate all payroll deductions for a bi-weekly gross amount.
- * Uses fetched/built-in tax tables for CPP1, CPP2, EI and federal/Ontario credits.
+ * Uses fetched/built-in tax tables for CPP1, CPP2, EI, federal/Ontario credits
+ * and (when the year's table provides them) year-specific tax brackets.
  * @param {number} biGross      gross pay for this pay period
  * @param {number} ppI          pay period index (used to apply CPP/EI caps)
  * @param {number} [targetYear=2026]
@@ -82,37 +108,31 @@ function calculateTaxes(biGross, ppI, targetYear = 2026) {
     const annCPP2 = Math.min(cpp2 * ppCount, annCPP2Max);
     const annEI   = Math.min(ei   * ppCount, annEIMax);
 
-    // BPA phase-out above $181 440 (2026 threshold)
-    if (annG > 181440) {
-        const excess = Math.min(annG - 181440, 258482 - 181440);
-        fedBPA -= (excess / 77042) * (fedBPA - 14829);
+    const fedBrackets = tbl.fedBrackets || DEFAULT_FED_BRACKETS;
+    const onBrackets  = tbl.onBrackets  || DEFAULT_ON_BRACKETS;
+    const phaseOut    = tbl.bpaPhaseOut || DEFAULT_BPA_PHASEOUT;
+    const onSurtax    = tbl.onSurtax    || DEFAULT_ON_SURTAX;
+
+    // BPA phase-out for high income (fedBPA shrinks toward its floor)
+    if (annG > phaseOut.start) {
+        const excess = Math.min(annG - phaseOut.start, phaseOut.end - phaseOut.start);
+        fedBPA -= (excess / (phaseOut.end - phaseOut.start)) * (fedBPA - phaseOut.floor);
     }
 
-    // Federal tax
-    let fedGross = 0;
-    if      (annG <= 58523)  fedGross = annG * 0.14;
-    else if (annG <= 117045) fedGross = 8193.22  + (annG - 58523)  * 0.205;
-    else if (annG <= 181440) fedGross = 20190.23 + (annG - 117045) * 0.26;
-    else if (annG <= 258482) fedGross = 36932.93 + (annG - 181440) * 0.29;
-    else                     fedGross = 59275.11 + (annG - 258482) * 0.33;
-
-    const fedCredits = (fedBPA + annCPP + annCPP2 + annEI + cea) * 0.14;
+    // Federal tax (credits use the lowest bracket rate)
+    const fedGross   = progressiveTax(annG, fedBrackets);
+    const fedCredits = (fedBPA + annCPP + annCPP2 + annEI + cea) * fedBrackets[0][1];
     const fedT       = Math.max(0, fedGross - fedCredits);
 
     // Ontario tax
-    let onGross = 0;
-    if      (annG <= 53891)  onGross = annG * 0.0505;
-    else if (annG <= 107785) onGross = 2721.50  + (annG - 53891)  * 0.0915;
-    else if (annG <= 150000) onGross = 7652.80  + (annG - 107785) * 0.1116;
-    else if (annG <= 220000) onGross = 12364.00 + (annG - 150000) * 0.1216;
-    else                     onGross = 20876.00 + (annG - 220000) * 0.1316;
-
-    const onCredits = (onBPA + annCPP + annCPP2 + annEI) * 0.0505;
+    const onGross   = progressiveTax(annG, onBrackets);
+    const onCredits = (onBPA + annCPP + annCPP2 + annEI) * onBrackets[0][1];
     let onT = Math.max(0, onGross - onCredits);
 
-    // Ontario surtax
-    if (onT > 5818) onT += (onT - 5818) * 0.20;
-    if (onT > 7446) onT += (onT - 7446) * 0.36;
+    // Ontario surtax — thresholds apply sequentially to the running total
+    for (const [thresh, rate] of onSurtax) {
+        if (onT > thresh) onT += (onT - thresh) * rate;
+    }
 
     // Ontario Health Premium
     let ohp = 0;

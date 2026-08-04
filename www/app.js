@@ -24,6 +24,17 @@ document.addEventListener('deviceready', function() {
                 updateNotifications();
             }
         });
+
+        // Notes typed into the on-shift status card's input action land on the
+        // day the notification belongs to (data.dStr set when scheduling).
+        cordova.plugins.notification.local.on('shift-note', function (notification, eopts) {
+            const text = eopts && eopts.text;
+            const dStr = notification && notification.data && notification.data.dStr;
+            if (text && dStr && typeof addShiftNote === 'function') {
+                addShiftNote(dStr, text);
+                showToast('Note saved to ' + dStr);
+            }
+        });
     }
 }, false);
 
@@ -76,6 +87,11 @@ if (typeof maybeStartOnboarding === 'function') maybeStartOnboarding();
 
 // Gentle "time to back up" nudge when overdue (no-op unless enabled in Settings).
 if (typeof maybeBackupReminder === 'function') maybeBackupReminder();
+
+// Auto-backup safety net: protect site storage from eviction and, if this
+// launch found no data, offer to restore the latest automatic snapshot.
+if (typeof requestPersistentStorage === 'function') requestPersistentStorage();
+if (typeof maybeRestoreFromSnapshot === 'function') setTimeout(maybeRestoreFromSnapshot, 800);
 
 // First-run guided tour (no-op once seen; deferred while onboarding is showing).
 if (sysSettings.hasSeenOnboarding && typeof maybeStartCoachmarks === 'function') {

@@ -183,6 +183,7 @@ function openPickupSheet(dStr, disp, curS, nextS) {
     }
 
     updatePickupToggles();
+    renderShiftNotes();
 
     const btnRemove = document.getElementById('btn-remove');
     if (btnRemove) btnRemove.style.display = Object.keys(ex).length ? 'block' : 'none';
@@ -664,13 +665,77 @@ function updatePickupToggles(skipSliderReset = false) {
     const cw = document.getElementById('conflict-warning');
     if (cw) cw.style.display = (wT && wT.innerHTML) ? 'block' : 'none';
     if (bSave) { bSave.disabled = !canS; bSave.style.opacity = canS ? '1' : '0.5'; bSave.style.pointerEvents = canS ? 'auto' : 'none'; }
+
+    schedulePayPreview();
+}
+
+// ─── Live marginal-pay preview ────────────────────────────────────────────────
+// Shows what saving the current form state would do to this pay period's gross
+// and (after taxes/CPP/EI, cap-aware via calculateTaxes) net pay.
+
+let _payPreviewTimer = null;
+function schedulePayPreview() {
+    clearTimeout(_payPreviewTimer);
+    _payPreviewTimer = setTimeout(renderPayPreview, 180);
+}
+
+function renderPayPreview() {
+    const el = document.getElementById('pay-preview');
+    if (!el || !activeDate) return;
+
+    const crew = (document.getElementById('crew-select') || {}).value || sysSettings.defaultCrew;
+    const dUTC = Date.UTC(+activeDate.substring(0, 4), +activeDate.substring(5, 7) - 1, +activeDate.substring(8, 10));
+    const pi   = Math.floor((dUTC - basePPStartUTC) / MS_PP);
+    const year = new Date(basePPStartUTC + pi * MS_PP + MS_PP_TO_END).getUTCFullYear();
+
+    const original = extraShifts[activeDate];
+    let baseGross, newGross;
+    try {
+        precalcFatigue(year, crew);
+        baseGross = computePPGross(pi, crew, year);
+        extraShifts[activeDate] = buildShiftPayload();
+        invalidateFatigueCache();
+        precalcFatigue(year, crew);
+        newGross = computePPGross(pi, crew, year);
+    } catch (e) {
+        el.style.display = 'none';
+        return;
+    } finally {
+        if (original === undefined) delete extraShifts[activeDate];
+        else extraShifts[activeDate] = original;
+        invalidateFatigueCache();
+    }
+
+    const dGross = newGross - baseGross;
+    if (Math.abs(dGross) < 0.5) {
+        el.style.display = 'block';
+        el.style.color = 'var(--text-muted)';
+        el.textContent = 'No pay change this period';
+        return;
+    }
+    const baseTax = calculateTaxes(baseGross, pi, year);
+    const newTax  = calculateTaxes(newGross,  pi, year);
+    const dNet    = dGross - (newTax.total - baseTax.total);
+    const sign    = dGross > 0 ? '+' : '−';
+    const col     = dGross > 0 ? 'var(--off)' : 'var(--night)';
+    el.style.display = 'block';
+    el.style.color = col;
+    el.textContent = `${sign}$${Math.abs(dGross).toFixed(2)} gross · ≈ ${dNet >= 0 ? '+' : '−'}$${Math.abs(dNet).toFixed(2)} net this pay period`;
 }
 
 // ─── Save / Remove shift ──────────────────────────────────────────────────────
 
-function saveShift() {
-    haptic();
+/**
+ * Build the extraShifts payload the current form state would save.
+ * Pure read of the form/DOM — shared by saveShift() and the live pay preview.
+ * @returns {Object}
+ */
+function buildShiftPayload() {
     const payload = { role: selectedRole };
+
+    // Notes ride along with the day: re-saving the form must never drop them.
+    const _existingNotes = (extraShifts[activeDate] || {}).notes;
+    if (_existingNotes && _existingNotes.length) payload.notes = _existingNotes;
 
     if (selectedRole === 'Manual') {
         const manualInput = document.getElementById('manual-rate-input');
@@ -755,11 +820,17 @@ function saveShift() {
             };
         }
     }
+    return payload;
+}
 
+function saveShift() {
+    haptic();
+    const payload = buildShiftPayload();
     extraShifts[activeDate] = payload;
     try { localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts)); }
     catch(e) { showToast('Storage full — shift not saved.', 'error'); return; }
     invalidateFatigueCache();
+    if (typeof dataChanged === 'function') dataChanged();
     updateNotifications();
     closeAllSheets();
     showToast('Shift Saved');
@@ -777,8 +848,70 @@ function removeShift() {
     try { localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts)); }
     catch(e) { showToast('Storage full — could not remove shift.', 'error'); return; }
     invalidateFatigueCache();
+    if (typeof dataChanged === 'function') dataChanged();
     updateNotifications();
     closeAllSheets();
     if (_undoPayload) showToastWithUndo('Shift Removed', _undoDate, _undoPayload);
     else showToast('Shift Removed', 'error');
+}
+// ─── Shift notes ──────────────────────────────────────────────────────────────
+// Free-text notes attached to a day (extraShifts[dStr].notes = [{text, at}]).
+// Added from the pickup sheet or straight from the on-shift notification's
+// input action; included in backups automatically via extraShifts.
+
+/** Append a note to a day and persist. Safe to call for days with no entry. */
+function addShiftNote(dStr, text) {
+    if (!dStr || !text || !text.trim()) return;
+    const ex = extraShifts[dStr] || {};
+    ex.notes = ex.notes || [];
+    ex.notes.push({ text: text.trim(), at: Date.now() });
+    extraShifts[dStr] = ex;
+    try { localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts)); } catch (e) { return; }
+    if (typeof dataChanged === 'function') dataChanged();
+}
+
+/** Delete a note (identified by its timestamp) from a day. */
+function deleteShiftNote(dStr, at) {
+    haptic();
+    const ex = extraShifts[dStr];
+    if (!ex || !ex.notes) return;
+    ex.notes = ex.notes.filter(n => n.at !== at);
+    if (!ex.notes.length) delete ex.notes;
+    // A bare {role} husk left behind by note-only entries can be dropped whole.
+    if (!ex.notes && Object.keys(ex).every(k => k === 'role')) delete extraShifts[dStr];
+    try { localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts)); } catch (e) {}
+    if (typeof dataChanged === 'function') dataChanged();
+    renderShiftNotes();
+}
+
+/** Add the note typed in the pickup sheet's input. */
+function addNoteFromForm() {
+    haptic();
+    const input = document.getElementById('input-note');
+    if (!input || !input.value.trim()) return;
+    addShiftNote(activeDate, input.value);
+    input.value = '';
+    renderShiftNotes();
+    showToast('Note added');
+}
+
+/** Render the active day's notes list inside the pickup sheet. */
+function renderShiftNotes() {
+    const host = document.getElementById('notes-list');
+    if (!host) return;
+    const input = document.getElementById('input-note');
+    if (input) input.value = '';
+    const notes = (extraShifts[activeDate] || {}).notes || [];
+    if (!notes.length) { host.innerHTML = ''; return; }
+    host.innerHTML = notes.map(n => {
+        const when = new Date(n.at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        const safe = String(n.text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        return `<div class="note-row" style="display:flex; align-items:flex-start; gap:8px; padding:8px 0; border-bottom:1px solid var(--glass-border);">
+            <div style="flex:1; min-width:0;">
+                <div style="font-size:13px; color:var(--text); word-wrap:break-word;">${safe}</div>
+                <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">${when}</div>
+            </div>
+            <button onclick="deleteShiftNote('${activeDate}', ${n.at})" aria-label="Delete note" style="background:none; border:none; color:var(--night); font-size:14px; cursor:pointer; padding:2px 6px;">✕</button>
+        </div>`;
+    }).join('');
 }

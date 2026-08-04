@@ -39,6 +39,7 @@ function applyBackupObject(data) {
     taxTables    = safeParse(STORAGE_KEYS.TAX_TABLES,    null);
 
     initDefaults();
+    if (typeof dataChanged === 'function') dataChanged();
     applyTheme(sysSettings.theme);
 
     const gText = document.getElementById('greeting-text');
@@ -88,22 +89,22 @@ async function exportData() {
     }
 }
 
-function _cordovaWriteAndShare(jsonString, fileName) {
+function _cordovaWriteAndShare(content, fileName, mime = 'application/json', message = 'Here is your Shift Hub backup.') {
     window.resolveLocalFileSystemURL(window.cordova.file.cacheDirectory, function(dirEntry) {
         dirEntry.getFile(fileName, { create: true, exclusive: false }, function(fileEntry) {
             fileEntry.createWriter(function(fileWriter) {
                 fileWriter.onwriteend = function() {
                     window.plugins.socialsharing.shareWithOptions({
-                        message: 'Here is your Shift Hub backup.',
+                        message: message,
                         subject: fileName,
                         files: [fileEntry.nativeURL]
                     }, null, function() {
                         showToast('Share failed. Try again.', 'error');
                     });
                 };
-                fileWriter.onerror = function() { showToast('Failed to write backup file.', 'error'); };
-                fileWriter.write(new Blob([jsonString], { type: 'application/json' }));
-            }, function() { showToast('Failed to create backup file.', 'error'); });
+                fileWriter.onerror = function() { showToast('Failed to write file.', 'error'); };
+                fileWriter.write(new Blob([content], { type: mime }));
+            }, function() { showToast('Failed to create file.', 'error'); });
         }, function() { showToast('Failed to access storage.', 'error'); });
     }, function() { showToast('Storage not available.', 'error'); });
 }

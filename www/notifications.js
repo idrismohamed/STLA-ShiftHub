@@ -1,20 +1,24 @@
 /**
- * Sync a single day to the device's native calendar.
- * Deletes the previous event for that day (if any) then creates a new one.
- * Requires cordova-plugin-calendar and sysSettings.syncCalendar === true.
+ * Resolve what actually happens on a given day: off or working, start/end
+ * times and duration, honouring extraShifts overrides, the base rotation and
+ * fatigue lockouts. Single source of truth shared by the calendar sync, the
+ * notification scheduler and the ICS export.
+ * Requires precalcFatigue() to have run for the relevant year.
  * @param {string} dStr  YYYY-MM-DD
+ * @param {string} crew  'A'|'B'|'C'|'D'
+ * @returns {{ isOff:boolean, startTime:string|null, endTime:string|null,
+ *             durH:number, isNight:boolean, ex:Object|undefined }}
  */
-function safeSingleDaySync(dStr) {
-    const crew = sysSettings.defaultCrew;
-    const pI   = getPIndex(Date.UTC(+dStr.substring(0, 4), +dStr.substring(5, 7) - 1, +dStr.substring(8, 10)));
-    const bS   = getShiftForCrew(pI, crew);
-    const ex   = extraShifts[dStr];
-    const f    = dayFatigue[dStr] || {};
+function resolveDaySchedule(dStr, crew) {
+    const pI = getPIndex(Date.UTC(+dStr.substring(0, 4), +dStr.substring(5, 7) - 1, +dStr.substring(8, 10)));
+    const bS = getShiftForCrew(pI, crew);
+    const ex = extraShifts[dStr];
+    const f  = dayFatigue[dStr] || {};
 
     let sTime = null, isOff = false;
 
     if (ex) {
-        if (['Off', 'DropOff', 'Vacation', 'Lieu'].includes(ex.type) && (!ex.startTime || !ex.endTime)) {
+        if (['Off', 'DropOff', 'Vacation', 'Lieu', 'OffDay'].includes(ex.type) && (!ex.startTime || !ex.endTime)) {
             isOff = true;
         } else if (ex.startTime) {
             sTime = ex.startTime;
@@ -35,21 +39,39 @@ function safeSingleDaySync(dStr) {
 
     if (f.isLockout && (!ex || !ex.overrideLockout)) isOff = true;
 
+    if (isOff || !sTime) return { isOff: true, startTime: null, endTime: null, durH: 0, isNight: false, ex };
+
+    const sh    = parseInt(sTime.split(':')[0], 10);
+    const eTime = (ex && ex.endTime) || (sh >= 12 ? '06:30' : '18:30');
+    let isNight = sh >= 12;
+    if (ex && ex.type === 'Day')   isNight = false;
+    if (ex && ex.type === 'Night') isNight = true;
+    return { isOff: false, startTime: sTime, endTime: eTime, durH: getDuration(sTime, eTime), isNight, ex };
+}
+
+/**
+ * Sync a single day to the device's native calendar.
+ * Deletes the previous event for that day (if any) then creates a new one.
+ * Requires cordova-plugin-calendar and sysSettings.syncCalendar === true.
+ * @param {string} dStr  YYYY-MM-DD
+ */
+function safeSingleDaySync(dStr) {
+    const crew = sysSettings.defaultCrew;
+    const day  = resolveDaySchedule(dStr, crew);
+    const ex   = day.ex;
+
     const [y, m, d] = dStr.split('-').map(Number);
     let start, end, title;
 
-    if (isOff) {
+    if (day.isOff) {
         start = new Date(y, m - 1, d, 0, 0, 0);
         end   = new Date(y, m - 1, d, 23, 59, 59);
         title = 'OFF SHIFT';
     } else {
-        const [sh, smin] = sTime ? sTime.split(':').map(Number) : [0, 0];
+        const [sh, smin] = day.startTime.split(':').map(Number);
         start = new Date(y, m - 1, d, sh, smin, 0);
-        const dur = getDuration(sTime || '06:30', ex?.endTime || (sh >= 12 ? '06:30' : '18:30'));
-        end   = new Date(start.getTime() + dur * 3600000);
-        title = (sh >= 12) ? 'NIGHT SHIFT' : 'DAY SHIFT';
-        if (ex && ex.type === 'Day')   title = 'DAY SHIFT';
-        if (ex && ex.type === 'Night') title = 'NIGHT SHIFT';
+        end   = new Date(start.getTime() + day.durH * 3600000);
+        title = day.isNight ? 'NIGHT SHIFT' : 'DAY SHIFT';
         if (ex && ex.crew && ex.crew !== sysSettings.defaultCrew) {
             title += /^[A-D]$/.test(ex.crew) ? ` (${ex.crew}-SHIFT)` : (ex.crew === 'OT' ? ' (OT)' : ` (${ex.crew})`);
         }
@@ -126,40 +148,17 @@ function updateNotifications() {
     for (let i = 0; i < 30; i++) {
         const checkUTC  = nowUTC + i * MS_DAY;
         const dStr      = toDateKey(checkUTC);
-        const bS        = getShiftForCrew(getPIndex(checkUTC), crew);
-        const ex        = extraShifts[dStr];
-        const f         = dayFatigue[dStr] || {};
         const shortDate = dStr.replace(/-/g, '').substring(2);
 
-        cancelIds.push(parseInt(shortDate + '1'), parseInt(shortDate + '2'), parseInt(shortDate + '3'), parseInt(shortDate + '4'));
+        cancelIds.push(parseInt(shortDate + '1'), parseInt(shortDate + '2'), parseInt(shortDate + '3'), parseInt(shortDate + '4'), parseInt(shortDate + '5'));
 
-        let sTime = null, isOff = false;
+        const day   = resolveDaySchedule(dStr, crew);
+        const sTime = day.startTime;
 
-        if (ex) {
-            if (['Off', 'DropOff', 'Vacation', 'Lieu'].includes(ex.type) && (!ex.startTime || !ex.endTime)) {
-                isOff = true;
-            } else if (ex.startTime) {
-                sTime = ex.startTime;
-            } else if (ex.type === 'DropPaid') {
-                isOff = true;
-            } else if (ex.type === 'Day')  { sTime = '06:30'; }
-            else if (ex.type === 'Night') { sTime = '18:30'; }
-        }
-
-        if (!sTime && !isOff && !ex) {
-            if      (bS === 'D') sTime = '06:30';
-            else if (bS === 'N') sTime = '18:30';
-            else if (bS === 'O') isOff = true;
-        }
-
-        if (f.isLockout && (!ex || !ex.overrideLockout)) isOff = true;
-
-        if (sTime && !isOff) {
+        if (sTime && !day.isOff) {
             const [hh, mm]   = sTime.split(':').map(Number);
             const shiftStart = new Date(+dStr.substring(0, 4), +dStr.substring(5, 7) - 1, +dStr.substring(8, 10), hh, mm, 0);
-            let shiftName    = hh >= 12 ? 'Night Shift' : 'Day Shift';
-            if (ex && ex.type === 'Day')   shiftName = 'Day Shift';
-            if (ex && ex.type === 'Night') shiftName = 'Night Shift';
+            const shiftName  = day.isNight ? 'Night Shift' : 'Day Shift';
 
             if (sysSettings.notif24h) {
                 const t24 = new Date(shiftStart.getTime() - 24 * 3600000);
@@ -192,6 +191,28 @@ function updateNotifications() {
                     text: `Your shift starts in 2 hours!`,
                     trigger: { at: wakeTime }, priority: 2, wakeup: true, sound: 'default', vibrate: true, color: '#ff3b30'
                 });
+            }
+
+            // On-shift status card: pinned only WHILE the shift runs. Appears at
+            // shift start (immediately if we're already mid-shift), auto-dismissed
+            // at shift end via timeoutAfter — no app wake-up needed. Its input
+            // action drops a note straight onto the day (handler in app.js).
+            if (sysSettings.shiftNotif && day.durH > 0) {
+                const shiftEnd = new Date(shiftStart.getTime() + day.durH * 3600000);
+                if (shiftEnd > now) {
+                    const n = {
+                        id: parseInt(shortDate + '5'),
+                        title: `${shiftName} · Crew ${crew}`,
+                        text: `${formatTime12(sTime)} – ${formatTime12(day.endTime)} · tap Add note to log something`,
+                        sticky: true, priority: -1, wakeup: false, sound: false,
+                        smallIcon: 'res://icon', color: '#ff6d00',
+                        timeoutAfter: shiftEnd.getTime() - Math.max(shiftStart.getTime(), now.getTime()),
+                        actions: [{ id: 'shift-note', type: 'input', title: '📝 Add note', emptyText: 'Quick note…' }],
+                        data: { dStr }
+                    };
+                    if (shiftStart > now) n.trigger = { at: shiftStart };
+                    notifications.push(n);
+                }
             }
         }
     }

@@ -43,6 +43,7 @@ function openSettingsSheet() {
         'setting-notif-24':  'notif24h',
         'setting-notif-12':  'notif12h',
         'setting-notif-3':   'notif3h',
+        'setting-shift-notif': 'shiftNotif',
 'setting-cal-sync':  'syncCalendar',
         'setting-alarms':    'smartAlarms'
     };
@@ -65,13 +66,17 @@ function openSettingsSheet() {
     if (eiS)   eiS.value   = sysSettings.eiMaxPP;
 
     updateTaxFetchedLabel();
+    if (typeof updateAutoBackupStatus === 'function') updateAutoBackupStatus();
     openSheet('sheet-settings');
 }
 
 function saveSettings() {
     haptic();
     const g = id => document.getElementById(id);
+    // Spread the existing settings first: keys without a form field here
+    // (hasSeenOnboarding, lastBackupAt, backupReminderDays, …) must survive.
     sysSettings = {
+        ...sysSettings,
         theme:             g('setting-theme')         ? g('setting-theme').value           : 'system',
         displayName:       g('setting-display-name')  ? (g('setting-display-name').value || 'Drizzy') : 'Drizzy',
         regRate:           g('setting-reg-rate')       ? (parseFloat(g('setting-reg-rate').value) || 47.06)  : 47.06,
@@ -89,10 +94,12 @@ function saveSettings() {
         notif24h:          g('setting-notif-24')    ? g('setting-notif-24').checked    : true,
         notif12h:          g('setting-notif-12')    ? g('setting-notif-12').checked    : true,
         notif3h:           g('setting-notif-3')     ? g('setting-notif-3').checked     : true,
+        shiftNotif:        g('setting-shift-notif') ? g('setting-shift-notif').checked : false,
 syncCalendar:      g('setting-cal-sync')    ? g('setting-cal-sync').checked    : false,
         smartAlarms:       g('setting-alarms')      ? g('setting-alarms').checked      : false
     };
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(sysSettings));
+    if (typeof dataChanged === 'function') dataChanged();
 
     const gText = document.getElementById('greeting-text');
     if (gText) gText.innerHTML = `<span>${sysSettings.displayName}</span>`;
@@ -137,6 +144,13 @@ async function fetchTaxRates(silent = false) {
 
 function updateTaxFetchedLabel() {
     const el = document.getElementById('tax-fetched-date');
-    const d  = localStorage.getItem(STORAGE_KEYS.TAX_FETCHED);
-    if (el) el.textContent = d ? `Last updated: ${d}` : 'Not yet synced';
+    if (!el) return;
+    const d = localStorage.getItem(STORAGE_KEYS.TAX_FETCHED);
+    let txt = d ? `Last updated: ${d}` : 'Not yet synced';
+    // Flag years whose table is a projection (e.g. 2027 before CRA publishes).
+    const year = getLogicalToday().getFullYear();
+    for (const y of [year, year + 1]) {
+        if (getTaxYear(y).estimated) { txt += ` · ${y} rates are estimates`; break; }
+    }
+    el.textContent = txt;
 }
