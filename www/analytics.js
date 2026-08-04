@@ -698,7 +698,8 @@ function openTimeOffDetail(type) {
     const days = Object.keys(extraShifts).filter(d => match(extraShifts[d])).sort().reverse();
     const titleEl = document.getElementById('timeoff-detail-title');
     const host    = document.getElementById('timeoff-detail-content');
-    if (titleEl) titleEl.textContent = meta.title;
+    // meta.title carries an inline <svg> icon, so it must be assigned as HTML.
+    if (titleEl) titleEl.innerHTML = meta.title;
     if (!host) return;
 
     if (!days.length) {

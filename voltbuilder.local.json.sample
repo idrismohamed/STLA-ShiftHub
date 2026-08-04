@@ -1,0 +1,9 @@
+{
+  "_comment": "Copy to voltbuilder.local.json (git-ignored) and fill in. NEVER commit the real file. release_body is the base64 of your PKCS#12 keystore: base64 -w0 my-release.p12",
+  "android": {
+    "release_body": "<base64 of your .p12 keystore>",
+    "release_alias": "<key alias>",
+    "release_password": "<keystore password>",
+    "release_key_password": "<key password>"
+  }
+}

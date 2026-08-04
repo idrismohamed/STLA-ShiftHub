@@ -108,6 +108,26 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond }); console
   check('Rest & Recovery card renders with turnaround stats', !!rest && /Avg Turnaround/.test(rest) && /Short Rests/.test(rest),
         (rest || '').replace(/\s+/g, ' ').substring(0, 90));
 
+  // ── Time-off detail sheet: icon in the title must RENDER, not print as text ──
+  // All three variants share one title element, so all three are checked.
+  for (const [type, label] of [['drop', 'Drop Days'], ['lieu', 'Lieu'], ['vacation', 'Vacation Days']]) {
+    const to = await page.evaluate(async (t) => {
+      closeAllSheets();
+      openTimeOffDetail(t);
+      await new Promise(r => setTimeout(r, 350));
+      const el = document.getElementById('timeoff-detail-title');
+      return { text: el.textContent, svgs: el.querySelectorAll('svg').length };
+    }, type);
+    check(`Time-off "${type}" title renders its icon as an element, not raw markup`,
+          to.svgs === 1 && !/<svg|href="#i-/.test(to.text), JSON.stringify(to));
+    check(`Time-off "${type}" title keeps its label`, to.text.includes(label), to.text);
+  }
+
+  // No icon markup should ever leak as literal text anywhere on screen.
+  const leaked = await page.evaluate(() =>
+    /<svg class="shi"|href="#i-/.test(document.body.innerText));
+  check('No icon markup leaks as visible text anywhere', leaked === false);
+
   check('Zero console/page errors during dashboard render', errors.length === 0, errors.slice(0, 4).join(' | '));
 
   await browser.close();
