@@ -979,8 +979,8 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 10px; cu
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.cal-pp-label-wrap { min-width: 0; display: flex; }
-.cal-pp-label-wrap .cal-month-label { font-size: 12.5px; }
+.cal-pp-label-wrap { min-width: 0; display: flex; align-items: center; overflow: hidden; border-radius: 50px; }
+.cal-pp-label-wrap .cal-month-label { font-size: 12.5px; line-height: 1.3; }
 .cal-nav-btn {
     position: relative;
     background: none;
@@ -1086,7 +1086,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 10px; cu
 .cal-pp-label-current {
     background: var(--accent);
     border-radius: 50px;
-    padding: 5px 10px;
+    padding: 6px 12px;
     box-shadow: 0 3px 10px rgba(255,107,53,0.35);
     min-width: 0;
 }

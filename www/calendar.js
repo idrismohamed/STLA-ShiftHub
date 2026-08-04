@@ -1003,7 +1003,15 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
     const firstDayStr     = toDateKey(ppStart);
     const isDropPP        = (dayFatigue[firstDayStr] || {}).isDropPeriod === true;
 
-    const utcFmt   = utc => { const s = toDateKey(utc).split('-'); return new Date(+s[0], +s[1]-1, +s[2]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); };
+    // Compact numeric range on very narrow screens so the date pill always
+    // hugs its full text on one line with the tabs + Today button.
+    const _compactHdr = window.innerWidth < 380;
+    const utcFmt   = utc => {
+        const s = toDateKey(utc).split('-');
+        const d = new Date(+s[0], +s[1]-1, +s[2]);
+        return _compactHdr ? `${d.getMonth() + 1}/${d.getDate()}`
+                           : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
     const ppLabel  = `${utcFmt(ppStart)} – ${utcFmt(ppEnd)}`;
 
     const leftContent = `
