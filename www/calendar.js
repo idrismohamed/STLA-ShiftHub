@@ -625,7 +625,10 @@ function positionTabIndicator() {
         setTo(_lastTabIndex);          // start at old tab
         void ind.offsetWidth;
         ind.style.transition = '';
+        // Shape-morph while travelling: pill → rounded rect → pill (M3E).
+        wrap.classList.add('morphing');
         requestAnimationFrame(() => setTo(activeIdx)); // slide to new tab
+        setTimeout(() => wrap.classList.remove('morphing'), 300);
     }
     _lastTabIndex = activeIdx;
 }

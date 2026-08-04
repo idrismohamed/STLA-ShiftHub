@@ -246,52 +246,57 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; ov
 .ytd-hero-grid { margin: 8px 0 0; }
 .an-hero-micro { font-size: 9px; font-weight: 700; color: #34a853; margin-top: 3px; letter-spacing: 0.03em; }
 
-/* Enhanced Modern Header (Glassmorphism) */
+/* ── M3 large app bar ──────────────────────────────────────────────────── */
 .app-header {
-    background: var(--card);
-    padding: 20px 20px 16px 20px;
+    background: var(--md-surface);
+    padding: 22px 20px 14px 20px;
     display: flex;
     align-items: center;
-    border-bottom: 1px solid var(--border);
     position: static;
     z-index: 50;
-    transition: background 0.3s, border-color 0.3s;
+    transition: background-color 0.3s;
 }
-.app-logo {
-    width: 54px;
-    height: 54px;
-    min-width: 54px;
-    border-radius: 50%;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    outline: 1px solid rgba(255,255,255,0.10);
-    outline-offset: 0;
-    margin-right: 15px;
-    object-fit: contain;
+/* Day/night monogram badge — SVG, tints with the theme (no raster clash) */
+.app-logo-badge {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    border-radius: var(--shape-md);
+    background: var(--md-primary-container);
+    color: var(--md-on-primary-container);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 14px;
     flex-shrink: 0;
+    transition: border-radius 0.4s var(--spring), background-color 0.3s;
 }
-[data-theme="light"] .app-logo { outline-color: rgba(0,0,0,0.10); }
-.app-title-container { display: flex; flex-direction: column; flex: 1; }
+.app-logo-badge:active { border-radius: 50%; }
+.app-title-container { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .app-subtitle { font-size: 12px; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
-.app-greeting-label { font-size: 11px; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; margin: 0 0 2px 0; }
-.app-title { font-size: 18px; font-weight: 900; letter-spacing: -0.5px; color: var(--text); margin: 0; text-wrap: balance; }
+.app-greeting-label { font-size: 11px; color: var(--text-muted); font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; margin: 0 0 2px 0; }
+.app-title { font-size: 22px; font-weight: 900; letter-spacing: -0.4px; color: var(--text); margin: 0; text-wrap: balance; }
 .app-title span { background: var(--accent-grad); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 .app-header-settings-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     background: transparent;
-    border: 1px solid var(--border);
-    font-size: 17px;
+    border: none;
     cursor: pointer;
     color: var(--text-muted);
     -webkit-tap-highlight-color: transparent;
-    transition: background 0.15s, color 0.15s;
+    transition: background-color 0.15s, color 0.15s, transform 0.32s var(--spring);
     flex-shrink: 0;
 }
-.app-header-settings-btn:active { background: var(--m3-surface-container-high); color: var(--text); }
+.app-header-settings-btn:active {
+    background: var(--md-surface-container-high);
+    color: var(--text);
+    transform: scale(var(--press)) rotate(24deg);
+}
 
 /* Dashboard Card */
 .dashboard-card {
@@ -686,7 +691,7 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; ov
     font-size: 16px;
 }
 
-/* Floating Pill Bar — single row */
+/* ── M3E floating toolbar (bottom navigation) ─────────────────────────── */
 .pill-bar {
     position: fixed;
     bottom: 20px;
@@ -694,48 +699,54 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; ov
     transform: translateX(-50%);
     width: fit-content;
     background: var(--glass-bg);
-    border-radius: 50px;
-    padding: 5px;
+    border-radius: var(--shape-full);
+    padding: 6px;
     display: flex;
-    gap: 4px;
+    gap: 6px;
     z-index: 90;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.32), 0 2px 8px rgba(0,0,0,0.16);
-    border: 1px solid var(--border);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.28), 0 2px 8px rgba(0,0,0,0.14);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
 }
 .pill-btn-secondary {
-    background: var(--m3-surface-container-high);
+    background: var(--md-surface-container-high);
     color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 50px;
-    padding: 8px 16px;
+    border: none;
+    /* Concentric with the 6px-padded pill container */
+    border-radius: var(--shape-full);
+    padding: 10px 16px;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 800;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: background 0.15s;
+    transition: background-color 0.15s, border-radius 0.35s var(--spring), transform 0.32s var(--spring);
     font-family: inherit;
     white-space: nowrap;
 }
-.pill-btn-secondary:active { background: var(--m3-surface-container-highest); }
+.pill-btn-secondary:active {
+    background: var(--md-surface-container-highest);
+    border-radius: var(--shape-md);
+    transform: scale(var(--press));
+}
 .pill-btn-primary {
-    background: var(--accent-grad);
-    color: #fff;
+    background: var(--md-primary);
+    color: var(--md-on-primary);
     border: none;
-    border-radius: 50px;
-    padding: 8px 20px;
+    border-radius: var(--shape-full);
+    padding: 10px 20px;
     font-size: 12px;
     font-weight: 800;
     cursor: pointer;
     box-shadow: 0 4px 14px rgba(255, 138, 92, 0.40);
     -webkit-tap-highlight-color: transparent;
-    transition: transform 0.32s var(--spring), box-shadow 0.15s;
+    transition: transform 0.32s var(--spring), border-radius 0.35s var(--spring), box-shadow 0.15s;
     font-family: inherit;
     white-space: nowrap;
 }
 .pill-btn-primary:active {
     transform: scale(var(--press));
+    border-radius: var(--shape-md);
     box-shadow: 0 2px 6px rgba(255, 138, 92, 0.22);
 }
 
@@ -961,17 +972,19 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
 .cal-nav-btn:active { background: var(--border); }
 .cal-nav-btn:disabled { opacity: 0.25; pointer-events: none; }
 
-/* View tab pill bar */
+/* M3 connected button group (Month/Week/Year) */
 .cal-view-tabs {
     position: relative;
     display: flex;
     align-items: center;
-    background: var(--border);
+    background: var(--md-surface-container);
     border-radius: 999px;
     padding: 3px;
     gap: 2px;
 }
-/* Sliding active-tab indicator (positioned by positionTabIndicator) */
+/* Sliding active-tab indicator — shape-morphs (pill→rounded rect→pill) while
+ * it travels, the M3E "connected group" selection feel. Radius is animated by
+ * the same spring as the slide; positionTabIndicator drives transform/width. */
 .cal-tab-ind {
     position: absolute;
     z-index: 0;
@@ -980,11 +993,12 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     left: 0;
     width: 0;
     border-radius: 999px;
-    background: var(--accent-grad);
+    background: var(--md-primary);
     box-shadow: 0 2px 8px rgba(255,138,92,0.40);
-    transition: transform 0.42s var(--spring), width 0.42s var(--spring);
+    transition: transform 0.42s var(--spring), width 0.42s var(--spring), border-radius 0.42s var(--spring);
     pointer-events: none;
 }
+.cal-view-tabs.morphing .cal-tab-ind { border-radius: var(--shape-xs); }
 .cal-tab {
     position: relative;
     z-index: 1;
