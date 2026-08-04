@@ -101,5 +101,59 @@ t('Net (gross − total) is positive and below gross for a normal cheque', () =>
   assert.ok(g - r.total > 0 && g - r.total < g);
 });
 
+// ─── Golden regression values (captured before the bracket-table refactor) ────
+// These pin the exact outputs of the pre-refactor engine for 2024–2026 so the
+// year-driven bracket tables can never silently change historical results.
+const GOLDEN = [
+  { g: 2500, pp: 0,  y: 2024, cpp: 140.7404, cpp2: 0,       ei: 41.5,  fedTax: 248.5582,  onTax: 133.6174 },
+  { g: 2500, pp: 0,  y: 2025, cpp: 140.7404, cpp2: 0,       ei: 41,    fedTax: 245.9796,  onTax: 132.9086 },
+  { g: 2500, pp: 0,  y: 2026, cpp: 141.037,  cpp2: 0,       ei: 40.75, fedTax: 253.0715,  onTax: 135.6634 },
+  { g: 4000, pp: 3,  y: 2026, cpp: 156.6833, cpp2: 15.4074, ei: 65.2,  fedTax: 556.1056,  onTax: 283.7699 },
+  { g: 6000, pp: 10, y: 2026, cpp: 156.6833, cpp2: 15.4074, ei: 97.8,  fedTax: 1057.6806, onTax: 648.1631 },
+  { g: 1200, pp: 0,  y: 2025, cpp: 63.3904,  cpp2: 0,       ei: 19.68, fedTax: 61.6009,   onTax: 43.1848 },
+  { g: 3200, pp: 20, y: 2024, cpp: 148.75,   cpp2: 7.2308,  ei: 53.12, fedTax: 389.9245,  onTax: 202.6669 }
+];
+
+t('Golden regression: 2024–2026 outputs unchanged after bracket refactor', () => {
+  for (const c of GOLDEN) {
+    const r = calculateTaxes(c.g, c.pp, c.y);
+    for (const k of ['cpp', 'cpp2', 'ei', 'fedTax', 'onTax']) {
+      assert.ok(Math.abs(r[k] - c[k]) <= 0.01, `${c.y} g=${c.g} ${k}: expected ${c[k]}, got ${r[k].toFixed(4)}`);
+    }
+  }
+});
+
+// ─── 2027 (estimated tables) ──────────────────────────────────────────────────
+
+t('2027 table resolves with bracket data and estimated flag', () => {
+  const t27 = getTaxYear(2027);
+  assert.ok(t27.estimated === true, 'expected estimated flag');
+  assert.ok(Array.isArray(t27.fedBrackets) && Array.isArray(t27.onBrackets), 'expected bracket arrays');
+  assert.ok(t27.fedBPA > getTaxYear(2026).fedBPA, '2027 BPA should exceed 2026');
+});
+
+t('2027 deductions are sane and monotonic in gross', () => {
+  let prev = -1;
+  for (const g of [1000, 2000, 3000, 4500, 6000]) {
+    const r = calculateTaxes(g, 0, 2027);
+    const totalTax = r.fedTax + r.onTax;
+    assert.ok(totalTax >= prev, `tax not monotonic at g=${g}`);
+    assert.ok(r.total < g, `deductions exceed gross at g=${g}`);
+    assert.ok(r.cpp >= 0 && r.cpp2 >= 0 && r.ei >= 0, 'negative contribution');
+    prev = totalTax;
+  }
+});
+
+t('2027 indexation lowers tax slightly vs 2026 at equal gross', () => {
+  const a = calculateTaxes(2800, 0, 2026);
+  const b = calculateTaxes(2800, 0, 2027);
+  assert.ok((b.fedTax + b.onTax) < (a.fedTax + a.onTax), 'indexed brackets/BPA should reduce tax');
+});
+
+t('Unknown future year falls back to the latest built-in table', () => {
+  const far = getTaxYear(2030);
+  assert.strictEqual(far, getTaxYear(2027));
+});
+
 console.log(`\n${passed}/${passed + failed} engine checks passed.`);
 process.exit(failed ? 1 : 0);

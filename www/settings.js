@@ -137,6 +137,13 @@ async function fetchTaxRates(silent = false) {
 
 function updateTaxFetchedLabel() {
     const el = document.getElementById('tax-fetched-date');
-    const d  = localStorage.getItem(STORAGE_KEYS.TAX_FETCHED);
-    if (el) el.textContent = d ? `Last updated: ${d}` : 'Not yet synced';
+    if (!el) return;
+    const d = localStorage.getItem(STORAGE_KEYS.TAX_FETCHED);
+    let txt = d ? `Last updated: ${d}` : 'Not yet synced';
+    // Flag years whose table is a projection (e.g. 2027 before CRA publishes).
+    const year = getLogicalToday().getFullYear();
+    for (const y of [year, year + 1]) {
+        if (getTaxYear(y).estimated) { txt += ` · ${y} rates are estimates`; break; }
+    }
+    el.textContent = txt;
 }
