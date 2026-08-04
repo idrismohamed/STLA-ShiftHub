@@ -18,6 +18,7 @@ const urlsToCache = [
   './yearSelector.js',
   './dataExport.js',
   './backup.js',
+  './autoBackup.js',
   './motion.js',
   './onboarding.js',
   './coachmarks.js',

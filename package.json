@@ -15,13 +15,14 @@
     "test:onboarding": "node tests/onboarding.smoke.js",
     "test:payroll": "node tests/payroll-tools.smoke.js",
     "test:backup": "node tests/backup.smoke.js",
+    "test:autobackup": "node tests/autobackup.smoke.js",
     "test:timeoff": "node tests/timeoff.smoke.js",
     "test:coach": "node tests/coachmarks.smoke.js",
     "test:shiftform": "node tests/shiftform.smoke.js",
     "test:offday": "node tests/offday.smoke.js",
     "test:engine": "node tests/payroll-engine.test.js",
     "test:fatigue": "node tests/fatigue.smoke.js",
-    "test": "npm run test:engine && npm run test:fatigue && npm run test:onboarding && npm run test:payroll && npm run test:backup && npm run test:timeoff && npm run test:coach && npm run test:shiftform && npm run test:offday"
+    "test": "npm run test:engine && npm run test:fatigue && npm run test:onboarding && npm run test:payroll && npm run test:backup && npm run test:autobackup && npm run test:timeoff && npm run test:coach && npm run test:shiftform && npm run test:offday"
   },
   "keywords": [
     "cordova",

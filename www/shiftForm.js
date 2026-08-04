@@ -760,6 +760,7 @@ function saveShift() {
     try { localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts)); }
     catch(e) { showToast('Storage full — shift not saved.', 'error'); return; }
     invalidateFatigueCache();
+    if (typeof dataChanged === 'function') dataChanged();
     updateNotifications();
     closeAllSheets();
     showToast('Shift Saved');
@@ -777,6 +778,7 @@ function removeShift() {
     try { localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts)); }
     catch(e) { showToast('Storage full — could not remove shift.', 'error'); return; }
     invalidateFatigueCache();
+    if (typeof dataChanged === 'function') dataChanged();
     updateNotifications();
     closeAllSheets();
     if (_undoPayload) showToastWithUndo('Shift Removed', _undoDate, _undoPayload);

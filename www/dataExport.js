@@ -39,6 +39,7 @@ function applyBackupObject(data) {
     taxTables    = safeParse(STORAGE_KEYS.TAX_TABLES,    null);
 
     initDefaults();
+    if (typeof dataChanged === 'function') dataChanged();
     applyTheme(sysSettings.theme);
 
     const gText = document.getElementById('greeting-text');

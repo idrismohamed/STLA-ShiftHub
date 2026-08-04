@@ -415,6 +415,12 @@
                     <div class="settings-label" style="color: var(--off); font-weight: bold;">📷 Restore via QR (Scan)</div>
                 </div>
                 <div class="settings-row">
+                    <div class="settings-label" style="flex-direction:column;align-items:flex-start;gap:2px">
+                        Auto-Backup Safety Net
+                        <span id="autobackup-status" style="font-size:11px;opacity:0.55"></span>
+                    </div>
+                </div>
+                <div class="settings-row">
                     <div class="settings-label">Backup Reminder</div>
                     <select id="setting-backup-reminder" class="settings-select" onchange="setBackupReminder(this.value)">
                         <option value="0">Off</option>
@@ -605,6 +611,7 @@
     <script src="vendor/jsQR.js"></script>
     <script src="dataExport.js"></script>
     <script src="backup.js"></script>
+    <script src="autoBackup.js"></script>
     <script src="onboarding.js"></script>
     <script src="coachmarks.js"></script>
     <script src="app.js"></script>

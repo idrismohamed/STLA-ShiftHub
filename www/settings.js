@@ -65,13 +65,17 @@ function openSettingsSheet() {
     if (eiS)   eiS.value   = sysSettings.eiMaxPP;
 
     updateTaxFetchedLabel();
+    if (typeof updateAutoBackupStatus === 'function') updateAutoBackupStatus();
     openSheet('sheet-settings');
 }
 
 function saveSettings() {
     haptic();
     const g = id => document.getElementById(id);
+    // Spread the existing settings first: keys without a form field here
+    // (hasSeenOnboarding, lastBackupAt, backupReminderDays, …) must survive.
     sysSettings = {
+        ...sysSettings,
         theme:             g('setting-theme')         ? g('setting-theme').value           : 'system',
         displayName:       g('setting-display-name')  ? (g('setting-display-name').value || 'Drizzy') : 'Drizzy',
         regRate:           g('setting-reg-rate')       ? (parseFloat(g('setting-reg-rate').value) || 47.06)  : 47.06,
@@ -93,6 +97,7 @@ syncCalendar:      g('setting-cal-sync')    ? g('setting-cal-sync').checked    :
         smartAlarms:       g('setting-alarms')      ? g('setting-alarms').checked      : false
     };
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(sysSettings));
+    if (typeof dataChanged === 'function') dataChanged();
 
     const gText = document.getElementById('greeting-text');
     if (gText) gText.innerHTML = `<span>${sysSettings.displayName}</span>`;

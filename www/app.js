@@ -77,6 +77,11 @@ if (typeof maybeStartOnboarding === 'function') maybeStartOnboarding();
 // Gentle "time to back up" nudge when overdue (no-op unless enabled in Settings).
 if (typeof maybeBackupReminder === 'function') maybeBackupReminder();
 
+// Auto-backup safety net: protect site storage from eviction and, if this
+// launch found no data, offer to restore the latest automatic snapshot.
+if (typeof requestPersistentStorage === 'function') requestPersistentStorage();
+if (typeof maybeRestoreFromSnapshot === 'function') setTimeout(maybeRestoreFromSnapshot, 800);
+
 // First-run guided tour (no-op once seen; deferred while onboarding is showing).
 if (sysSettings.hasSeenOnboarding && typeof maybeStartCoachmarks === 'function') {
     setTimeout(maybeStartCoachmarks, 600);
