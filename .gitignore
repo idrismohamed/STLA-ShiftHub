@@ -35,3 +35,14 @@ npm-debug.log*
 
 # Signing certificates — keep off version control
 certificates/
+
+# Signing material — NEVER commit. Keystores and the credentials that unlock
+# them stay local; scripts/package-voltbuilder.sh injects them at build time.
+voltbuilder.local.json
+*.p12
+*.keystore
+*.jks
+certificates/
+
+# Build output
+build/
