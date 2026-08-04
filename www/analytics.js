@@ -503,7 +503,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
   <div class="an-flat-card">
     <div class="an-flat-card-title">${topCardTitle} ${pastBadge}<span class="an-section-sub" style="text-transform:none;letter-spacing:0;font-size:10px">${brkStartLabel}–${brkEndLabel}</span><span class="pp-top-chev">›</span></div>
     <div class="an-pp-bar-labels"><span>Day ${dispPpDayDisplay} of 14</span><span>${isPastPP ? 'Complete' : isFuturePP ? 'Not started' : `${dispPpDaysLeft} day${dispPpDaysLeft !== 1 ? 's' : ''} left`}</span></div>
-    <div class="an-progress" style="margin:5px 0 0"><div class="an-progress-fill" style="width:${dispPpPct}%;background:var(--accent)"></div></div>
+    <div style="margin:5px 0 0">${typeof wavyProgressHTML === 'function' ? wavyProgressHTML(dispPpPct) : `<div class="an-progress"><div class="an-progress-fill" style="width:${dispPpPct}%;background:var(--accent)"></div></div>`}</div>
   </div>
   <div class="an-grid-3">
     <div class="an-hero-card" style="--hero-color:#7c3aed">

@@ -487,7 +487,7 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; ov
 .week-card { background: var(--day-bg); border: 1px solid var(--border); border-radius: 20px; padding: 14px; min-height: 140px; display: flex; flex-direction: column; justify-content: flex-start; gap: 10px; cursor: pointer; transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s; }
 .week-card:hover { transform: translateY(-2px); border-color: var(--accent); }
 .week-card:active { transform: scale(0.98); border-color: var(--accent); }
-.week-card.today { box-shadow: 0 0 0 2px rgba(255,123,0,0.14); }
+.week-card.today { box-shadow: 0 0 0 2px color-mix(in srgb, var(--md-tertiary) 24%, transparent); }
 .week-day { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .week-label { font-size: 14px; font-weight: 800; color: var(--text); }
 .week-detail { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
@@ -1231,7 +1231,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     align-items: center;
     gap: 1px;
     cursor: pointer;
-    transition: transform 0.28s var(--spring), opacity 0.15s, border-color 0.18s, background-color 0.18s;
+    transition: transform 0.28s var(--spring), border-radius 0.28s var(--spring), opacity 0.15s, border-color 0.18s, background-color 0.18s;
     overflow: hidden;
     -webkit-user-select: none;
     user-select: none;
@@ -1256,7 +1256,7 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     .cal-animating .cal-cell,
     .cal-animating .cal-week-card { animation: none !important; }
 }
-.cal-cell:active { transform: scale(var(--press)); }
+.cal-cell:active { transform: scale(var(--press)); border-radius: var(--shape-sm); }
 /* Pay-period accent stripe (A-style) — always visible regardless of shift fill */
 .cal-cell::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: transparent; z-index: 0; }
 .cal-cell.empty {
@@ -1279,35 +1279,34 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
 
 /* Shift type — distinct background tint + coloured top accent bar */
 .cal-cell.D {
-    background-color: rgba(56, 189, 248, 0.10);
-    border-color: rgba(56, 189, 248, 0.22);
-    border-top: 3px solid #38bdf8;
+    background-color: color-mix(in srgb, var(--day-container) 55%, var(--cal-cell-bg));
+    border-color: color-mix(in srgb, var(--day) 26%, transparent);
+    border-top: 3px solid var(--day);
 }
 .cal-cell.N {
-    background-color: rgba(244, 63, 94, 0.10);
-    border-color: rgba(244, 63, 94, 0.22);
-    border-top: 3px solid #f43f5e;
+    background-color: color-mix(in srgb, var(--night-container) 55%, var(--cal-cell-bg));
+    border-color: color-mix(in srgb, var(--night) 26%, transparent);
+    border-top: 3px solid var(--night);
 }
 .cal-cell.O {
-    background-color: rgba(255, 255, 255, 0.025);
-    border-color: rgba(255, 255, 255, 0.06);
+    background-color: var(--md-surface-container-low);
+    border-color: var(--md-outline-variant);
 }
 .cal-cell.M {
-    background-color: rgba(192, 163, 255, 0.10);
-    border-color: rgba(192, 163, 255, 0.25);
+    background-color: color-mix(in srgb, var(--mod-container) 55%, var(--cal-cell-bg));
+    border-color: color-mix(in srgb, var(--mod) 28%, transparent);
     border-bottom: 3px solid var(--mod);
 }
 .cal-cell.M::before { background: transparent !important; }
-.cal-cell.M.D { border-top: 3px solid #38bdf8; }
-.cal-cell.M.N { border-top: 3px solid #f43f5e; }
-/* Vacation — bold teal so it stands out from Off/Day/Night at a glance */
+.cal-cell.M.D { border-top: 3px solid var(--day); }
+.cal-cell.M.N { border-top: 3px solid var(--night); }
+/* Vacation — bold so it stands out from Off/Day/Night at a glance */
 .cal-cell.vac {
-    background: rgba(0,188,212,0.28) !important;
-    border: 2px solid rgba(0,188,212,0.75) !important;
-    box-shadow: inset 0 0 0 1px rgba(0,188,212,0.20);
+    background: var(--vac-container) !important;
+    border: 2px solid var(--vac) !important;
 }
-.cal-cell.vac .cal-cell-type { color: #00e5ff !important; font-weight: 800; font-size: 0.82rem; }
-.cal-cell.vac .cal-date-num { color: #00e5ff !important; }
+.cal-cell.vac .cal-cell-type { color: var(--on-vac-container) !important; font-weight: 800; font-size: 0.82rem; }
+.cal-cell.vac .cal-date-num { color: var(--on-vac-container) !important; }
 
 /* State modifiers */
 .cal-cell.today {
@@ -1323,9 +1322,9 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
 .cal-drop-start {
     position: absolute;
     top: 0; left: 0; right: 0;
-    background: rgba(56,189,248,0.20);
-    border-bottom: 1px solid rgba(56,189,248,0.40);
-    color: rgba(56,189,248,1);
+    background: var(--day-container);
+    border-bottom: 1px solid color-mix(in srgb, var(--day) 40%, transparent);
+    color: var(--on-day-container);
     font-size: 8px;
     font-weight: 800;
     letter-spacing: 0.04em;
@@ -1406,12 +1405,12 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     white-space: nowrap;
 }
 .cal-flag.drop-flag {
-    color: rgba(56,189,248,0.85);
+    color: var(--day);
 }
 .cal-flag.hol-flag {
-    background: rgba(251,191,36,0.18);
-    color: #fbbf24;
-    border: 1px solid rgba(251,191,36,0.35);
+    background: var(--amber-container);
+    color: var(--on-amber-container);
+    border: 1px solid color-mix(in srgb, var(--amber) 35%, transparent);
     font-size: 9px;
     font-weight: 700;
 }
@@ -1425,10 +1424,10 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     bottom: 0;
     left: 0;
     right: 0;
-    background: rgba(52,211,153,0.14);
+    background: var(--off-container);
     border: none;
-    border-top: 1px solid rgba(52,211,153,0.30);
-    color: #34d399;
+    border-top: 1px solid color-mix(in srgb, var(--off) 32%, transparent);
+    color: var(--on-off-container);
     font-size: 8px;
     font-weight: 800;
     letter-spacing: 0.04em;
@@ -1453,9 +1452,9 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
     line-height: 1.4;
     white-space: nowrap;
 }
-.cal-ot-chip.dt     { background: rgba(56,189,248,0.22);  color: #38bdf8; }
-.cal-ot-chip.ot     { background: rgba(52,211,153,0.22);  color: #34d399; }
-.cal-ot-chip.unpaid { background: rgba(244,63,94,0.22);   color: #f43f5e; }
+.cal-ot-chip.dt     { background: var(--day-container);   color: var(--on-day-container); }
+.cal-ot-chip.ot     { background: var(--off-container);   color: var(--on-off-container); }
+.cal-ot-chip.unpaid { background: var(--night-container); color: var(--on-night-container); }
 
 /* Pills container — kept for week view */
 .cal-pills {
@@ -1466,8 +1465,8 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
 }
 .cal-pill {
     display: block;
-    padding: 2px 5px;
-    border-radius: 4px;
+    padding: 2px 6px;
+    border-radius: var(--shape-full);
     font-size: 9px;
     font-weight: 700;
     width: 100%;
@@ -1508,22 +1507,22 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
 }
 .cal-see-more:active { color: var(--accent); }
 
-/* Pill color variants */
-.pill-day    { background: var(--pill-day-bg);            color: #ffffff; }
-.pill-night  { background: var(--pill-night-bg);          color: #ffffff; }
-.pill-off    { background: var(--pill-off-bg);            color: #ffffff; }
-.pill-mod    { background: var(--pill-mod-bg);            color: #ffffff; }
-.pill-vac    { background: rgba(0,188,212,0.18);          color: #ffffff; }
-.pill-absent { background: rgba(244,63,94,0.18);          color: #ffffff; }
-.pill-lieu   { background: rgba(251,191,36,0.18);         color: #ffffff; }
-.pill-drop   { background: rgba(167,139,250,0.18);        color: #ffffff; }
-.pill-hol    { background: rgba(251,191,36,0.12);         color: #ffffff; border: 1px solid rgba(251,191,36,0.28); }
-.pill-ot     { background: rgba(52,211,153,0.18);         color: #ffffff; }
-.pill-dt     { background: rgba(56,189,248,0.18);         color: #ffffff; }
-.pill-unpaid { background: rgba(244,63,94,0.18);          color: #ffffff; }
-.pill-lock   { background: rgba(244,63,94,0.12);          color: #ffffff; border: 1px solid rgba(244,63,94,0.28); }
-.pill-pp     { background: rgba(255,107,53,0.16);         color: #ffffff; }
-.pill-tl     { background: rgba(255,138,92,0.22);         color: #ffffff; border: 1px solid rgba(255,138,92,0.5); font-weight: 800; letter-spacing: 0.5px; }
+/* Pill color variants — M3 container bg + on-container text in both themes */
+.pill-day    { background: var(--day-container);       color: var(--on-day-container); }
+.pill-night  { background: var(--night-container);     color: var(--on-night-container); }
+.pill-off    { background: var(--off-container);       color: var(--on-off-container); }
+.pill-mod    { background: var(--mod-container);       color: var(--on-mod-container); }
+.pill-vac    { background: var(--vac-container);       color: var(--on-vac-container); }
+.pill-absent { background: var(--night-container);     color: var(--on-night-container); }
+.pill-lieu   { background: var(--amber-container);     color: var(--on-amber-container); }
+.pill-drop   { background: var(--mod-container);       color: var(--on-mod-container); }
+.pill-hol    { background: var(--amber-container);     color: var(--on-amber-container); }
+.pill-ot     { background: var(--off-container);       color: var(--on-off-container); }
+.pill-dt     { background: var(--day-container);       color: var(--on-day-container); }
+.pill-unpaid { background: var(--night-container);     color: var(--on-night-container); }
+.pill-lock   { background: var(--night-container);     color: var(--on-night-container); }
+.pill-pp     { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+.pill-tl     { background: var(--md-primary-container); color: var(--md-on-primary-container); font-weight: 800; letter-spacing: 0.5px; }
 
 /* ── Week View ── */
 /* PP view wrapper — receives swipe transform */
@@ -1566,42 +1565,42 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cur
 .cal-week-card {
     background-color: var(--cal-cell-bg);
     border: 1px solid var(--cal-cell-border);
-    border-radius: 16px;
+    border-radius: var(--shape-md);
     padding: 10px 8px;
     min-height: 150px;
     display: flex;
     flex-direction: column;
     gap: 3px;
     cursor: pointer;
-    transition: opacity 0.15s;
+    transition: transform 0.28s var(--spring), border-radius 0.28s var(--spring), opacity 0.15s;
     -webkit-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
 }
-.cal-week-card:active { opacity: 0.7; }
-/* Shift type — distinct background tint + coloured top accent bar */
+.cal-week-card:active { transform: scale(var(--press)); border-radius: var(--shape-sm); }
+/* Shift type — tonal container wash + coloured top accent bar */
 .cal-week-card.D {
-    background-color: rgba(56, 189, 248, 0.10);
-    border-color: rgba(56, 189, 248, 0.22);
-    border-top: 3px solid #38bdf8;
+    background-color: color-mix(in srgb, var(--day-container) 55%, var(--cal-cell-bg));
+    border-color: color-mix(in srgb, var(--day) 26%, transparent);
+    border-top: 3px solid var(--day);
 }
 .cal-week-card.N {
-    background-color: rgba(244, 63, 94, 0.10);
-    border-color: rgba(244, 63, 94, 0.22);
-    border-top: 3px solid #f43f5e;
+    background-color: color-mix(in srgb, var(--night-container) 55%, var(--cal-cell-bg));
+    border-color: color-mix(in srgb, var(--night) 26%, transparent);
+    border-top: 3px solid var(--night);
 }
 .cal-week-card.O {
-    background-color: rgba(255, 255, 255, 0.025);
-    border-color: var(--cal-cell-border);
+    background-color: var(--md-surface-container-low);
+    border-color: var(--md-outline-variant);
 }
 .cal-week-card.M {
-    background-color: rgba(255, 107, 53, 0.10);
-    border-color: rgba(255, 107, 53, 0.25);
-    border-top: 3px solid var(--accent);
+    background-color: color-mix(in srgb, var(--mod-container) 55%, var(--cal-cell-bg));
+    border-color: color-mix(in srgb, var(--mod) 28%, transparent);
+    border-top: 3px solid var(--mod);
 }
 .cal-week-card.today {
-    background: var(--cal-cell-bg-today) !important;
-    border-left: 3px solid var(--cal-today-border) !important;
+    background: color-mix(in srgb, var(--md-tertiary-container) 70%, var(--cal-cell-bg)) !important;
+    border-left: 3px solid var(--md-tertiary) !important;
     border-top-color: transparent !important;
     border-right-color: transparent !important;
     border-bottom-color: transparent !important;
@@ -2339,7 +2338,7 @@ input, textarea, select, [contenteditable="true"] {
     color: var(--off) !important;
     box-shadow: 0 4px 10px rgba(95, 214, 166, 0.2);
 }
-.pill-offday { background: rgba(95, 214, 166, 0.18); color: #ffffff; }
+.pill-offday { background: var(--off-container); color: var(--on-off-container); }
 
 /* ── Inline SVG icons (icons.js sprite) ─────────────────────────────────── */
 .shi { display: inline-block; vertical-align: -0.18em; flex: none; }
@@ -2348,3 +2347,6 @@ input, textarea, select, [contenteditable="true"] {
 .cal-pill .shi, .pill-top .shi, .legend-item .shi { vertical-align: -0.15em; }
 .note-del-btn { position: relative; background: none; border: none; color: var(--md-error); cursor: pointer; padding: 4px 6px; }
 .note-del-btn::after { content: ''; position: absolute; inset: -8px; }
+
+/* ── M3E wavy progress ─────────────────────────────────────────────────── */
+.wavy-progress { width: 100%; height: 15px; display: block; }

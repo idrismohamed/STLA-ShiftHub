@@ -840,7 +840,7 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
 
     // ── Drop cycle start — top banner on first day ────────────────────────
     const dropBadge = (f.isDropPeriod && f.ppDayIndex === 0)
-        ? `<div class="cal-drop-start">💧 Drop Cycle</div>`
+        ? `<div class="cal-drop-start">${icon('droplet', 9)} Drop Cycle</div>`
         : '';
 
     // ── Pay period end — full-width tappable footer ───────────────────────
@@ -1088,7 +1088,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
 
     let _dropBanner = '';
     if (isDropPP) {
-        _dropBanner = `<div class="cal-drop-pp-banner">💧 Drop Cycle</div>`;
+        _dropBanner = `<div class="cal-drop-pp-banner">${icon('droplet', 12)} Drop Cycle</div>`;
     } else {
         let _ndi = tgtPPIdx + 1;
         while ((_ndi % 3) !== 1) _ndi++;
