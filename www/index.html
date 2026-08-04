@@ -62,7 +62,7 @@
                 <div class="toggle-btn role-btn" onclick="selectRole('TL')" id="btn-role-TL">Team Leader</div>
                 <div class="toggle-btn role-btn" onclick="selectRole('Manual')" id="btn-role-Manual">Manual</div>
             </div>
-            <input type="number" id="manual-rate-input" class="number-input" placeholder="Custom Rate ($/hr)" style="display: none; margin-top: 12px;" step="0.01">
+            <input type="number" id="manual-rate-input" class="number-input" placeholder="Custom Rate ($/hr)" style="display: none; margin-top: 12px;" step="0.01" oninput="schedulePayPreview()">
         </div>
 
         <div class="sheet-card" id="section-shift-times">
@@ -204,6 +204,8 @@
                 <input type="checkbox" id="cb-override" onchange="haptic(); updatePickupToggles()"> Override Lockdown
             </label>
         </div>
+
+        <div id="pay-preview" style="display:none; margin: 0 0 12px; padding: 10px 14px; border-radius: 12px; background: var(--input-bg); border: 1px solid var(--border); font-size: 13px; font-weight: 700; text-align: center;"></div>
 
         <div class="btn-row">
             <button class="btn-action btn-remove" id="btn-remove" onclick="removeShift()">Clear Day</button>

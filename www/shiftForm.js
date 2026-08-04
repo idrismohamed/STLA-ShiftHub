@@ -664,12 +664,72 @@ function updatePickupToggles(skipSliderReset = false) {
     const cw = document.getElementById('conflict-warning');
     if (cw) cw.style.display = (wT && wT.innerHTML) ? 'block' : 'none';
     if (bSave) { bSave.disabled = !canS; bSave.style.opacity = canS ? '1' : '0.5'; bSave.style.pointerEvents = canS ? 'auto' : 'none'; }
+
+    schedulePayPreview();
+}
+
+// ─── Live marginal-pay preview ────────────────────────────────────────────────
+// Shows what saving the current form state would do to this pay period's gross
+// and (after taxes/CPP/EI, cap-aware via calculateTaxes) net pay.
+
+let _payPreviewTimer = null;
+function schedulePayPreview() {
+    clearTimeout(_payPreviewTimer);
+    _payPreviewTimer = setTimeout(renderPayPreview, 180);
+}
+
+function renderPayPreview() {
+    const el = document.getElementById('pay-preview');
+    if (!el || !activeDate) return;
+
+    const crew = (document.getElementById('crew-select') || {}).value || sysSettings.defaultCrew;
+    const dUTC = Date.UTC(+activeDate.substring(0, 4), +activeDate.substring(5, 7) - 1, +activeDate.substring(8, 10));
+    const pi   = Math.floor((dUTC - basePPStartUTC) / MS_PP);
+    const year = new Date(basePPStartUTC + pi * MS_PP + MS_PP_TO_END).getUTCFullYear();
+
+    const original = extraShifts[activeDate];
+    let baseGross, newGross;
+    try {
+        precalcFatigue(year, crew);
+        baseGross = computePPGross(pi, crew, year);
+        extraShifts[activeDate] = buildShiftPayload();
+        invalidateFatigueCache();
+        precalcFatigue(year, crew);
+        newGross = computePPGross(pi, crew, year);
+    } catch (e) {
+        el.style.display = 'none';
+        return;
+    } finally {
+        if (original === undefined) delete extraShifts[activeDate];
+        else extraShifts[activeDate] = original;
+        invalidateFatigueCache();
+    }
+
+    const dGross = newGross - baseGross;
+    if (Math.abs(dGross) < 0.5) {
+        el.style.display = 'block';
+        el.style.color = 'var(--text-muted)';
+        el.textContent = 'No pay change this period';
+        return;
+    }
+    const baseTax = calculateTaxes(baseGross, pi, year);
+    const newTax  = calculateTaxes(newGross,  pi, year);
+    const dNet    = dGross - (newTax.total - baseTax.total);
+    const sign    = dGross > 0 ? '+' : '−';
+    const col     = dGross > 0 ? 'var(--off)' : 'var(--night)';
+    el.style.display = 'block';
+    el.style.color = col;
+    el.textContent = `${sign}$${Math.abs(dGross).toFixed(2)} gross · ≈ ${dNet >= 0 ? '+' : '−'}$${Math.abs(dNet).toFixed(2)} net this pay period`;
 }
 
 // ─── Save / Remove shift ──────────────────────────────────────────────────────
 
-function saveShift() {
-    haptic();
+/**
+ * Build the extraShifts payload the current form state would save.
+ * Pure read of the form/DOM — shared by saveShift() and the live pay preview.
+ * @returns {Object}
+ */
+function buildShiftPayload() {
     const payload = { role: selectedRole };
 
     if (selectedRole === 'Manual') {
@@ -755,7 +815,12 @@ function saveShift() {
             };
         }
     }
+    return payload;
+}
 
+function saveShift() {
+    haptic();
+    const payload = buildShiftPayload();
     extraShifts[activeDate] = payload;
     try { localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts)); }
     catch(e) { showToast('Storage full — shift not saved.', 'error'); return; }
