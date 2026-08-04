@@ -9,6 +9,7 @@ const urlsToCache = [
   './payroll.js',
   './payrollTools.js',
   './charts.js',
+  './analytics.js',
   './calendar.js',
   './notifications.js',
   './icsExport.js',
