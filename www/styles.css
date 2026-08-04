@@ -172,8 +172,8 @@
     --accent: var(--md-primary);
     --accent-light: #ffab5e;
     --accent-grad: linear-gradient(135deg, #ff7a45, #ffab5e);
-    --c-net: #2bb079; --c-reg: #2f8fe0; --c-ot: #d99a1e; --c-dt: #ff7a45;
-    --c-tax: #ef5366; --c-cpp: #9a5fd6; --c-ei: #2a9fc0; --c-prem: #e08a3c;
+    --c-net: #3fbd8a; --c-reg: #4d9fe6; --c-ot: #e0a83c; --c-dt: #ff8d5e;
+    --c-tax: #f26b7c; --c-cpp: #a678de; --c-ei: #3fadcd; --c-prem: #e89a54;
     --good: #2bb079; --warn: #d99a1e; --bad: #ef5366;
     --drop-badge-bg: #ffcf8a;
     --drop-badge-text: #3a2e1a;
@@ -496,7 +496,7 @@ body { background-color: var(--bg); color: var(--text); padding-bottom: 40px; ov
 
 /* Legend */
 .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding: 0 20px 20px 20px; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-.legend-item { display: flex; align-items: center; }
+.legend-item { display: flex; align-items: center; gap: 5px; }
 .dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; box-shadow: 0 0 8px rgba(128,128,128,0.2); }
 .cal-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 14px; padding: 8px 14px; font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); width: 100%; }
 .cal-view-bar-actions { display: flex; align-items: center; gap: 8px; padding: 10px 14px; }
@@ -1735,39 +1735,43 @@ input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 10px; cu
 }
 .an-grid-2 {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
     margin-bottom: 10px;
 }
 .an-grid-3 {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
     margin-bottom: 10px;
 }
 .an-month-block { margin-bottom: 10px; }
 .an-hero-card {
-    background: var(--card);
-    border: 1px solid var(--glass-border);
-    border-radius: 24px;
+    background: var(--md-surface-container);
+    border: none;
+    border-radius: var(--shape-lg);
     padding: 16px 14px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.14);
     border-top: 3px solid var(--hero-color, var(--accent));
+    min-width: 0;
+    overflow: hidden;
 }
 .an-hero-label {
     font-size: 10px;
-    font-weight: 700;
+    font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--text-muted);
     margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .an-hero-value {
-    font-size: 24px;
+    font-size: clamp(17px, 6.4vw, 26px);
     font-weight: 900;
     color: var(--text);
     letter-spacing: -0.5px;
-    line-height: 1;
+    line-height: 1.05;
     font-variant-numeric: tabular-nums;
 }
 .an-shift-card {
@@ -2373,3 +2377,16 @@ input, textarea, select, [contenteditable="true"] {
 
 /* ── M3E wavy progress ─────────────────────────────────────────────────── */
 .wavy-progress { width: 100%; height: 15px; display: block; }
+
+/* ── Analytics card entrance — split & staggered (M3E) ─────────────────── */
+@keyframes an-card-in {
+    from { opacity: 0; transform: translateY(10px) scale(0.985); }
+    to   { opacity: 1; transform: none; }
+}
+.analytics-wrap .an-flat-card {
+    animation: an-card-in 0.45s var(--spring-slow) backwards;
+    animation-delay: calc(var(--an-i, 0) * 70ms);
+}
+@media (prefers-reduced-motion: reduce) {
+    .analytics-wrap .an-flat-card { animation: none !important; }
+}

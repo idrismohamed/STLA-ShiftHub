@@ -256,6 +256,9 @@ function chartPaired(hostId, rows, thisLabel, prevLabel) {
         s.appendChild(_cText(barX, yTop + 11, r[0], 12, 700, '--text', 'start'));
         [[r[1], '--accent', yTop + 17, 1], [r[2], '--border', yTop + 30, 0.95]].forEach(([v, color, yy, op], j) => {
             const w = barW * (v / max);
+            // Faint full-length track so zero-value rows still read as bars
+            // instead of stray "0" text floating in space.
+            s.appendChild(_cEl('rect', { x: barX, y: yy, width: barW, height: 11, rx: 5.5, fill: _cCol('--m3-surface-container-high'), opacity: 0.55 }));
             const bar = _cEl('rect', { x: barX, y: yy, width: 0, height: 11, rx: 5.5, fill: _cCol(color), opacity: op });
             s.appendChild(bar);
             _cAnimate(t => bar.setAttribute('width', Math.max(0, w * t)), 600, i * 80 + j * 60);

@@ -810,9 +810,9 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
     } else if (f.is16hLockout) {
         typeLabel = '❌ Rest';
     } else if (shift === 'D') {
-        typeLabel = '☀️ Day';   timeLabel = '6:30';
+        typeLabel = `${icon('sun', 10)} Day`;   timeLabel = '6:30';
     } else if (shift === 'N') {
-        typeLabel = '🌙 Night'; timeLabel = '18:30';
+        typeLabel = `${icon('moon', 10)} Night`; timeLabel = '18:30';
     }
 
     // ── OT/DT corner chip (show only the larger of the two) ─────────────────
@@ -835,7 +835,7 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
 
     // ── Holiday flag ─────────────────────────────────────────────────────────
     const holFlag = yearHols[dStr]
-        ? `<div class="cal-cell-flags"><span class="cal-flag hol-flag">⭐ ${yearHols[dStr].n.split(' ')[0]}</span></div>`
+        ? `<div class="cal-cell-flags"><span class="cal-flag hol-flag">${icon('star', 9)} ${yearHols[dStr].n.split(' ')[0]}</span></div>`
         : '';
 
     // ── Drop cycle start — top banner on first day ────────────────────────
@@ -845,7 +845,7 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
 
     // ── Pay period end — full-width tappable footer ───────────────────────
     const ppBadge = f.isPPBoundary
-        ? `<button class="cal-pp-badge" onclick="event.stopPropagation(); haptic(); triggerBiometricsAndOpenPay(${f.ppIndex})">💰 PP End</button>`
+        ? `<button class="cal-pp-badge" onclick="event.stopPropagation(); haptic(); triggerBiometricsAndOpenPay(${f.ppIndex})">${icon('wallet', 9)} PP End</button>`
         : '';
 
     const dispDate  = `${months[m]} ${d}, ${year}`;
@@ -1094,7 +1094,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
         while ((_ndi % 3) !== 1) _ndi++;
         const _daysUntil = Math.floor((basePPStartUTC + _ndi * MS_PP - nowUTC) / MS_DAY);
         if (_daysUntil > 0 && _daysUntil <= 14) {
-            _dropBanner = `<div class="cal-drop-pp-banner upcoming">💧 Drop Cycle in ${_daysUntil} day${_daysUntil !== 1 ? 's' : ''}</div>`;
+            _dropBanner = `<div class="cal-drop-pp-banner upcoming">${icon('droplet', 12)} Drop Cycle in ${_daysUntil} day${_daysUntil !== 1 ? 's' : ''}</div>`;
         }
     }
 
@@ -1192,8 +1192,8 @@ function buildMiniMonth(m, year, crew, todayStr) {
 
     grid += '</div>';
     const otBadge  = mmOT > 0   ? `<span class="cal-mini-ot-badge">+${mmOT.toFixed(0)}h</span>` : '';
-    const dropIcon = mmDrop      ? `<span class="cal-mini-drop">💧</span>` : '';
-    const summary  = `<div class="cal-mini-summary"><span>☀️${mmD} 🌙${mmN}</span><span>${otBadge}${dropIcon}</span></div>`;
+    const dropIcon = mmDrop      ? `<span class="cal-mini-drop">${icon('droplet', 9)}</span>` : '';
+    const summary  = `<div class="cal-mini-summary"><span>${icon('sun', 9)}${mmD} ${icon('moon', 9)}${mmN}</span><span>${otBadge}${dropIcon}</span></div>`;
     return `<div class="cal-mini-month" onclick="haptic(); navigateToMonth(${m},${year})"><div class="cal-mini-month-title">${months[m].substring(0,3)}</div>${grid}${summary}</div>`;
 }
 

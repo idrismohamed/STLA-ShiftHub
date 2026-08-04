@@ -621,6 +621,8 @@ function renderAnalyticsDashboard(crew, logicalT) {
 
     if (elSide)  elSide.innerHTML  = _sideHTML;
     if (elBelow) elBelow.innerHTML = _belowHTML;
+    // Stagger index for the card entrance animation (CSS reads --an-i).
+    document.querySelectorAll('.analytics-wrap .an-flat-card').forEach((c, i) => c.style.setProperty('--an-i', i));
     animateHeroCountUps();
 
     // ── Inline-SVG analytics charts (charts.js) ──────────────
@@ -635,7 +637,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
         const fatigueTrackColor = dispFatigueUsed >= 108 ? '--c-dt' : dispFatigueUsed >= 90 ? '--warn' : '--c-reg';
         chartStacked('chart-fatigue-bar', 'chart-fatigue-legend', [
             ['Used', dispFatigueUsed, fatigueTrackColor],
-            ['Left', Math.max(0, 120 - dispFatigueUsed), '--glass-border']
+            ['Left', Math.max(0, 120 - dispFatigueUsed), '--m3-surface-container-highest']
         ], v => v.toFixed(1) + 'h');
         chartPaired('chart-paired', [
             ['Days worked', thisWorked, prevWorked],
