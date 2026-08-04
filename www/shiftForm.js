@@ -915,3 +915,29 @@ function renderShiftNotes() {
         </div>`;
     }).join('');
 }
+
+/**
+ * Open a day's sheet scrolled/focused on its Notes field. Used by the on-shift
+ * notification's "Add note" action, which launches the app with a date.
+ * @param {string} dStr  YYYY-MM-DD
+ */
+function openDayNotes(dStr) {
+    if (!dStr) return;
+    const crew = (document.getElementById('crew-select') || {}).value || sysSettings.defaultCrew;
+    const utc  = Date.UTC(+dStr.substring(0, 4), +dStr.substring(5, 7) - 1, +dStr.substring(8, 10));
+    const pI   = getPIndex(utc);
+    const disp = new Date(utc).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+    precalcFatigue(+dStr.substring(0, 4), crew);
+    closeAllSheets();
+    openPickupSheet(dStr, disp, getShiftForCrew(pI, crew), getShiftForCrew((pI + 1) % 28, crew));
+
+    // Let the sheet finish its open transition before pulling focus, or the
+    // keyboard fights the animation on Android.
+    setTimeout(() => {
+        const sec   = document.getElementById('section-notes');
+        const input = document.getElementById('input-note');
+        if (sec)   sec.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (input) input.focus();
+    }, 450);
+}

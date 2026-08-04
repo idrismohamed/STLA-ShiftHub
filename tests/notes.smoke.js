@@ -123,6 +123,21 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond }); console
   });
   check('Note-only husk entry is dropped when its last note is deleted', huskGone);
 
+  // ── 5. openDayNotes (the on-shift notification's "Add note" target) ────────
+  await page.evaluate(() => closeAllSheets());
+  const opened = await page.evaluate(async (ds) => {
+    openDayNotes(ds);
+    await new Promise(r => setTimeout(r, 700));
+    return {
+      sheetOpen: document.getElementById('sheet-pickup').classList.contains('active'),
+      activeDate: activeDate,
+      focused: document.activeElement && document.activeElement.id
+    };
+  }, day.ds);
+  check('openDayNotes opens that day with the note field focused',
+        opened.sheetOpen && opened.activeDate === day.ds && opened.focused === 'input-note',
+        JSON.stringify(opened));
+
   check('Zero console/page errors during flow', errors.length === 0, errors.slice(0, 4).join(' | '));
 
   await browser.close();
