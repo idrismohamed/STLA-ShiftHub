@@ -7,138 +7,212 @@
     src: url('fonts/nunito-variable.woff2') format('woff2');
 }
 
-/* DEFAULT DARK MODE — "Soft & Calm" palette */
+/* ═══ MATERIAL 3 EXPRESSIVE TOKEN SYSTEM — DARK (default) ═══════════════════
+   Tonal roles seeded from the app's warm-orange identity. Legacy var names
+   (--accent, --card, --pill-*-bg, …) are kept as aliases of these tokens so
+   every existing selector keeps working; new rules should use the M3 names.
+   Concentric-radius rule: outerRadius = innerRadius + padding.               */
 :root {
-    --bg: #1A1820;
-    --text: #E9E4EF;
-    --text-muted: #A89FB2;
-    --accent: #ff8a5c;
+    /* ── Tonal surfaces ── */
+    --md-surface: #1A1820;
+    --md-on-surface: #E9E4EF;
+    --md-on-surface-variant: #A89FB2;
+    --md-surface-container-lowest: #14121A;
+    --md-surface-container-low: #272231;
+    --md-surface-container: #2C2636;
+    --md-surface-container-high: #352F40;
+    --md-surface-container-highest: #403849;
+    --md-outline: #554D61;
+    --md-outline-variant: #352F40;
+
+    /* ── Primary (warm orange — brand) ── */
+    --md-primary: #ff8a5c;
+    --md-on-primary: #FFFFFF;
+    --md-primary-container: #55301f;
+    --md-on-primary-container: #ffd9c2;
+
+    /* ── Tertiary (violet — "today" temporal landmark) ── */
+    --md-tertiary: #8b6fe8;
+    --md-on-tertiary: #FFFFFF;
+    --md-tertiary-container: #43356b;
+    --md-on-tertiary-container: #e5dcff;
+
+    /* ── Error (rose) ── */
+    --md-error: #ff7a8a;
+    --md-on-error: #FFFFFF;
+    --md-error-container: #55222b;
+    --md-on-error-container: #ffd9dd;
+
+    /* ── Shift semantic custom colors (base + container pair) ── */
+    --day: #5cb8ff;   --day-container: #23384d;   --on-day-container: #b8dcff;
+    --night: #ff7a8a; --night-container: #4d2733; --on-night-container: #ffc8d1;
+    --off: #5fd6a6;   --off-container: #223c31;   --on-off-container: #a9e8c8;
+    --mod: #c0a3ff;   --mod-container: #3a3054;   --on-mod-container: #ddcfff;
+    --vac: #64c9dd;   --vac-container: #1d3e46;   --on-vac-container: #a4e6f2;
+    --amber: #ffcf6b; --amber-container: #4a3a1d; --on-amber-container: #ffe1a6;
+
+    /* ── Shape scale ── */
+    --shape-xs: 8px; --shape-sm: 12px; --shape-md: 16px;
+    --shape-lg: 24px; --shape-xl: 28px; --shape-full: 999px;
+
+    /* ── Type scale (Nunito variable, bundled) ── */
+    --type-display: 800 30px/1.05 'Nunito';
+    --type-headline: 900 22px/1.15 'Nunito';
+    --type-title: 800 16px/1.25 'Nunito';
+    --type-label: 800 11px/1.2 'Nunito';
+    --type-body: 600 13px/1.45 'Nunito';
+
+    /* ── State layers ── */
+    --state-hover: 0.08;
+    --state-press: 0.12;
+
+    /* ── Motion — M3 Expressive spatial springs ── */
+    --spring-fast: cubic-bezier(0.42, 1.35, 0.55, 1);
+    --spring: cubic-bezier(0.34, 1.8, 0.5, 1);
+    --spring-slow: cubic-bezier(0.28, 1.2, 0.42, 1);
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --sheet-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --press: 0.96;
+
+    /* ═══ Legacy aliases (do not use in new rules) ═══ */
+    --bg: var(--md-surface);
+    --text: var(--md-on-surface);
+    --text-muted: var(--md-on-surface-variant);
+    --accent: var(--md-primary);
     --accent-light: #ffb27a;
-    /* Signature brand gradient — used sparingly on hero accents */
     --accent-grad: linear-gradient(135deg, #ff8a5c, #ffb27a);
-    --day: #5cb8ff;
-    --night: #ff7a8a;
-    --off: #5fd6a6;
-    --mod: #c0a3ff;
-    /* Semantic data-viz colours (charts.js) */
+    /* Semantic data-viz colours (charts.js) — tonal, harmonized */
     --c-net: #5fd6a6; --c-reg: #5cb8ff; --c-ot: #ffcf6b; --c-dt: #ff8a5c;
     --c-tax: #ff7a8a; --c-cpp: #c0a3ff; --c-ei: #7fd4e8; --c-prem: #ffb27a;
     --good: #5fd6a6; --warn: #ffcf6b; --bad: #ff7a8a;
     --drop-badge-bg: #ffcf8a;
     --drop-badge-text: #2a2030;
     --drop-glow: #ffcf8a;
-    --pp-glow: #ff8a5c;
-    --border: #352F40;
-    --glass-bg: rgba(31, 27, 39, 0.82);
+    --pp-glow: var(--md-primary);
+    --border: var(--md-outline-variant);
+    --glass-bg: rgba(31, 27, 39, 0.88);
     --glass-border: rgba(255, 255, 255, 0.07);
-    --card: rgba(42, 38, 52, 0.72);
-    --card-solid: #272231;
+    --card: var(--md-surface-container-low);
+    --card-solid: var(--md-surface-container-low);
     --day-bg: #241F2E;
-    --day-text: #E9E4EF;
+    --day-text: var(--md-on-surface);
     --input-bg: #1F1B27;
     --calendar-filter: invert(1);
-    /* Motion — bouncy M3-Expressive springs */
-    --spring: cubic-bezier(0.34, 1.8, 0.5, 1);
-    --ease: cubic-bezier(0.4, 0, 0.2, 1);
-    --sheet-ease: cubic-bezier(0.16, 1, 0.3, 1);
-    --press: 0.93;
-    /* Calendar redesign */
+    /* Calendar */
     --cal-cell-bg: #241F2E;
-    --cal-cell-bg-today: #2E2740;
-    --cal-cell-border: #352F40;
-    --cal-today-accent: #ff8a5c;
-    --cal-today-border: rgba(255,138,92,0.7);
-    --cal-header-bg: #272231;
-    --cal-tab-active-bg: #E9E4EF;
-    --cal-tab-active-text: #1A1820;
-    --cal-tab-inactive-text: #A89FB2;
-    --cal-cell-text: #E9E4EF;
+    --cal-cell-bg-today: var(--md-tertiary-container);
+    --cal-cell-border: var(--md-outline-variant);
+    --cal-today-accent: var(--md-tertiary);
+    --cal-today-border: rgba(139, 111, 232, 0.7);
+    --cal-header-bg: var(--md-surface-container-low);
+    --cal-tab-active-bg: var(--md-on-surface);
+    --cal-tab-active-text: var(--md-surface);
+    --cal-tab-inactive-text: var(--md-on-surface-variant);
+    --cal-cell-text: var(--md-on-surface);
     --cal-cell-text-muted: rgba(233,228,239,0.55);
-    /* Pay-period accent stripe colours (A-style) */
-    --pp0: #ffcf8a;
-    --pp1: #7fe3c6;
-    --pp2: #c0a3ff;
-    --pp3: #ff9ec6;
-    /* M3 surface hierarchy */
-    --m3-surface-container-low: #272231;
-    --m3-surface-container: #2C2636;
-    --m3-surface-container-high: #352F40;
-    --m3-surface-container-highest: #403849;
-    --m3-outline-variant: #554D61;
-    --pill-day-bg: rgba(92,184,255,0.20);
-    --pill-day-text: #5cb8ff;
-    --pill-night-bg: rgba(255,122,138,0.20);
-    --pill-night-text: #ff7a8a;
-    --pill-off-bg: rgba(95,214,166,0.15);
-    --pill-off-text: #5fd6a6;
-    --pill-mod-bg: rgba(192,163,255,0.20);
-    --pill-mod-text: #c0a3ff;
+    /* Pay-period accent stripe colours */
+    --pp0: #ffcf8a; --pp1: #7fe3c6; --pp2: #c0a3ff; --pp3: #ff9ec6;
+    /* M3 surface aliases */
+    --m3-surface-container-low: var(--md-surface-container-low);
+    --m3-surface-container: var(--md-surface-container);
+    --m3-surface-container-high: var(--md-surface-container-high);
+    --m3-surface-container-highest: var(--md-surface-container-highest);
+    --m3-outline-variant: var(--md-outline);
+    /* Pills → container pairs for stronger contrast */
+    --pill-day-bg: var(--day-container);     --pill-day-text: var(--on-day-container);
+    --pill-night-bg: var(--night-container); --pill-night-text: var(--on-night-container);
+    --pill-off-bg: var(--off-container);     --pill-off-text: var(--on-off-container);
+    --pill-mod-bg: var(--mod-container);     --pill-mod-text: var(--on-mod-container);
 }
 
-/* LIGHT MODE — soft warm palette */
+/* ═══ MATERIAL 3 EXPRESSIVE TOKEN SYSTEM — LIGHT ════════════════════════════ */
 [data-theme="light"] {
-    --bg: #F3EFF7;
-    --text: #2A2632;
-    --text-muted: #7A7283;
-    --accent: #ff7a45;
+    /* ── Tonal surfaces ── */
+    --md-surface: #F3EFF7;
+    --md-on-surface: #2A2632;
+    --md-on-surface-variant: #6E6678;
+    --md-surface-container-lowest: #FFFFFF;
+    --md-surface-container-low: #FBF9FF;
+    --md-surface-container: #F0EBF7;
+    --md-surface-container-high: #EAE4F2;
+    --md-surface-container-highest: #E3DCEC;
+    --md-outline: #CFC8D8;
+    --md-outline-variant: #E2DCEA;
+
+    /* ── Primary ── */
+    --md-primary: #ff7a45;
+    --md-on-primary: #FFFFFF;
+    --md-primary-container: #ffe3d1;
+    --md-on-primary-container: #7a3512;
+
+    /* ── Tertiary (today) ── */
+    --md-tertiary: #7a4fd8;
+    --md-on-tertiary: #FFFFFF;
+    --md-tertiary-container: #eee4ff;
+    --md-on-tertiary-container: #43276b;
+
+    /* ── Error ── */
+    --md-error: #ef5366;
+    --md-on-error: #FFFFFF;
+    --md-error-container: #ffe1e4;
+    --md-on-error-container: #8a1f2d;
+
+    /* ── Shift semantic custom colors ── */
+    --day: #2f8fe0;   --day-container: #dcedff;   --on-day-container: #14528f;
+    --night: #ef5366; --night-container: #ffe0e5; --on-night-container: #99283a;
+    --off: #2bb079;   --off-container: #ddf3e7;   --on-off-container: #17734a;
+    --mod: #9a5fd6;   --mod-container: #ecdfff;   --on-mod-container: #5d3a9e;
+    --vac: #1f9cb8;   --vac-container: #d7f2f7;   --on-vac-container: #0e5f70;
+    --amber: #d99a1e; --amber-container: #fff0d1; --on-amber-container: #7a5510;
+
+    /* ═══ Legacy aliases ═══ */
+    --bg: var(--md-surface);
+    --text: var(--md-on-surface);
+    --text-muted: var(--md-on-surface-variant);
+    --accent: var(--md-primary);
     --accent-light: #ffab5e;
     --accent-grad: linear-gradient(135deg, #ff7a45, #ffab5e);
-    --day: #2f8fe0;
-    --night: #ef5366;
-    --off: #2bb079;
-    --mod: #9a5fd6;
-    /* Semantic data-viz colours (charts.js) */
     --c-net: #2bb079; --c-reg: #2f8fe0; --c-ot: #d99a1e; --c-dt: #ff7a45;
     --c-tax: #ef5366; --c-cpp: #9a5fd6; --c-ei: #2a9fc0; --c-prem: #e08a3c;
     --good: #2bb079; --warn: #d99a1e; --bad: #ef5366;
     --drop-badge-bg: #ffcf8a;
     --drop-badge-text: #3a2e1a;
     --drop-glow: #ffcf8a;
-    --pp-glow: #ff7a45;
-    --border: #E2DCEA;
-    --glass-bg: rgba(252, 250, 255, 0.84);
+    --pp-glow: var(--md-primary);
+    --border: var(--md-outline-variant);
+    --glass-bg: rgba(252, 250, 255, 0.90);
     --glass-border: rgba(0, 0, 0, 0.06);
-    --card: rgba(255, 255, 255, 0.78);
-    --card-solid: #FBF9FF;
+    --card: var(--md-surface-container-low);
+    --card-solid: var(--md-surface-container-low);
     --day-bg: #FAF7FE;
-    --day-text: #2A2632;
-    --input-bg: #F3EFF7;
+    --day-text: var(--md-on-surface);
+    --input-bg: var(--md-surface-container);
     --calendar-filter: invert(0);
-    --spring: cubic-bezier(0.34, 1.8, 0.5, 1);
-    --ease: cubic-bezier(0.4, 0, 0.2, 1);
-    --sheet-ease: cubic-bezier(0.16, 1, 0.3, 1);
-    --press: 0.93;
-    /* Calendar redesign */
+    /* Calendar */
     --cal-cell-bg: #FAF7FE;
-    --cal-cell-bg-today: #F3ECFB;
-    --cal-cell-border: #E2DCEA;
-    --cal-today-accent: #ff7a45;
-    --cal-today-border: rgba(255,122,69,0.7);
-    --cal-header-bg: #FBF9FF;
-    --cal-tab-active-bg: #2A2632;
-    --cal-tab-active-text: #FBF9FF;
-    --cal-tab-inactive-text: #7A7283;
-    --cal-cell-text: #2A2632;
-    --cal-cell-text-muted: #7A7283;
+    --cal-cell-bg-today: var(--md-tertiary-container);
+    --cal-cell-border: var(--md-outline-variant);
+    --cal-today-accent: var(--md-tertiary);
+    --cal-today-border: rgba(122, 79, 216, 0.6);
+    --cal-header-bg: var(--md-surface-container-low);
+    --cal-tab-active-bg: var(--md-on-surface);
+    --cal-tab-active-text: var(--md-surface-container-low);
+    --cal-tab-inactive-text: var(--md-on-surface-variant);
+    --cal-cell-text: var(--md-on-surface);
+    --cal-cell-text-muted: var(--md-on-surface-variant);
     /* Pay-period accent stripe colours */
-    --pp0: #f0a94e;
-    --pp1: #3bc49a;
-    --pp2: #9a5fd6;
-    --pp3: #e86ba6;
-    /* M3 surface hierarchy */
-    --m3-surface-container-low: #F6F2FB;
-    --m3-surface-container: #F0EBF7;
-    --m3-surface-container-high: #EAE4F2;
-    --m3-surface-container-highest: #E3DCEC;
-    --m3-outline-variant: #CFC8D8;
-    --pill-day-bg: rgba(47,143,224,0.15);
-    --pill-day-text: #1f73c0;
-    --pill-night-bg: rgba(239,83,102,0.15);
-    --pill-night-text: #d23a4d;
-    --pill-off-bg: rgba(43,176,121,0.15);
-    --pill-off-text: #1f8e5f;
-    --pill-mod-bg: rgba(154,95,214,0.15);
-    --pill-mod-text: #7e3fc0;
+    --pp0: #f0a94e; --pp1: #3bc49a; --pp2: #9a5fd6; --pp3: #e86ba6;
+    /* M3 surface aliases */
+    --m3-surface-container-low: var(--md-surface-container-low);
+    --m3-surface-container: var(--md-surface-container);
+    --m3-surface-container-high: var(--md-surface-container-high);
+    --m3-surface-container-highest: var(--md-surface-container-highest);
+    --m3-outline-variant: var(--md-outline);
+    /* Pills → container pairs */
+    --pill-day-bg: var(--day-container);     --pill-day-text: var(--on-day-container);
+    --pill-night-bg: var(--night-container); --pill-night-text: var(--on-night-container);
+    --pill-off-bg: var(--off-container);     --pill-off-text: var(--on-off-container);
+    --pill-mod-bg: var(--mod-container);     --pill-mod-text: var(--on-mod-container);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Nunito', -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-tap-highlight-color: transparent; -webkit-font-smoothing: antialiased; }
