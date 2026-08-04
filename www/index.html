@@ -198,6 +198,15 @@
             </div>
         </div>
 
+        <div class="sheet-card" id="section-notes">
+            <div class="sheet-card-title">Notes</div>
+            <div id="notes-list"></div>
+            <div style="display:flex; gap:8px; margin-top:10px; align-items:center;">
+                <input type="text" id="input-note" class="text-input" style="flex:1; min-width:0;" placeholder="e.g. Covered line 2, spoke to TL...">
+                <button class="btn-action btn-save" style="padding:8px 16px; font-size:13px; white-space:nowrap;" onclick="addNoteFromForm()">＋ Add</button>
+            </div>
+        </div>
+
         <div id="conflict-warning">
             <div id="conflict-text"></div>
             <label style="display: none; align-items: center; justify-content: center; gap: 5px; margin-top: 10px; font-size: 12px; color: var(--text);" id="override-label">
@@ -509,6 +518,16 @@
                     <div class="settings-label">3-Hour Warning</div>
                     <label class="switch">
                         <input type="checkbox" id="setting-notif-3" onchange="haptic()">
+                        <span class="switch-slider"></span>
+                    </label>
+                </div>
+                <div class="settings-row">
+                    <div class="settings-label" style="flex-direction:column;align-items:flex-start;gap:2px">
+                        On-Shift Status Card
+                        <span style="font-size:11px;opacity:0.55">Pinned notification during your shift, with quick notes</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="setting-shift-notif" onchange="haptic()">
                         <span class="switch-slider"></span>
                     </label>
                 </div>

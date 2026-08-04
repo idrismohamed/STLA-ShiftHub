@@ -24,6 +24,17 @@ document.addEventListener('deviceready', function() {
                 updateNotifications();
             }
         });
+
+        // Notes typed into the on-shift status card's input action land on the
+        // day the notification belongs to (data.dStr set when scheduling).
+        cordova.plugins.notification.local.on('shift-note', function (notification, eopts) {
+            const text = eopts && eopts.text;
+            const dStr = notification && notification.data && notification.data.dStr;
+            if (text && dStr && typeof addShiftNote === 'function') {
+                addShiftNote(dStr, text);
+                showToast('Note saved to ' + dStr);
+            }
+        });
     }
 }, false);
 

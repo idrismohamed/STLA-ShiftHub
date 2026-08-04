@@ -43,6 +43,7 @@ function openSettingsSheet() {
         'setting-notif-24':  'notif24h',
         'setting-notif-12':  'notif12h',
         'setting-notif-3':   'notif3h',
+        'setting-shift-notif': 'shiftNotif',
 'setting-cal-sync':  'syncCalendar',
         'setting-alarms':    'smartAlarms'
     };
@@ -93,6 +94,7 @@ function saveSettings() {
         notif24h:          g('setting-notif-24')    ? g('setting-notif-24').checked    : true,
         notif12h:          g('setting-notif-12')    ? g('setting-notif-12').checked    : true,
         notif3h:           g('setting-notif-3')     ? g('setting-notif-3').checked     : true,
+        shiftNotif:        g('setting-shift-notif') ? g('setting-shift-notif').checked : false,
 syncCalendar:      g('setting-cal-sync')    ? g('setting-cal-sync').checked    : false,
         smartAlarms:       g('setting-alarms')      ? g('setting-alarms').checked      : false
     };

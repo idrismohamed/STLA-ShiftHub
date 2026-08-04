@@ -150,7 +150,7 @@ function updateNotifications() {
         const dStr      = toDateKey(checkUTC);
         const shortDate = dStr.replace(/-/g, '').substring(2);
 
-        cancelIds.push(parseInt(shortDate + '1'), parseInt(shortDate + '2'), parseInt(shortDate + '3'), parseInt(shortDate + '4'));
+        cancelIds.push(parseInt(shortDate + '1'), parseInt(shortDate + '2'), parseInt(shortDate + '3'), parseInt(shortDate + '4'), parseInt(shortDate + '5'));
 
         const day   = resolveDaySchedule(dStr, crew);
         const sTime = day.startTime;
@@ -191,6 +191,28 @@ function updateNotifications() {
                     text: `Your shift starts in 2 hours!`,
                     trigger: { at: wakeTime }, priority: 2, wakeup: true, sound: 'default', vibrate: true, color: '#ff3b30'
                 });
+            }
+
+            // On-shift status card: pinned only WHILE the shift runs. Appears at
+            // shift start (immediately if we're already mid-shift), auto-dismissed
+            // at shift end via timeoutAfter — no app wake-up needed. Its input
+            // action drops a note straight onto the day (handler in app.js).
+            if (sysSettings.shiftNotif && day.durH > 0) {
+                const shiftEnd = new Date(shiftStart.getTime() + day.durH * 3600000);
+                if (shiftEnd > now) {
+                    const n = {
+                        id: parseInt(shortDate + '5'),
+                        title: `${shiftName} · Crew ${crew}`,
+                        text: `${formatTime12(sTime)} – ${formatTime12(day.endTime)} · tap Add note to log something`,
+                        sticky: true, priority: -1, wakeup: false, sound: false,
+                        smallIcon: 'res://icon', color: '#ff6d00',
+                        timeoutAfter: shiftEnd.getTime() - Math.max(shiftStart.getTime(), now.getTime()),
+                        actions: [{ id: 'shift-note', type: 'input', title: '📝 Add note', emptyText: 'Quick note…' }],
+                        data: { dStr }
+                    };
+                    if (shiftStart > now) n.trigger = { at: shiftStart };
+                    notifications.push(n);
+                }
             }
         }
     }

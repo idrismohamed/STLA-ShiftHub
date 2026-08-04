@@ -183,6 +183,7 @@ function openPickupSheet(dStr, disp, curS, nextS) {
     }
 
     updatePickupToggles();
+    renderShiftNotes();
 
     const btnRemove = document.getElementById('btn-remove');
     if (btnRemove) btnRemove.style.display = Object.keys(ex).length ? 'block' : 'none';
@@ -732,6 +733,10 @@ function renderPayPreview() {
 function buildShiftPayload() {
     const payload = { role: selectedRole };
 
+    // Notes ride along with the day: re-saving the form must never drop them.
+    const _existingNotes = (extraShifts[activeDate] || {}).notes;
+    if (_existingNotes && _existingNotes.length) payload.notes = _existingNotes;
+
     if (selectedRole === 'Manual') {
         const manualInput = document.getElementById('manual-rate-input');
         const mRate = manualInput ? parseFloat(manualInput.value) : 0;
@@ -848,4 +853,65 @@ function removeShift() {
     closeAllSheets();
     if (_undoPayload) showToastWithUndo('Shift Removed', _undoDate, _undoPayload);
     else showToast('Shift Removed', 'error');
+}
+// ─── Shift notes ──────────────────────────────────────────────────────────────
+// Free-text notes attached to a day (extraShifts[dStr].notes = [{text, at}]).
+// Added from the pickup sheet or straight from the on-shift notification's
+// input action; included in backups automatically via extraShifts.
+
+/** Append a note to a day and persist. Safe to call for days with no entry. */
+function addShiftNote(dStr, text) {
+    if (!dStr || !text || !text.trim()) return;
+    const ex = extraShifts[dStr] || {};
+    ex.notes = ex.notes || [];
+    ex.notes.push({ text: text.trim(), at: Date.now() });
+    extraShifts[dStr] = ex;
+    try { localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts)); } catch (e) { return; }
+    if (typeof dataChanged === 'function') dataChanged();
+}
+
+/** Delete a note (identified by its timestamp) from a day. */
+function deleteShiftNote(dStr, at) {
+    haptic();
+    const ex = extraShifts[dStr];
+    if (!ex || !ex.notes) return;
+    ex.notes = ex.notes.filter(n => n.at !== at);
+    if (!ex.notes.length) delete ex.notes;
+    // A bare {role} husk left behind by note-only entries can be dropped whole.
+    if (!ex.notes && Object.keys(ex).every(k => k === 'role')) delete extraShifts[dStr];
+    try { localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(extraShifts)); } catch (e) {}
+    if (typeof dataChanged === 'function') dataChanged();
+    renderShiftNotes();
+}
+
+/** Add the note typed in the pickup sheet's input. */
+function addNoteFromForm() {
+    haptic();
+    const input = document.getElementById('input-note');
+    if (!input || !input.value.trim()) return;
+    addShiftNote(activeDate, input.value);
+    input.value = '';
+    renderShiftNotes();
+    showToast('Note added');
+}
+
+/** Render the active day's notes list inside the pickup sheet. */
+function renderShiftNotes() {
+    const host = document.getElementById('notes-list');
+    if (!host) return;
+    const input = document.getElementById('input-note');
+    if (input) input.value = '';
+    const notes = (extraShifts[activeDate] || {}).notes || [];
+    if (!notes.length) { host.innerHTML = ''; return; }
+    host.innerHTML = notes.map(n => {
+        const when = new Date(n.at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        const safe = String(n.text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        return `<div class="note-row" style="display:flex; align-items:flex-start; gap:8px; padding:8px 0; border-bottom:1px solid var(--glass-border);">
+            <div style="flex:1; min-width:0;">
+                <div style="font-size:13px; color:var(--text); word-wrap:break-word;">${safe}</div>
+                <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">${when}</div>
+            </div>
+            <button onclick="deleteShiftNote('${activeDate}', ${n.at})" aria-label="Delete note" style="background:none; border:none; color:var(--night); font-size:14px; cursor:pointer; padding:2px 6px;">✕</button>
+        </div>`;
+    }).join('');
 }
