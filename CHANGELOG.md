@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-08-04
+
+### Changed — Material 3 Expressive redesign
+- Rebuilt both theme palettes as an M3 tonal token system (surfaces,
+  primary/tertiary/error roles, shift-semantic container pairs) with legacy
+  aliases so no selector broke; "today" moved from orange to tertiary violet
+- Replaced UI emoji with a bundled SVG icon sprite (www/icons.js) —
+  consistent glyphs that tint with their surroundings in both themes
+- Header became an M3 large app bar with a day/night monogram badge
+  (replacing the raster logo that clashed in light theme)
+- Bottom pill bar restyled as an M3E floating toolbar; Month/Week/Year is a
+  connected button group with a shape-morphing sliding indicator
+- Calendar cells and week cards use tonal container washes with token
+  accents; pills/chips/badges use container-bg + on-container text
+  (previously white-on-tint, unreadable in light mode); cells shape-morph
+  on press
+- Pay-period progress is an M3E wavy progress bar (reduced-motion safe)
+- Bottom sheets: tonal cards, expressive grouped settings lists, filter-chip
+  toggles with a morphing check, and a full-width sticky action footer that
+  no longer overlaps sheet content
+- Analytics: tonal stat tiles with clamped display numerals (fixes the
+  clipped Gross/Net/Hours row), softened light-theme chart palette,
+  staggered card entrances
+- Week-view header no longer wraps: date pill shrinks/ellipsizes so the view
+  tabs and Today button always share its line
+
+### Fixed
+- chartPaired zero-value rows render as empty tracks instead of stray "0"s
+- One remaining `transition: all`; QR image outline; several sub-40px hit
+  areas (nav chevrons, delete buttons)
+
 ## [1.1.0] - 2026-08-04
 
 ### Added

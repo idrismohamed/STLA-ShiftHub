@@ -560,8 +560,8 @@ const LEGEND_HTML = `<div class="cal-legend">
     <div class="legend-item"><span class="dot" style="background-color:var(--day)"></span> Days</div>
     <div class="legend-item"><span class="dot" style="background-color:var(--off)"></span> Off</div>
     <div class="legend-item"><span class="dot" style="background-color:var(--mod)"></span> Modified</div>
-    <div class="legend-item">💧 Drop Day</div>
-    <div class="legend-item">❌ 120H Max</div>
+    <div class="legend-item">${icon('droplet', 11)} Drop Day</div>
+    <div class="legend-item">${icon('ban', 11)} 120H Max</div>
 </div>`;
 
 function buildViewBar(crew, ppIdx = null) {
@@ -571,7 +571,7 @@ function buildViewBar(crew, ppIdx = null) {
     return `<div class="cal-week-bar">
         ${LEGEND_HTML}
         <div class="cal-view-bar-actions">
-            <button class="cal-week-bar-btn" onclick="haptic(); triggerBiometricsAndOpenPay(${payArg})">💰 Pay Period</button>
+            <button class="cal-week-bar-btn" onclick="haptic(); triggerBiometricsAndOpenPay(${payArg})">${icon('wallet', 13)} Pay Period</button>
             <div class="cal-crew-btn" style="margin-left:auto">
                 <span>Crew ${crew}</span>
                 <span class="cal-crew-chevron">▾</span>
@@ -625,7 +625,10 @@ function positionTabIndicator() {
         setTo(_lastTabIndex);          // start at old tab
         void ind.offsetWidth;
         ind.style.transition = '';
+        // Shape-morph while travelling: pill → rounded rect → pill (M3E).
+        wrap.classList.add('morphing');
         requestAnimationFrame(() => setTo(activeIdx)); // slide to new tab
+        setTimeout(() => wrap.classList.remove('morphing'), 300);
     }
     _lastTabIndex = activeIdx;
 }
@@ -653,27 +656,27 @@ function buildCellPills(dStr, shift, ex, f, baseH, yearHols) {
 
         if (t === 'Vacation') {
             pCls = ht ? 'pill-mod' : 'pill-vac';
-            pTxt = ht ? `🏖️ Partial Vac · ${times}` : '🏖️ Vacation';
+            pTxt = ht ? `${icon('umbrella', 10)} Partial Vac · ${times}` : `${icon('umbrella', 10)} Vacation`;
         } else if (t === 'Off') {
             pCls = 'pill-absent';
-            pTxt = ht ? `🚫 Partial Off · ${times}` : '🚫 Absent';
+            pTxt = ht ? `${icon('ban', 10)} Partial Off · ${times}` : `${icon('ban', 10)} Absent`;
         } else if (t === 'OffDay') {
             pCls = 'pill-offday';
-            pTxt = '🚫 Off';
+            pTxt = `${icon('ban', 10)} Off`;
         } else if (t === 'Lieu') {
             pCls = 'pill-lieu';
-            pTxt = ht ? `🏛️ Partial Lieu · ${times}` : '🏛️ Lieu Day';
+            pTxt = ht ? `${icon('landmark', 10)} Partial Lieu · ${times}` : `${icon('landmark', 10)} Lieu Day`;
         } else if (t === 'DropOff') {
-            pCls = 'pill-drop'; pTxt = '💧 Drop Off';
+            pCls = 'pill-drop'; pTxt = `${icon('droplet', 10)} Drop Off`;
         } else if (t === 'DropPaid') {
             pCls = 'pill-mod';
-            pTxt = ht ? `💰 Drop Paid · ${times}` : '💰 Drop Paid';
+            pTxt = ht ? `${icon('coins', 10)} Drop Paid · ${times}` : `${icon('coins', 10)} Drop Paid`;
         } else if (t === 'Day' || t === 'Night') {
             pCls = (t === 'Day' ? 'pill-day' : 'pill-night') + ' two-line';
-            const icon = t === 'Day' ? '☀️' : '🌙';
+            const typeIcon = t === 'Day' ? icon('sun', 10) : icon('moon', 10);
             const defT = t === 'Day' ? '6:30–18:30' : '18:30–6:30';
             const disp = ht ? times : defT;
-            const label = ex.crew ? `${icon} ${formatCrewLabel(ex.crew)}` : `${icon} ${t}`;
+            const label = ex.crew ? `${typeIcon} ${formatCrewLabel(ex.crew)}` : `${typeIcon} ${t}`;
             pTxt = `<span class="pill-top">${label}</span><span class="pill-sub">${disp}</span>`;
         } else {
             // No recognized type — fall back to base rotation shift so D/N shifts with
@@ -681,23 +684,23 @@ function buildCellPills(dStr, shift, ex, f, baseH, yearHols) {
             if (shift === 'D') {
                 pCls = 'pill-day two-line';
                 const disp = ht ? times : '6:30–18:30';
-                pTxt = `<span class="pill-top">☀️ Day</span><span class="pill-sub">${disp}</span>`;
+                pTxt = `<span class="pill-top">${icon('sun', 10)} Day</span><span class="pill-sub">${disp}</span>`;
             } else if (shift === 'N') {
                 pCls = 'pill-night two-line';
                 const disp = ht ? times : '18:30–6:30';
-                pTxt = `<span class="pill-top">🌙 Night</span><span class="pill-sub">${disp}</span>`;
+                pTxt = `<span class="pill-top">${icon('moon', 10)} Night</span><span class="pill-sub">${disp}</span>`;
             }
         }
     } else if (f.isLockout) {
-        pCls = 'pill-lock'; pTxt = '❌ Max Hours';
+        pCls = 'pill-lock'; pTxt = `${icon('ban', 10)} Max Hours`;
     } else if (f.is16hLockout) {
-        pCls = 'pill-lock'; pTxt = '❌ Rest Limit';
+        pCls = 'pill-lock'; pTxt = `${icon('ban', 10)} Rest Limit`;
     } else if (shift === 'D') {
         pCls = 'pill-day two-line';
-        pTxt = '<span class="pill-top">☀️ Day</span><span class="pill-sub">6:30–18:30</span>';
+        pTxt = `<span class="pill-top">${icon('sun', 10)} Day</span><span class="pill-sub">6:30–18:30</span>`;
     } else if (shift === 'N') {
         pCls = 'pill-night two-line';
-        pTxt = '<span class="pill-top">🌙 Night</span><span class="pill-sub">18:30–6:30</span>';
+        pTxt = `<span class="pill-top">${icon('moon', 10)} Night</span><span class="pill-sub">18:30–6:30</span>`;
     }
 
     pills.push({ cls: pCls, text: pTxt });
@@ -725,20 +728,20 @@ function buildCellPills(dStr, shift, ex, f, baseH, yearHols) {
 
     // Drop cycle marker — only on the first day of a drop period
     if (f.isDropPeriod && f.ppDayIndex === 0) {
-        pills.push({ cls: 'pill-drop', text: '💧 Drop Cycle' });
+        pills.push({ cls: 'pill-drop', text: `${icon('droplet', 10)} Drop Cycle`, dropCycle: true });
     }
 
     // Lockout secondary — when ex exists but doesn't fully override lockout
     if (f.isLockout && ex && !['Vacation', 'Off', 'DropOff', 'Lieu', 'OffDay'].includes(ex.type)) {
-        pills.push({ cls: 'pill-lock', text: '❌ Max' });
+        pills.push({ cls: 'pill-lock', text: `${icon('ban', 10)} Max` });
     }
     if (f.is16hLockout && ex && !['Vacation', 'Off', 'DropOff', 'Lieu', 'OffDay'].includes(ex.type)) {
-        pills.push({ cls: 'pill-lock', text: '❌ Rest' });
+        pills.push({ cls: 'pill-lock', text: `${icon('ban', 10)} Rest` });
     }
 
     // Holiday
     const hol = yearHols[dStr];
-    if (hol) pills.push({ cls: 'pill-hol', text: `⭐ ${hol.n}` });
+    if (hol) pills.push({ cls: 'pill-hol', text: `${icon('star', 10)} ${hol.n}` });
 
     return pills;
 }
@@ -791,25 +794,25 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
     if (ex) {
         const t  = ex.type;
         const ht = ex.startTime && ex.endTime;
-        if (t === 'Vacation')      { typeLabel = ht ? '🏖️ Partial Vac' : '🏖️ Vacation'; sC += ' vac'; }
-        else if (t === 'Off')      { typeLabel = ht ? '🚫 Partial' : '🚫 Absent'; }
-        else if (t === 'OffDay')   { typeLabel = '🚫 Off'; }
-        else if (t === 'Lieu')     { typeLabel = ht ? '🏛️ Partial' : '🏛️ Lieu'; }
-        else if (t === 'DropOff')  { typeLabel = '💧 Drop'; }
-        else if (t === 'DropPaid') { typeLabel = '💰 Drop+'; }
-        else if (t === 'Day')      { typeLabel = '☀️ Day';   timeLabel = ht ? formatTime24(ex.startTime) : '6:30'; }
-        else if (t === 'Night')    { typeLabel = '🌙 Night'; timeLabel = ht ? formatTime24(ex.startTime) : '18:30'; }
-        else if (shift === 'D')    { typeLabel = '☀️ Day'; }
-        else if (shift === 'N')    { typeLabel = '🌙 Night'; }
+        if (t === 'Vacation')      { typeLabel = ht ? `${icon('umbrella', 10)} Partial Vac` : `${icon('umbrella', 10)} Vacation`; sC += ' vac'; }
+        else if (t === 'Off')      { typeLabel = ht ? `${icon('ban', 10)} Partial` : `${icon('ban', 10)} Absent`; }
+        else if (t === 'OffDay')   { typeLabel = `${icon('ban', 10)} Off`; }
+        else if (t === 'Lieu')     { typeLabel = ht ? `${icon('landmark', 10)} Partial` : `${icon('landmark', 10)} Lieu`; }
+        else if (t === 'DropOff')  { typeLabel = `${icon('droplet', 10)} Drop`; }
+        else if (t === 'DropPaid') { typeLabel = `${icon('coins', 10)} Drop+`; }
+        else if (t === 'Day')      { typeLabel = `${icon('sun', 10)} Day`;   timeLabel = ht ? formatTime24(ex.startTime) : '6:30'; }
+        else if (t === 'Night')    { typeLabel = `${icon('moon', 10)} Night`; timeLabel = ht ? formatTime24(ex.startTime) : '18:30'; }
+        else if (shift === 'D')    { typeLabel = `${icon('sun', 10)} Day`; }
+        else if (shift === 'N')    { typeLabel = `${icon('moon', 10)} Night`; }
         if (ht && !timeLabel) timeLabel = formatTime24(ex.startTime);
     } else if (f.isLockout) {
         typeLabel = '❌ Max';
     } else if (f.is16hLockout) {
         typeLabel = '❌ Rest';
     } else if (shift === 'D') {
-        typeLabel = '☀️ Day';   timeLabel = '6:30';
+        typeLabel = `${icon('sun', 10)} Day`;   timeLabel = '6:30';
     } else if (shift === 'N') {
-        typeLabel = '🌙 Night'; timeLabel = '18:30';
+        typeLabel = `${icon('moon', 10)} Night`; timeLabel = '18:30';
     }
 
     // ── OT/DT corner chip (show only the larger of the two) ─────────────────
@@ -832,17 +835,17 @@ function buildCalCell(d, m, year, crew, todayStr, yearHols, currentTargetPPIndex
 
     // ── Holiday flag ─────────────────────────────────────────────────────────
     const holFlag = yearHols[dStr]
-        ? `<div class="cal-cell-flags"><span class="cal-flag hol-flag">⭐ ${yearHols[dStr].n.split(' ')[0]}</span></div>`
+        ? `<div class="cal-cell-flags"><span class="cal-flag hol-flag">${icon('star', 9)} ${yearHols[dStr].n.split(' ')[0]}</span></div>`
         : '';
 
     // ── Drop cycle start — top banner on first day ────────────────────────
     const dropBadge = (f.isDropPeriod && f.ppDayIndex === 0)
-        ? `<div class="cal-drop-start">💧 Drop Cycle</div>`
+        ? `<div class="cal-drop-start">${icon('droplet', 9)} Drop Cycle</div>`
         : '';
 
     // ── Pay period end — full-width tappable footer ───────────────────────
     const ppBadge = f.isPPBoundary
-        ? `<button class="cal-pp-badge" onclick="event.stopPropagation(); haptic(); triggerBiometricsAndOpenPay(${f.ppIndex})">💰 PP End</button>`
+        ? `<button class="cal-pp-badge" onclick="event.stopPropagation(); haptic(); triggerBiometricsAndOpenPay(${f.ppIndex})">${icon('wallet', 9)} PP End</button>`
         : '';
 
     const dispDate  = `${months[m]} ${d}, ${year}`;
@@ -1000,13 +1003,21 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
     const firstDayStr     = toDateKey(ppStart);
     const isDropPP        = (dayFatigue[firstDayStr] || {}).isDropPeriod === true;
 
-    const utcFmt   = utc => { const s = toDateKey(utc).split('-'); return new Date(+s[0], +s[1]-1, +s[2]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); };
+    // Compact numeric range on very narrow screens so the date pill always
+    // hugs its full text on one line with the tabs + Today button.
+    const _compactHdr = window.innerWidth < 380;
+    const utcFmt   = utc => {
+        const s = toDateKey(utc).split('-');
+        const d = new Date(+s[0], +s[1]-1, +s[2]);
+        return _compactHdr ? `${d.getMonth() + 1}/${d.getDate()}`
+                           : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
     const ppLabel  = `${utcFmt(ppStart)} – ${utcFmt(ppEnd)}`;
 
     const leftContent = `
         <button class="cal-nav-btn" onclick="haptic(); navigatePP(-1)">&#8249;</button>
         <div class="cal-pp-label-wrap${isCurrentPPView ? ' cal-pp-label-current' : ''}">
-            <span class="cal-month-label" style="font-size:14px">${ppLabel}</span>
+            <span class="cal-month-label">${ppLabel}</span>
         </div>
         <button class="cal-nav-btn" onclick="haptic(); navigatePP(1)">&#8250;</button>`;
 
@@ -1063,7 +1074,7 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
 
         // Drop cycle is shown in the header for the week view — omit from individual cards
         const pills    = buildCellPills(dStr, shift, ex, f, baseH, holsMap)
-            .filter(p => !(p.cls === 'pill-drop' && p.text === '💧 Drop Cycle'));
+            .filter(p => !(p.cls === 'pill-drop' && p.dropCycle));
         // Flag days worked at the Team Leader rate.
         if (ex && ex.role === 'TL') pills.unshift({ cls: 'pill-tl', text: 'TL' });
         const visible  = pills.slice(0, 5);
@@ -1085,13 +1096,13 @@ function renderWeekViewNew(year, crew, logicalT, todayStr, yearHols, currentTarg
 
     let _dropBanner = '';
     if (isDropPP) {
-        _dropBanner = `<div class="cal-drop-pp-banner">💧 Drop Cycle</div>`;
+        _dropBanner = `<div class="cal-drop-pp-banner">${icon('droplet', 12)} Drop Cycle</div>`;
     } else {
         let _ndi = tgtPPIdx + 1;
         while ((_ndi % 3) !== 1) _ndi++;
         const _daysUntil = Math.floor((basePPStartUTC + _ndi * MS_PP - nowUTC) / MS_DAY);
         if (_daysUntil > 0 && _daysUntil <= 14) {
-            _dropBanner = `<div class="cal-drop-pp-banner upcoming">💧 Drop Cycle in ${_daysUntil} day${_daysUntil !== 1 ? 's' : ''}</div>`;
+            _dropBanner = `<div class="cal-drop-pp-banner upcoming">${icon('droplet', 12)} Drop Cycle in ${_daysUntil} day${_daysUntil !== 1 ? 's' : ''}</div>`;
         }
     }
 
@@ -1189,8 +1200,8 @@ function buildMiniMonth(m, year, crew, todayStr) {
 
     grid += '</div>';
     const otBadge  = mmOT > 0   ? `<span class="cal-mini-ot-badge">+${mmOT.toFixed(0)}h</span>` : '';
-    const dropIcon = mmDrop      ? `<span class="cal-mini-drop">💧</span>` : '';
-    const summary  = `<div class="cal-mini-summary"><span>☀️${mmD} 🌙${mmN}</span><span>${otBadge}${dropIcon}</span></div>`;
+    const dropIcon = mmDrop      ? `<span class="cal-mini-drop">${icon('droplet', 9)}</span>` : '';
+    const summary  = `<div class="cal-mini-summary"><span>${icon('sun', 9)}${mmD} ${icon('moon', 9)}${mmN}</span><span>${otBadge}${dropIcon}</span></div>`;
     return `<div class="cal-mini-month" onclick="haptic(); navigateToMonth(${m},${year})"><div class="cal-mini-month-title">${months[m].substring(0,3)}</div>${grid}${summary}</div>`;
 }
 
@@ -1277,20 +1288,20 @@ function showCtxMenu(dStr, friendly, shift, next, x, y, view) {
     hideCtxMenu();
     let items = '';
     if (shift === 'O') {
-        items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();openPickupSheet('${dStr}','${friendly}','D','${next}')">☀️ Day Shift</div>`;
-        items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();openPickupSheet('${dStr}','${friendly}','N','${next}')">🌙 Night Shift</div>`;
+        items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();openPickupSheet('${dStr}','${friendly}','D','${next}')">${icon('sun', 13)} Day Shift</div>`;
+        items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();openPickupSheet('${dStr}','${friendly}','N','${next}')">${icon('moon', 13)} Night Shift</div>`;
     } else {
-        const icon = shift === 'D' ? '☀️' : '🌙';
-        items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();openPickupSheet('${dStr}','${friendly}','${shift}','${next}')">${icon} Log Shift</div>`;
+        const logIcon = shift === 'D' ? icon('sun', 13) : icon('moon', 13);
+        items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();openPickupSheet('${dStr}','${friendly}','${shift}','${next}')">${logIcon} Log Shift</div>`;
     }
-    items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();openPickupSheet('${dStr}','${friendly}','${shift}','${next}');requestAnimationFrame(()=>requestAnimationFrame(()=>selectType('Vacation')))">🏖️ Vacation</div>`;
-    items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();triggerBiometricsAndOpenPay(Math.floor((Date.UTC(...'${dStr}'.split('-').map(Number).map((v,i)=>i===1?v-1:v))-basePPStartUTC)/MS_PP))">💰 View Pay Period</div>`;
+    items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();openPickupSheet('${dStr}','${friendly}','${shift}','${next}');requestAnimationFrame(()=>requestAnimationFrame(()=>selectType('Vacation')))">${icon('umbrella', 13)} Vacation</div>`;
+    items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();triggerBiometricsAndOpenPay(Math.floor((Date.UTC(...'${dStr}'.split('-').map(Number).map((v,i)=>i===1?v-1:v))-basePPStartUTC)/MS_PP))">${icon('wallet', 13)} View Pay Period</div>`;
     if (view === 'month') {
-        items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();goToWeekPP('${dStr}')">📅 Go to Week View</div>`;
+        items += `<div class="cal-ctx-item" onclick="hideCtxMenu();haptic();goToWeekPP('${dStr}')">${icon('calendar', 13)} Go to Week View</div>`;
     }
     if (extraShifts[dStr]) {
         items += `<div style="height:1px;background:var(--border);margin:4px 8px"></div>`;
-        items += `<div class="cal-ctx-item" onclick="hideCtxMenu();clearDayMod('${dStr}')">↩️ Clear Modifications</div>`;
+        items += `<div class="cal-ctx-item" onclick="hideCtxMenu();clearDayMod('${dStr}')">${icon('close', 13)} Clear Modifications</div>`;
     }
     menu.innerHTML = items;
     const menuW = 210;

@@ -13,7 +13,15 @@ function showToast(msg, type = 'success') {
     if (!container) return;
     const toast = document.createElement('div');
     toast.className = `native-toast ${type}`;
-    toast.innerText = msg;
+    // Status icon + message (icon() from icons.js; fall back to text-only)
+    if (typeof icon === 'function') {
+        toast.innerHTML = icon(type === 'error' ? 'alert' : 'check', 15);
+        const span = document.createElement('span');
+        span.textContent = msg;
+        toast.appendChild(span);
+    } else {
+        toast.innerText = msg;
+    }
     container.appendChild(toast);
     haptic();
     setTimeout(() => toast.classList.add('show'), 10);

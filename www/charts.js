@@ -256,6 +256,9 @@ function chartPaired(hostId, rows, thisLabel, prevLabel) {
         s.appendChild(_cText(barX, yTop + 11, r[0], 12, 700, '--text', 'start'));
         [[r[1], '--accent', yTop + 17, 1], [r[2], '--border', yTop + 30, 0.95]].forEach(([v, color, yy, op], j) => {
             const w = barW * (v / max);
+            // Faint full-length track so zero-value rows still read as bars
+            // instead of stray "0" text floating in space.
+            s.appendChild(_cEl('rect', { x: barX, y: yy, width: barW, height: 11, rx: 5.5, fill: _cCol('--m3-surface-container-high'), opacity: 0.55 }));
             const bar = _cEl('rect', { x: barX, y: yy, width: 0, height: 11, rx: 5.5, fill: _cCol(color), opacity: op });
             s.appendChild(bar);
             _cAnimate(t => bar.setAttribute('width', Math.max(0, w * t)), 600, i * 80 + j * 60);
@@ -378,4 +381,30 @@ function _drawTrend() {
         s.appendChild(_cText(x(i) + bwi / 2, H - 8, lb, 9, 700, '--text-muted'));
     });
     host.appendChild(s);
+}
+
+/* ── M3E wavy progress ───────────────────────────────────────────────────── */
+/* Filled portion is an undulating sine stroke (scrolling gently unless the
+ * user prefers reduced motion), remainder a flat thin track with an M3-style
+ * stop dot at the end. Returns an inline SVG string. */
+function wavyProgressHTML(pct, color = 'var(--md-primary)') {
+    const W = 300, H = 16, amp = 2.8, wl = 20, mid = H / 2;
+    const fillW = Math.max(0, Math.min(100, pct)) / 100 * W;
+    let d = `M${-wl} ${mid}`;
+    for (let x = -wl; x <= W + wl; x += 2) {
+        d += ` L${x} ${(mid + Math.sin((x / wl) * 2 * Math.PI) * amp).toFixed(2)}`;
+    }
+    const id = 'wp' + Math.random().toString(36).slice(2, 8);
+    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const anim = reduced ? '' :
+        `<animateTransform attributeName="transform" type="translate" from="0 0" to="${wl} 0" dur="2.4s" repeatCount="indefinite"/>`;
+    const wave = fillW > 1
+        ? `<defs><clipPath id="${id}"><rect x="0" y="0" width="${fillW.toFixed(1)}" height="${H}"/></clipPath></defs>` +
+          `<g clip-path="url(#${id})"><path d="${d}" fill="none" stroke="${color}" stroke-width="3.6" stroke-linecap="round">${anim}</path></g>`
+        : '';
+    return `<svg class="wavy-progress" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">` +
+        `<line x1="${Math.min(W - 6, fillW + 5).toFixed(1)}" y1="${mid}" x2="${W - 6}" y2="${mid}" stroke="var(--md-surface-container-highest)" stroke-width="3" stroke-linecap="round"/>` +
+        wave +
+        `<circle cx="${W - 3}" cy="${mid}" r="2.2" fill="${color}"/>` +
+        `</svg>`;
 }

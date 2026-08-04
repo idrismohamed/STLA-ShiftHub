@@ -503,7 +503,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
   <div class="an-flat-card">
     <div class="an-flat-card-title">${topCardTitle} ${pastBadge}<span class="an-section-sub" style="text-transform:none;letter-spacing:0;font-size:10px">${brkStartLabel}–${brkEndLabel}</span><span class="pp-top-chev">›</span></div>
     <div class="an-pp-bar-labels"><span>Day ${dispPpDayDisplay} of 14</span><span>${isPastPP ? 'Complete' : isFuturePP ? 'Not started' : `${dispPpDaysLeft} day${dispPpDaysLeft !== 1 ? 's' : ''} left`}</span></div>
-    <div class="an-progress" style="margin:5px 0 0"><div class="an-progress-fill" style="width:${dispPpPct}%;background:var(--accent)"></div></div>
+    <div style="margin:5px 0 0">${typeof wavyProgressHTML === 'function' ? wavyProgressHTML(dispPpPct) : `<div class="an-progress"><div class="an-progress-fill" style="width:${dispPpPct}%;background:var(--accent)"></div></div>`}</div>
   </div>
   <div class="an-grid-3">
     <div class="an-hero-card" style="--hero-color:#7c3aed">
@@ -526,7 +526,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
     <div id="chart-paybar" class="ch-host-bar"></div>
     <div class="ch-legend" id="chart-paybar-legend"></div>
     <div class="an-sep" style="margin:12px 0 10px"></div>
-    <div class="ch-sub-label">120H Limit${dispFatigueAtMax ? ' · ⛔ MAX' : ''} <span class="ch-sub-val" style="color:${dispFatigueColor}">${dispFatigueAtMax ? 'Limit reached' : dispFatigueRem.toFixed(1) + 'h left'}</span></div>
+    <div class="ch-sub-label">120H Limit${dispFatigueAtMax ? ` · ${icon('ban', 11)} MAX` : ''} <span class="ch-sub-val" style="color:${dispFatigueColor}">${dispFatigueAtMax ? 'Limit reached' : dispFatigueRem.toFixed(1) + 'h left'}</span></div>
     <div id="chart-fatigue-bar" class="ch-host-bar"></div>
     <div class="ch-legend" id="chart-fatigue-legend"></div>
   </div>
@@ -621,6 +621,8 @@ function renderAnalyticsDashboard(crew, logicalT) {
 
     if (elSide)  elSide.innerHTML  = _sideHTML;
     if (elBelow) elBelow.innerHTML = _belowHTML;
+    // Stagger index for the card entrance animation (CSS reads --an-i).
+    document.querySelectorAll('.analytics-wrap .an-flat-card').forEach((c, i) => c.style.setProperty('--an-i', i));
     animateHeroCountUps();
 
     // ── Inline-SVG analytics charts (charts.js) ──────────────
@@ -635,7 +637,7 @@ function renderAnalyticsDashboard(crew, logicalT) {
         const fatigueTrackColor = dispFatigueUsed >= 108 ? '--c-dt' : dispFatigueUsed >= 90 ? '--warn' : '--c-reg';
         chartStacked('chart-fatigue-bar', 'chart-fatigue-legend', [
             ['Used', dispFatigueUsed, fatigueTrackColor],
-            ['Left', Math.max(0, 120 - dispFatigueUsed), '--glass-border']
+            ['Left', Math.max(0, 120 - dispFatigueUsed), '--m3-surface-container-highest']
         ], v => v.toFixed(1) + 'h');
         chartPaired('chart-paired', [
             ['Days worked', thisWorked, prevWorked],
@@ -683,9 +685,9 @@ function openTimeOffDetail(type) {
     haptic();
     const crew = (document.getElementById('crew-select') || {}).value || sysSettings.defaultCrew;
     const meta = {
-        vacation: { title: '🏖️ Vacation Days',     unit: 'h' },
-        lieu:     { title: '🏛️ Lieu (Holiday) Days', unit: 'd' },
-        drop:     { title: '💧 Drop Days',           unit: 'd' }
+        vacation: { title: `${icon('umbrella', 14)} Vacation Days`,     unit: 'h' },
+        lieu:     { title: `${icon('landmark', 14)} Lieu (Holiday) Days`, unit: 'd' },
+        drop:     { title: `${icon('droplet', 14)} Drop Days`,           unit: 'd' }
     }[type] || { title: 'Time Off', unit: '' };
 
     const match = ex =>

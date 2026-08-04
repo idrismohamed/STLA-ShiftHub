@@ -16,12 +16,14 @@
 <body>
     
     <div class="app-header">
-        <img src="./launcher-icon.png" alt="Shift Hub" class="app-logo" onerror="this.style.display='none'">
+        <div class="app-logo-badge" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></svg>
+        </div>
         <div class="app-title-container">
             <p class="app-greeting-label">Welcome,</p>
             <h1 class="app-title" id="greeting-text"><span>Drizzy</span></h1>
         </div>
-        <button class="app-header-settings-btn" onclick="haptic(); openSettingsSheet()">⚙️</button>
+        <button class="app-header-settings-btn" onclick="haptic(); openSettingsSheet()"><svg class="shi" width="22" height="22" aria-hidden="true"><use href="#i-gear"/></svg></button>
     </div>
     
     <div id="pp-top-summary"></div>
@@ -104,7 +106,7 @@
 
         <div class="sheet-card" id="section-ot-rate" style="display: none;">
             <div class="sheet-card-title">Classify Extra Hours (<span id="display-extra-hours" style="color: #fbbc04;">0</span> total)</div>
-            <div id="btn-reg-pay" onclick="toggleRegPay()" style="display:none; margin-top:10px; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--input-bg); font-size:13px; font-weight:600; text-align:center; cursor:pointer; color:var(--text-muted);">📋 Regular Pay</div>
+            <div id="btn-reg-pay" onclick="toggleRegPay()" style="display:none; margin-top:10px; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--input-bg); font-size:13px; font-weight:600; text-align:center; cursor:pointer; color:var(--text-muted);"><svg class="shi" width="14" height="14" aria-hidden="true"><use href="#i-clipboard"/></svg> Regular Pay</div>
             <div id="ot-dt-section">
                 <div style="margin-top: 10px; display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); font-weight: bold; letter-spacing: 0.5px;">
                     <span>ALL OT</span>
@@ -130,13 +132,13 @@
         </div>
 
         <div id="btn-add-shift2" style="display:none; margin: 0 0 12px;" onclick="addShift2()">
-            <div style="padding:10px 14px; background:var(--input-bg); border:1px dashed var(--border); border-radius:10px; color:var(--text-muted); font-size:13px; font-weight:600; text-align:center; cursor:pointer;">➕ Add More</div>
+            <div style="padding:10px 14px; background:var(--input-bg); border:1px dashed var(--border); border-radius:10px; color:var(--text-muted); font-size:13px; font-weight:600; text-align:center; cursor:pointer;"><svg class="shi" width="14" height="14" aria-hidden="true"><use href="#i-plus"/></svg> Add More</div>
         </div>
 
         <div class="sheet-card" id="section-shift2" style="display:none;">
             <div class="sheet-card-title" style="display:flex; align-items:center; justify-content:space-between; padding-bottom:10px; border-bottom:1px solid var(--glass-border);">
                 <span>Additional Time</span>
-                <span onclick="clearShift2()" style="font-size:11px; color:var(--night); cursor:pointer; font-weight:700;">✕ Remove</span>
+                <span onclick="clearShift2()" style="font-size:11px; color:var(--night); cursor:pointer; font-weight:700;"><svg class="shi" width="11" height="11" aria-hidden="true"><use href="#i-close"/></svg> Remove</span>
             </div>
             <div class="time-row" style="margin-top:12px;">
                 <div>
@@ -170,9 +172,9 @@
         <div class="sheet-card">
             <div class="sheet-card-title">Schedule Overrides</div>
             <div class="toggle-group">
-                <div class="toggle-btn day-type" onclick="selectType('Day')" id="btn-type-Day">☀️ Day Shift</div>
-                <div class="toggle-btn night-type" onclick="selectType('Night')" id="btn-type-Night">🌙 Night Shift</div>
-                <div class="toggle-btn offday-type" onclick="selectType('OffDay')" id="btn-type-OffDay">🚫 Off</div>
+                <div class="toggle-btn day-type" onclick="selectType('Day')" id="btn-type-Day"><svg class="shi" width="14" height="14" aria-hidden="true"><use href="#i-sun"/></svg> Day Shift</div>
+                <div class="toggle-btn night-type" onclick="selectType('Night')" id="btn-type-Night"><svg class="shi" width="14" height="14" aria-hidden="true"><use href="#i-moon"/></svg> Night Shift</div>
+                <div class="toggle-btn offday-type" onclick="selectType('OffDay')" id="btn-type-OffDay"><svg class="shi" width="14" height="14" aria-hidden="true"><use href="#i-ban"/></svg> Off</div>
             </div>
             <div id="crew-override-container" style="margin-top: 12px;">
                 <div class="toggle-group">
@@ -190,11 +192,11 @@
         <div class="sheet-card">
             <div class="sheet-card-title">Time Off & Absences</div>
             <div class="toggle-group">
-                <div class="toggle-btn" style="border-color:#00bcd4; color:#00bcd4;" onclick="selectType('Vacation')" id="btn-type-Vacation">🏖️ Vacation</div>
-                <div class="toggle-btn" style="border-color:var(--night); color:var(--night);" onclick="selectType('Off')" id="btn-type-Off">🚫 Unpaid Off</div>
-                <div class="toggle-btn" style="border-color:#fbbc04; color:#fbbc04;" onclick="selectType('Lieu')" id="btn-type-Lieu">🏛️ Lieu Day</div>
-                <div class="toggle-btn" style="border-color:var(--day); color:var(--day);" onclick="selectType('DropOff')" id="btn-type-DropOff">💧 Drop Off</div>
-                <div class="toggle-btn" style="border-color:var(--off); color:var(--off); flex-basis: 100%;" onclick="selectType('DropPaid')" id="btn-type-DropPaid">💰 Drop Paid</div>
+                <div class="toggle-btn vac-type" onclick="selectType('Vacation')" id="btn-type-Vacation"><svg class="shi" width="14" height="14" aria-hidden="true"><use href="#i-umbrella"/></svg> Vacation</div>
+                <div class="toggle-btn night-type" onclick="selectType('Off')" id="btn-type-Off"><svg class="shi" width="14" height="14" aria-hidden="true"><use href="#i-ban"/></svg> Unpaid Off</div>
+                <div class="toggle-btn lieu-type" onclick="selectType('Lieu')" id="btn-type-Lieu"><svg class="shi" width="14" height="14" aria-hidden="true"><use href="#i-landmark"/></svg> Lieu Day</div>
+                <div class="toggle-btn day-type" onclick="selectType('DropOff')" id="btn-type-DropOff"><svg class="shi" width="14" height="14" aria-hidden="true"><use href="#i-droplet"/></svg> Drop Off</div>
+                <div class="toggle-btn off-type" style="flex-basis: 100%;" onclick="selectType('DropPaid')" id="btn-type-DropPaid"><svg class="shi" width="14" height="14" aria-hidden="true"><use href="#i-coins"/></svg> Drop Paid</div>
             </div>
         </div>
 
@@ -203,7 +205,7 @@
             <div id="notes-list"></div>
             <div style="display:flex; gap:8px; margin-top:10px; align-items:center;">
                 <input type="text" id="input-note" class="text-input" style="flex:1; min-width:0;" placeholder="e.g. Covered line 2, spoke to TL...">
-                <button class="btn-action btn-save" style="padding:8px 16px; font-size:13px; white-space:nowrap;" onclick="addNoteFromForm()">＋ Add</button>
+                <button class="btn-action btn-save" style="padding:8px 16px; font-size:13px; white-space:nowrap;" onclick="addNoteFromForm()"><svg class="shi" width="13" height="13" aria-hidden="true"><use href="#i-plus"/></svg> Add</button>
             </div>
         </div>
 
@@ -224,7 +226,7 @@
     </div>
 
     <div class="bottom-sheet" id="sheet-payroll" style="display: flex; flex-direction: column; max-height: 85vh; padding-bottom: 0;">
-        <h3 class="sheet-header">💰 Financial Dashboard</h3>
+        <h3 class="sheet-header"><svg class="shi" width="18" height="18" aria-hidden="true"><use href="#i-wallet"/></svg> Financial Dashboard</h3>
         <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: -15px; margin-bottom: 15px;">Calculated dynamically by Year rules.</p>
         
         <div style="overflow-y: auto; flex: 1; padding: 0 15px 20px 15px;">
@@ -235,7 +237,7 @@
             </div>
 
             <div class="sheet-card" style="margin-top: 25px; border-color: var(--accent); background: rgba(255, 123, 0, 0.05);">
-                <div class="sheet-card-title" style="color: var(--accent); margin-bottom: 15px;">🔮 "What-If" OT Simulator</div>
+                <div class="sheet-card-title" style="color: var(--accent); margin-bottom: 15px;"><svg class="shi" width="15" height="15" aria-hidden="true"><use href="#i-sliders"/></svg> "What-If" OT Simulator</div>
                 
                 <div>
                     <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); font-weight: bold; margin-bottom: 5px;">
@@ -271,22 +273,22 @@
         </div>
 
         <div class="btn-row" style="position: sticky; bottom: 0; padding: 14px 20px 28px; margin: 0; border-radius: 0; border: none; border-top: 1px solid var(--border); box-shadow: none; width: 100%; z-index: 10; justify-content: center; flex-wrap: wrap;">
-            <button class="btn-action btn-cancel" onclick="openPayTools()">🧰 Tools</button>
-            <button class="btn-action btn-cancel" style="background: var(--day); border: none; color: #fff;" onclick="exportPDF()">📄 PDF</button>
-            <button class="btn-action btn-cancel" onclick="sharePayPeriod()">📤 Text</button>
+            <button class="btn-action btn-cancel" onclick="openPayTools()"><svg class="shi" width="14" height="14" aria-hidden="true"><use href="#i-wrench"/></svg> Tools</button>
+            <button class="btn-action btn-cancel" style="background: var(--day); border: none; color: #fff;" onclick="exportPDF()"><svg class="shi" width="14" height="14" aria-hidden="true"><use href="#i-file"/></svg> PDF</button>
+            <button class="btn-action btn-cancel" onclick="sharePayPeriod()"><svg class="shi" width="14" height="14" aria-hidden="true"><use href="#i-share"/></svg> Text</button>
             <button class="btn-action btn-save" onclick="sheetBack()">Close</button>
         </div>
     </div>
 
     <div class="bottom-sheet" id="sheet-paytools">
-        <h3 class="sheet-header">🧰 Pay Tools</h3>
+        <h3 class="sheet-header"><svg class="shi" width="18" height="18" aria-hidden="true"><use href="#i-wrench"/></svg> Pay Tools</h3>
         <div class="settings-group">
-            <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openCapTracker()"><div class="settings-label">📊 Contribution Caps</div><div class="dash-arrow">❯</div></div>
-            <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openVerifySheet()"><div class="settings-label">🔍 Paystub Verifier</div><div class="dash-arrow">❯</div></div>
-            <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openPaystubHistory()"><div class="settings-label">🧾 Paystub History</div><div class="dash-arrow">❯</div></div>
-            <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openT4Estimate()"><div class="settings-label">📄 T4 / Refund Estimate</div><div class="dash-arrow">❯</div></div>
-            <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openExtraPayments()"><div class="settings-label">💵 Bonus &amp; VCP Payments</div><div class="dash-arrow">❯</div></div>
-            <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openHolidayExplainer()"><div class="settings-label">🎉 Holiday Pay Explainer</div><div class="dash-arrow">❯</div></div>
+            <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openCapTracker()"><div class="settings-label"><svg class="shi" width="15" height="15" aria-hidden="true"><use href="#i-chart"/></svg> Contribution Caps</div><div class="dash-arrow"><svg class="shi" width="14" height="14" aria-hidden="true"><use href="#i-chevron-r"/></svg></div></div>
+            <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openVerifySheet()"><div class="settings-label"><svg class="shi" width="15" height="15" aria-hidden="true"><use href="#i-search"/></svg> Paystub Verifier</div><div class="dash-arrow"><svg class="shi" width="14" height="14" aria-hidden="true"><use href="#i-chevron-r"/></svg></div></div>
+            <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openPaystubHistory()"><div class="settings-label"><svg class="shi" width="15" height="15" aria-hidden="true"><use href="#i-receipt"/></svg> Paystub History</div><div class="dash-arrow"><svg class="shi" width="14" height="14" aria-hidden="true"><use href="#i-chevron-r"/></svg></div></div>
+            <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openT4Estimate()"><div class="settings-label"><svg class="shi" width="15" height="15" aria-hidden="true"><use href="#i-file"/></svg> T4 / Refund Estimate</div><div class="dash-arrow"><svg class="shi" width="14" height="14" aria-hidden="true"><use href="#i-chevron-r"/></svg></div></div>
+            <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openExtraPayments()"><div class="settings-label"><svg class="shi" width="15" height="15" aria-hidden="true"><use href="#i-banknote"/></svg> Bonus &amp; VCP Payments</div><div class="dash-arrow"><svg class="shi" width="14" height="14" aria-hidden="true"><use href="#i-chevron-r"/></svg></div></div>
+            <div class="settings-row" style="cursor:pointer;" onclick="haptic(); openHolidayExplainer()"><div class="settings-label"><svg class="shi" width="15" height="15" aria-hidden="true"><use href="#i-star"/></svg> Holiday Pay Explainer</div><div class="dash-arrow"><svg class="shi" width="14" height="14" aria-hidden="true"><use href="#i-chevron-r"/></svg></div></div>
         </div>
         <div class="btn-row">
             <button class="btn-action btn-save" onclick="sheetBack()">Close</button>
@@ -294,7 +296,7 @@
     </div>
 
     <div class="bottom-sheet" id="sheet-history">
-        <h3 class="sheet-header">🧾 Paystub History</h3>
+        <h3 class="sheet-header"><svg class="shi" width="18" height="18" aria-hidden="true"><use href="#i-receipt"/></svg> Paystub History</h3>
         <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: -15px; margin-bottom: 15px;">Your saved paystubs, reconciled against the app.</p>
         <div id="history-content" style="padding: 0 4px;"></div>
         <div class="btn-row">
@@ -303,7 +305,7 @@
     </div>
 
     <div class="bottom-sheet" id="sheet-t4">
-        <h3 class="sheet-header">📄 T4 / Refund Estimate</h3>
+        <h3 class="sheet-header"><svg class="shi" width="18" height="18" aria-hidden="true"><use href="#i-file"/></svg> T4 / Refund Estimate</h3>
         <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: -15px; margin-bottom: 15px;">Projected year-end totals. Not tax advice.</p>
         <div id="t4-content" style="padding: 0 4px;"></div>
         <div class="btn-row">
@@ -312,7 +314,7 @@
     </div>
 
     <div class="bottom-sheet" id="sheet-holidays">
-        <h3 class="sheet-header">🎉 Holiday Pay</h3>
+        <h3 class="sheet-header"><svg class="shi" width="18" height="18" aria-hidden="true"><use href="#i-star"/></svg> Holiday Pay</h3>
         <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: -15px; margin-bottom: 15px;">How each statutory holiday is paid for your crew.</p>
         <div id="holiday-content" style="padding: 0 4px;"></div>
         <div class="btn-row">
@@ -321,7 +323,7 @@
     </div>
 
     <div class="bottom-sheet" id="sheet-captrack">
-        <h3 class="sheet-header">📊 Contribution Caps</h3>
+        <h3 class="sheet-header"><svg class="shi" width="18" height="18" aria-hidden="true"><use href="#i-chart"/></svg> Contribution Caps</h3>
         <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: -15px; margin-bottom: 15px;">Year-to-date progress toward annual CPP / EI maximums.</p>
         <div id="captrack-content" style="padding: 0 4px;"></div>
         <div class="btn-row">
@@ -330,7 +332,7 @@
     </div>
 
     <div class="bottom-sheet" id="sheet-verify">
-        <h3 class="sheet-header">🔍 Paystub Verifier</h3>
+        <h3 class="sheet-header"><svg class="shi" width="18" height="18" aria-hidden="true"><use href="#i-search"/></svg> Paystub Verifier</h3>
         <p id="vf-pp-label" style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: -15px; margin-bottom: 15px;">Pay period</p>
         <div class="sheet-card">
             <div class="sheet-card-title">Enter your real paystub</div>
@@ -345,13 +347,13 @@
         <div id="vf-results" class="sheet-card"></div>
         <div class="btn-row">
             <button class="btn-action btn-cancel" onclick="sheetBack()">Close</button>
-            <button class="btn-action btn-cancel" onclick="savePaystubEntry()">💾 Save</button>
+            <button class="btn-action btn-cancel" onclick="savePaystubEntry()"><svg class="shi" width="14" height="14" aria-hidden="true"><use href="#i-save"/></svg> Save</button>
             <button class="btn-action btn-save" onclick="runPaystubCompare()">Compare</button>
         </div>
     </div>
 
     <div class="bottom-sheet" id="sheet-backupqr">
-        <h3 class="sheet-header">📲 Backup via QR</h3>
+        <h3 class="sheet-header"><svg class="shi" width="18" height="18" aria-hidden="true"><use href="#i-qr"/></svg> Backup via QR</h3>
         <div id="backup-qr" class="backup-qr-wrap"></div>
         <p id="backup-qr-note" style="font-size: 12.5px; color: var(--text-muted); text-align: center; line-height: 1.5; padding: 0 8px;"></p>
         <div class="btn-row">
@@ -360,7 +362,7 @@
     </div>
 
     <div class="bottom-sheet" id="sheet-scan">
-        <h3 class="sheet-header">📷 Restore via QR</h3>
+        <h3 class="sheet-header"><svg class="shi" width="18" height="18" aria-hidden="true"><use href="#i-camera"/></svg> Restore via QR</h3>
         <div class="scan-frame">
             <video id="scan-video" muted playsinline></video>
             <div class="scan-reticle"></div>
@@ -381,7 +383,7 @@
     </div>
 
     <div class="bottom-sheet" id="sheet-extra-pay">
-        <h3 class="sheet-header">💵 Bonus &amp; VCP Payments</h3>
+        <h3 class="sheet-header"><svg class="shi" width="18" height="18" aria-hidden="true"><use href="#i-banknote"/></svg> Bonus &amp; VCP Payments</h3>
         <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: -15px; margin-bottom: 15px;">Log one-off pay (annual bonus, quarterly VCP). Counts toward YTD, caps &amp; T4.</p>
         <div class="sheet-card">
             <div class="sheet-card-title">Add a payment</div>
@@ -397,7 +399,7 @@
                 <label>CPP<input type="number" id="xp-cpp" class="number-input" step="0.01" inputmode="decimal" placeholder="$"></label>
                 <label>EI<input type="number" id="xp-ei" class="number-input" step="0.01" inputmode="decimal" placeholder="$"></label>
             </div>
-            <button class="btn-action btn-save" style="width:100%;margin-top:12px;" onclick="addExtraPayment()">＋ Add payment</button>
+            <button class="btn-action btn-save" style="width:100%;margin-top:12px;" onclick="addExtraPayment()"><svg class="shi" width="13" height="13" aria-hidden="true"><use href="#i-plus"/></svg> Add payment</button>
         </div>
         <div class="sheet-card-title" style="padding:0 4px;">Logged payments</div>
         <div id="xp-list" style="padding: 0 4px;"></div>
@@ -407,23 +409,23 @@
     </div>
 
     <div class="bottom-sheet" id="sheet-settings" style="display: flex; flex-direction: column; max-height: 85vh; padding-bottom: 0;">
-        <h3 class="sheet-header">⚙️ System Settings</h3>
+        <h3 class="sheet-header"><svg class="shi" width="18" height="18" aria-hidden="true"><use href="#i-gear"/></svg> System Settings</h3>
         
         <div class="settings-scroll-area" style="overflow-y: auto; flex: 1; padding: 0 15px 20px 15px;">
             <div class="settings-group-title">Data Management & Privacy</div>
             <div class="settings-group">
                 <div class="settings-row" style="cursor: pointer;" onclick="exportData()">
-                    <div class="settings-label" style="color: var(--day); font-weight: bold;">📤 Export Backup (.json)</div>
+                    <div class="settings-label" style="color: var(--day); font-weight: bold;"><svg class="shi" width="15" height="15" aria-hidden="true"><use href="#i-share"/></svg> Export Backup (.json)</div>
                 </div>
                 <div class="settings-row" style="cursor: pointer;" onclick="document.getElementById('import-file').click(); haptic();">
-                    <div class="settings-label" style="color: var(--accent); font-weight: bold;">📥 Import Backup</div>
+                    <div class="settings-label" style="color: var(--accent); font-weight: bold;"><svg class="shi" width="15" height="15" aria-hidden="true"><use href="#i-download"/></svg> Import Backup</div>
                     <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importData(event)">
                 </div>
                 <div class="settings-row" style="cursor: pointer;" onclick="showBackupQR()">
-                    <div class="settings-label" style="color: var(--off); font-weight: bold;">📲 Transfer via QR</div>
+                    <div class="settings-label" style="color: var(--off); font-weight: bold;"><svg class="shi" width="15" height="15" aria-hidden="true"><use href="#i-qr"/></svg> Transfer via QR</div>
                 </div>
                 <div class="settings-row" style="cursor: pointer;" onclick="openScanSheet()">
-                    <div class="settings-label" style="color: var(--off); font-weight: bold;">📷 Restore via QR (Scan)</div>
+                    <div class="settings-label" style="color: var(--off); font-weight: bold;"><svg class="shi" width="15" height="15" aria-hidden="true"><use href="#i-camera"/></svg> Restore via QR (Scan)</div>
                 </div>
                 <div class="settings-row">
                     <div class="settings-label" style="flex-direction:column;align-items:flex-start;gap:2px">
@@ -441,14 +443,14 @@
                     </select>
                 </div>
                 <div class="settings-row" style="cursor: pointer;" onclick="replayCoachmarks()">
-                    <div class="settings-label" style="color: var(--off); font-weight: bold;">🧭 Replay App Tour</div>
+                    <div class="settings-label" style="color: var(--off); font-weight: bold;"><svg class="shi" width="15" height="15" aria-hidden="true"><use href="#i-compass"/></svg> Replay App Tour</div>
                 </div>
             </div>
 
             <div class="settings-group-title">Native OS Integrations</div>
             <div class="settings-group">
                 <div class="settings-row" style="cursor: pointer;" onclick="exportICS()">
-                    <div class="settings-label" style="color: var(--day); font-weight: bold;">🗓️ Export Calendar (.ics)</div>
+                    <div class="settings-label" style="color: var(--day); font-weight: bold;"><svg class="shi" width="15" height="15" aria-hidden="true"><use href="#i-calendar"/></svg> Export Calendar (.ics)</div>
                 </div>
                 <div class="settings-row">
                     <div class="settings-label">Sync to Phone Calendar</div>
@@ -616,6 +618,7 @@
     <div id="onboarding-root"></div>
 
     <script src="cordova.js"></script>
+    <script src="icons.js"></script>
     <script src="constants.js"></script>
     <script src="utils.js"></script>
     <script src="state.js"></script>

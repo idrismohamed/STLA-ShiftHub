@@ -105,7 +105,7 @@ function openPickupSheet(dStr, disp, curS, nextS) {
     const holBanner = document.getElementById('sheet-holiday-banner');
     const holName   = document.getElementById('sheet-holiday-name');
     if (holBanner && holName) {
-        holName.textContent = holInfo ? '⭐ ' + holInfo.n : '';
+        holName.innerHTML = holInfo ? `${icon('star', 12)} ` + holInfo.n : '';
         holBanner.classList.toggle('visible', !!holInfo);
     }
 
@@ -911,7 +911,7 @@ function renderShiftNotes() {
                 <div style="font-size:13px; color:var(--text); word-wrap:break-word;">${safe}</div>
                 <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">${when}</div>
             </div>
-            <button onclick="deleteShiftNote('${activeDate}', ${n.at})" aria-label="Delete note" style="background:none; border:none; color:var(--night); font-size:14px; cursor:pointer; padding:2px 6px;">✕</button>
+            <button onclick="deleteShiftNote('${activeDate}', ${n.at})" aria-label="Delete note" class="note-del-btn"><svg class="shi" width="13" height="13" aria-hidden="true"><use href="#i-close"/></svg></button>
         </div>`;
     }).join('');
 }
